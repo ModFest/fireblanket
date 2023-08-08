@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "fireblanket",
+	"version": "${version}",
+	"name": "Fireblanket",
+	"description": "Performance and bugfixing utilities for Modfest events.",
+	"authors": [
+		"Jasmine"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/fireblanket/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.modfest.fireblanket.Fireblanket"
+		]
+	},
+	"mixins": [
+		"fireblanket.mixins.json"
+	],
+	"depends": {
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
