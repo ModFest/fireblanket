@@ -7,7 +7,7 @@
 	"authors": [
 		"Jasmine"
 	],
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/fireblanket/icon.png",
 	"environment": "*",
 	"entrypoints": {
