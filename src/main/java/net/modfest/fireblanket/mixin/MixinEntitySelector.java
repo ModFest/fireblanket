@@ -77,7 +77,7 @@ public abstract class MixinEntitySelector {
                     predicate = getPositionOnlyPredicate(pos);
 
                     list = source.getWorld().getPlayers(predicate, i);
-                    list.removeIf(this.basePredicate);
+                    list.removeIf(this.basePredicate.negate());
                 } else {
                     list = Lists.newArrayList();
 

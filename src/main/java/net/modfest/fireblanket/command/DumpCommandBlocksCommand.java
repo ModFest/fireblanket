@@ -18,7 +18,7 @@ public class DumpCommandBlocksCommand {
     public static void init() {
         CommandRegistrationCallback.EVENT.register((event, access, env) -> {
             event.register(CommandManager.literal("fireblanket:dumpcommandblocks")
-                            .requires(source -> source.hasPermissionLevel(4))
+                    .requires(source -> source.hasPermissionLevel(4))
                     .executes(server -> {
                         server.getSource().getServer().submit(() -> {
                             ServerWorld world = server.getSource().getWorld();
