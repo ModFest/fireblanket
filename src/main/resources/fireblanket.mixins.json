@@ -3,9 +3,12 @@
   "package": "net.modfest.fireblanket.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "EntityTypeAccessor",
     "MixinEntitySelector",
     "MixinRecipeManager",
     "MixinServerPlayerEntity",
+    "entity_ticking.MixinMinecraftServer",
+    "entity_ticking.MixinThreadedAnvilChunkStorage",
     "improved_be_sync.MixinBlockEntity",
     "improved_be_sync.MixinChunkHolder"
   ],
