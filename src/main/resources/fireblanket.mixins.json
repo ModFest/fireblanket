@@ -3,6 +3,7 @@
   "package": "net.modfest.fireblanket.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "MixinCustomPayloadS2CPacket",
     "MixinEntitySelector",
     "MixinRecipeManager",
     "MixinServerPlayerEntity",
