@@ -4,8 +4,10 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "MixinEntitySelector",
+    "MixinRecipeManager",
     "MixinServerPlayerEntity",
-    "MixinRecipeManager"
+    "improved_be_sync.MixinBlockEntity",
+    "improved_be_sync.MixinChunkHolder"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -13,7 +15,7 @@
   "client": [
     "client.MixinBlockEntityRenderDispatcher",
     "client.MixinRebuildTask",
-    "client.sodium.MixinChunkRenderRebuildTask",
-    "client.MixinSignBlockEntityRenderer"
+    "client.MixinSignBlockEntityRenderer",
+    "client.sodium.MixinChunkRenderRebuildTask"
   ]
 }

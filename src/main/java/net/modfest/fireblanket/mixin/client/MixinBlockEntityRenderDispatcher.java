@@ -25,7 +25,7 @@ public class MixinBlockEntityRenderDispatcher {
             if (ClientState.MASKED_BERS.contains(Registries.BLOCK_ENTITY_TYPE.getId(blockEntity.getType()))) {
                 VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayers.TRANSLUCENT_BROKEN_DEPTH);
 
-                QuadEmitter.buildBox(buffer, matrices, 0, 1.00001f, 0, 1.00001f, 0, 1.00001f, 30, 200, 220, 180);
+                QuadEmitter.buildBox(buffer, matrices, 0, 1.00001f, 0, 1.00001f, 0, 1.00001f, 30, 200, 220, 40);
 
                 // Please let this be a normal field trip
                 if (vertexConsumers instanceof VertexConsumerProvider.Immediate imm) {
