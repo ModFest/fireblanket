@@ -2,6 +2,7 @@
   "required": true,
   "package": "net.modfest.fireblanket.mixin",
   "compatibilityLevel": "JAVA_17",
+  "plugin": "net.modfest.fireblanket.FireblanketMixin",
   "mixins": [
     "EntityTypeAccessor",
     "MixinEntitySelector",
@@ -16,9 +17,10 @@
     "defaultRequire": 1
   },
   "client": [
-    "client.MixinBlockEntityRenderDispatcher",
-    "client.MixinRebuildTask",
+    "client.be_masking.MixinBlockEntityRenderDispatcher",
+    "client.be_masking.MixinRebuildTask",
+    "client.be_masking.sodium.MixinChunkRenderRebuildTask",
     "client.MixinSignBlockEntityRenderer",
-    "client.sodium.MixinChunkRenderRebuildTask"
+    "client.MixinRenderSystem"
   ]
 }
