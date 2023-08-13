@@ -2,13 +2,7 @@ package net.modfest.fireblanket;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
-import net.minecraft.client.gui.screen.ingame.CommandBlockScreen;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
 
 public class FireblanketClient implements ClientModInitializer {
@@ -22,24 +16,8 @@ public class FireblanketClient implements ClientModInitializer {
             int size = buf.readVarInt();
 
             for (int i = 0; i < size; i++) {
-                BlockPos pos = buf.readBlockPos();
-                BlockEntityType<?> type = buf.readRegistryValue(Registries.BLOCK_ENTITY_TYPE);
-                NbtCompound nbt = buf.readNbt();
-
-                client.execute(() -> {
-                    BlockEntity be = client.world.getBlockEntity(pos);
-                    if (be == null || be.getType() != type) {
-                        return;
-                    }
-
-                    if (nbt != null) {
-                        be.readNbt(nbt);
-                    }
-
-                    if (be instanceof CommandBlockBlockEntity && client.currentScreen instanceof CommandBlockScreen) {
-                        ((CommandBlockScreen) client.currentScreen).updateCommandBlock();
-                    }
-                });
+                BlockEntityUpdateS2CPacket fakePacket = new BlockEntityUpdateS2CPacket(buf);
+                client.execute(() -> handler.onBlockEntityUpdate(fakePacket));
             }
         });
     }
