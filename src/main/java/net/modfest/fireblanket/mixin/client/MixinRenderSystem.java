@@ -19,7 +19,7 @@ public class MixinRenderSystem {
 	private static ConcurrentLinkedQueue<RenderCall> recordingQueue;
 	
 	/**
-	 * @author unascribed
+	 * @author Una
 	 * @reason Add blame and log when dubious things occur
 	 */
 	@Overwrite
