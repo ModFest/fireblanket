@@ -15,7 +15,7 @@ public class MixinComplexCollisionManager {
 
 	/**
 	 * @reason Causes huge performance issues due to getOtherEntities calls. We're not using any PSWG complex entities, so just delete it.
-	 * @author unascribed
+	 * @author Una
 	 */
 	@Overwrite
 	public static Optional<Vec3d> adjustMovementForCollisions(Entity entity, Vec3d currentMovement) {
