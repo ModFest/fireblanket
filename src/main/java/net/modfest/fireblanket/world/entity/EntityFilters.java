@@ -67,7 +67,11 @@ public class EntityFilters {
                 if (filter.pattern().asMatchPredicate().test(id.toString())) {
                     ((EntityTypeAccessor)type).setMaxTrackDistance(filter.trackingRangeChunks());
                     ((EntityTypeAccessor)type).setTrackTickInterval(filter.tickRate());
-                    FORCE_VELOCITY_UPDATE_OFF.add(type);
+
+                    if (filter.forceNoVelcityUpdate()) {
+                        FORCE_VELOCITY_UPDATE_OFF.add(type);
+                    }
+
                     Fireblanket.LOGGER.debug("Filter applied to " + id + " successfully");
                 }
             }
