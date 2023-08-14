@@ -17,14 +17,20 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 
 	@Override
 	public void onLoad(String mixinPackage) {
-		boolean ignoreNvidium = Boolean.getBoolean("fireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage");
-		if (ignoreNvidium) {
-			LoggerFactory.getLogger("Fireblanket").error("===================================================");
-			LoggerFactory.getLogger("Fireblanket").error("         IGNORING THE PRESENCE OF NVIDIUM.         ");
-			LoggerFactory.getLogger("Fireblanket").error("YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.");
-			LoggerFactory.getLogger("Fireblanket").error("===================================================");
+		// aaaaagh
+		boolean ignoreRenderingMods = Boolean.getBoolean("fireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage");
+		if (ignoreRenderingMods) {
+			if (FabricLoader.getInstance().isModLoaded("nvidium")) {
+				LoggerFactory.getLogger("Fireblanket").error("===================================================");
+				LoggerFactory.getLogger("Fireblanket").error("         IGNORING THE PRESENCE OF NVIDIUM.         ");
+				LoggerFactory.getLogger("Fireblanket").error("YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.");
+				LoggerFactory.getLogger("Fireblanket").error("===================================================");
+			}
+			if (FabricLoader.getInstance().isModLoaded("bobby")) {
+				LoggerFactory.getLogger("Fireblanket").error("Ignoring the presence of Bobby. Be ready for missing chunks.");
+			}
 		}
-		if (!ignoreNvidium && FabricLoader.getInstance().isModLoaded("nvidium") ) {
+		if (!ignoreRenderingMods && FabricLoader.getInstance().isModLoaded("nvidium")) {
 			Bootstrap.SYSOUT.println("""
 			----------------------------------------------------------------------------------------
 			###### Fireblanket is cowardly refusing to launch the game with Nvidium installed ######
@@ -35,8 +41,8 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			     receives a fix.  Additionally, Nvidium does not help with the main performance
 			                bottlenecks in the pack, and is as such fairly unhelpful.
 			========================================================================================
-			If you would like to ignore these warnings and launch anyway, you must add the
-			following to your JVM arguments:
+			If you would like to ignore these warnings and launch anyway, you must add the following
+			to your JVM arguments:
 			   -Dfireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage=true
 			The JVM will now exit.
 			""");
@@ -54,6 +60,24 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			                              specifically for Blanketcon.
 			========================================================================================
 			You may not override this. The JVM will now exit.
+			""");
+			System.exit(0xDEAD);
+		}
+		if (FabricLoader.getInstance().isModLoaded("bobby")) {
+			Bootstrap.SYSOUT.println("""
+			----------------------------------------------------------------------------------------
+			####### Fireblanket is cowardly refusing to launch the game with Bobby installed #######
+			----------------------------------------------------------------------------------------
+			While Bobby is a great mod and makes navigating the map easier,  it is causing difficult
+			 to debug culling issues that keep resulting in false issue reports.  We do not ship it
+			 with the pack for a reason — we have had so many other issues to chase and fix that we
+			simply do not have time to field the Bobby issues.  It additionally can cause crashes if
+			            its option to keep block entities in fake chunks is not enabled.
+			========================================================================================
+			If you would like to ignore these warnings and launch anyway, you must add the following
+			to your JVM arguments:
+			   -Dfireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage=true
+			The JVM will now exit.
 			""");
 			System.exit(0xDEAD);
 		}
