@@ -20,7 +20,9 @@
     "client.be_masking.MixinBlockEntityRenderDispatcher",
     "client.be_masking.MixinRebuildTask",
     "client.be_masking.sodium.MixinChunkRenderRebuildTask",
-    "client.MixinSignBlockEntityRenderer",
-    "client.MixinRenderSystem"
+    "client.vbo_opto.MixinShaderProgram",
+    "client.vbo_opto.MixinVertexBuffer",
+    "client.MixinRenderSystem",
+    "client.MixinSignBlockEntityRenderer"
   ]
 }
