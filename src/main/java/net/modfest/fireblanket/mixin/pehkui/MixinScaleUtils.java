@@ -12,7 +12,7 @@ public class MixinScaleUtils {
 
 	/**
 	 * @reason Massive performance hazard.
-	 * @author unascribed
+	 * @author Una
 	 */
 	@Overwrite
 	public static float getInteractionBoxWidthScale(Entity entity, float tickDelta) {
@@ -20,7 +20,7 @@ public class MixinScaleUtils {
 	}
 	/**
 	 * @reason Massive performance hazard.
-	 * @author unascribed
+	 * @author Una
 	 */
 	@Overwrite
 	public static float getInteractionBoxHeightScale(Entity entity, float tickDelta) {
