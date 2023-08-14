@@ -11,7 +11,8 @@
     "entity_ticking.MixinMinecraftServer",
     "entity_ticking.MixinThreadedAnvilChunkStorage",
     "improved_be_sync.MixinBlockEntity",
-    "improved_be_sync.MixinChunkHolder"
+    "improved_be_sync.MixinChunkHolder",
+    "pehkui.MixinScaleUtils"
   ],
   "injectors": {
     "defaultRequire": 1
