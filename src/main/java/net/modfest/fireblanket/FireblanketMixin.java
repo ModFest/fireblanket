@@ -63,7 +63,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			""");
 			System.exit(0xDEAD);
 		}
-		if (FabricLoader.getInstance().isModLoaded("bobby")) {
+		if (!ignoreRenderingMods && FabricLoader.getInstance().isModLoaded("bobby")) {
 			Bootstrap.SYSOUT.println("""
 			----------------------------------------------------------------------------------------
 			####### Fireblanket is cowardly refusing to launch the game with Bobby installed #######
