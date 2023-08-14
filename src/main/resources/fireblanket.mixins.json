@@ -12,7 +12,8 @@
     "entity_ticking.MixinThreadedAnvilChunkStorage",
     "improved_be_sync.MixinBlockEntity",
     "improved_be_sync.MixinChunkHolder",
-    "pehkui.MixinScaleUtils"
+    "pehkui.MixinScaleUtils",
+    "pswg.MixinComplexCollisionManager"
   ],
   "injectors": {
     "defaultRequire": 1
