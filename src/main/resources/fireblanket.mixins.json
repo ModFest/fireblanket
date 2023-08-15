@@ -16,7 +16,9 @@
     "pehkui.MixinScaleUtils",
     "pswg.MixinComplexCollisionManager",
     "mythicmetals.MixinCarmotShield",
-    "MixinClientConnection"
+    "MixinClientConnection",
+    "chunk_cache.MixinChunkDataS2CPacket",
+    "chunk_cache.MixinWorldChunk"
   ],
   "injectors": {
     "defaultRequire": 1
