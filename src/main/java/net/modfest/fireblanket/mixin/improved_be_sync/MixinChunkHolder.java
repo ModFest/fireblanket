@@ -1,14 +1,12 @@
 package net.modfest.fireblanket.mixin.improved_be_sync;
 
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.util.math.BlockPos;
@@ -105,7 +103,7 @@ public abstract class MixinChunkHolder {
                 return;
             }
 
-            var packet = new BundledBlockEntityUpdatePacket(BATCHED_UPDATES.toArray(new BEUpdate[0])).toPacket(Fireblanket.BATCHED_BE_UPDATE);
+            Packet<ClientPlayPacketListener> packet = new BundledBlockEntityUpdatePacket(BATCHED_UPDATES.toArray(new BEUpdate[0])).toPacket(Fireblanket.BATCHED_BE_UPDATE);
 
             for (ServerPlayerEntity p : list) {
                 p.networkHandler.sendPacket(packet);
