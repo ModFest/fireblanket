@@ -14,7 +14,8 @@
     "improved_be_sync.MixinBlockEntity",
     "improved_be_sync.MixinChunkHolder",
     "pehkui.MixinScaleUtils",
-    "pswg.MixinComplexCollisionManager"
+    "pswg.MixinComplexCollisionManager",
+    "mythicmetals.MixinCarmotShield"
   ],
   "injectors": {
     "defaultRequire": 1
