@@ -10,7 +10,7 @@ public record BundledBlockEntityUpdatePacket(BEUpdate[] updates) implements Serv
 
     @Override
     public void write(PacketByteBuf buf, Identifier packetId) {
-        var size = updates.length;
+        int size = updates.length;
         buf.writeVarInt(size);
         for (int i = 0; i < size; i++) {
             BEUpdate bup = updates[i];

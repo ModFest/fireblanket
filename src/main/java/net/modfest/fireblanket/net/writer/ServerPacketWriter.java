@@ -14,15 +14,18 @@ import net.minecraft.util.Identifier;
  *
  * This is a (minimally) simplified version of interface from Polymer Networking API.
  * In case of bigger data (like polymer's registry sync), performance increase was noticeable,
- * so I thought it would be good idea to bring it here.
+ * making it a good choice for possibly data heavy packets.
+ * Additionally, it keeps player context while writing the packet.
  *
- * Vanilla adopted similar (through bit fancier) approach with it's own CustomPayload packets in 1.20.2 (23w31a)
+ * Vanilla adopted similar (through bit fancier) approach with its own CustomPayload packets in 1.20.2 (23w31a)
+ *
+ * @author Patbox
  */
 public interface ServerPacketWriter {
     void write(PacketByteBuf buf, Identifier packetId);
 
     default Packet<ClientPlayPacketListener> toPacket(Identifier identifier) {
-        var base = new CustomPayloadS2CPacket(identifier, new PacketByteBuf(Unpooled.EMPTY_BUFFER));
+        CustomPayloadS2CPacket base = new CustomPayloadS2CPacket(identifier, new PacketByteBuf(Unpooled.EMPTY_BUFFER));
         ((CustomPayloadS2CExt) base).fireblanket$setWriter(this);
         return base;
     }
