@@ -17,10 +17,13 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Fireblanket implements ModInitializer {
 	public static final Identifier BATCHED_BE_UPDATE = new Identifier("fireblanket", "batched_be_sync");
     public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
+    
+    public static final LinkedBlockingQueue<Runnable> PACKET_QUEUE = new LinkedBlockingQueue<>();
 
 	@Override
 	public void onInitialize() {
@@ -43,5 +46,17 @@ public class Fireblanket implements ModInitializer {
 				EntityFilters.parse(types);
 			}
 		}
+		
+		Thread packetThread = new Thread(() -> {
+			while (true) {
+				try {
+					PACKET_QUEUE.take().run();
+				} catch (Throwable t) {
+					LOGGER.error("Exception in packet thread", t);
+				}
+			}
+		}, "Fireblanket async packet send thread");
+		packetThread.setDaemon(true);
+		packetThread.start();
 	}
 }
