@@ -18,7 +18,8 @@
     "mythicmetals.MixinCarmotShield",
     "MixinClientConnection",
     "chunk_cache.MixinChunkDataS2CPacket",
-    "chunk_cache.MixinWorldChunk"
+    "chunk_cache.MixinWorldChunk",
+    "ClientConnectionAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
