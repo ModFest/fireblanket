@@ -20,7 +20,6 @@ public class Fireblanket implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		DumpCommandBlocksCommand.init();
-
 		DumpEntityTypesCommand.init();
 
 		Path configs = FabricLoader.getInstance().getConfigDir().resolve("fireblanket");
