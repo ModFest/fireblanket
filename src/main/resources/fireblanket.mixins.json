@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "plugin": "net.modfest.fireblanket.FireblanketMixin",
   "mixins": [
+    "BlockEntityTypeAccessor",
     "EntityTypeAccessor",
     "MixinEntitySelector",
     "MixinRecipeManager",
@@ -19,12 +20,12 @@
     "defaultRequire": 1
   },
   "client": [
+    "client.MixinRenderSystem",
+    "client.MixinSignBlockEntityRenderer",
     "client.be_masking.MixinBlockEntityRenderDispatcher",
     "client.be_masking.MixinRebuildTask",
     "client.be_masking.sodium.MixinChunkRenderRebuildTask",
     "client.vbo_opto.MixinShaderProgram",
-    "client.vbo_opto.MixinVertexBuffer",
-    "client.MixinRenderSystem",
-    "client.MixinSignBlockEntityRenderer"
+    "client.vbo_opto.MixinVertexBuffer"
   ]
 }
