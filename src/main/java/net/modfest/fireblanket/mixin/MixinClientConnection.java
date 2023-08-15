@@ -1,5 +1,7 @@
 package net.modfest.fireblanket.mixin;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -9,12 +11,12 @@ import net.minecraft.network.ClientConnection;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
 import net.modfest.fireblanket.Fireblanket;
+import net.modfest.fireblanket.Fireblanket.QueuedPacket;
 
 @Mixin(ClientConnection.class)
 public class MixinClientConnection {
 
-	@Shadow
-	private void sendImmediately(Packet<?> packet, PacketCallbacks callbacks) { throw new AbstractMethodError(); }
+	private final LinkedBlockingQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
 	
 	/**
 	 * With a lot of connections, simply the act of writing packets becomes slow.
@@ -26,9 +28,7 @@ public class MixinClientConnection {
 	@Redirect(at=@At(value="INVOKE", target="net/minecraft/network/ClientConnection.sendImmediately(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V"),
 			method="send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V")
 	public void fireblanket$asyncPacketSending(ClientConnection subject, Packet<?> pkt, PacketCallbacks listener) {
-		Fireblanket.PACKET_QUEUE.add(() -> {
-			sendImmediately(pkt, listener);
-		});
+		fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
 	}
 	
 }
