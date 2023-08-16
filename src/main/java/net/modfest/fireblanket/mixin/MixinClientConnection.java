@@ -3,6 +3,7 @@ package net.modfest.fireblanket.mixin;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,6 +18,7 @@ import com.github.luben.zstd.ZstdOutputStream;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.network.NetworkSide;
 import net.minecraft.network.NetworkState;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
@@ -37,8 +39,6 @@ public class MixinClientConnection implements FSCConnection {
     
     @Shadow
     private void sendImmediately(Packet<?> packet, PacketCallbacks callbacks) { throw new AbstractMethodError(); }
-    @Shadow
-    public boolean isEncrypted() { throw new AbstractMethodError(); }
     
 	private final LinkedBlockingQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
 	private boolean fireblanket$fsc = false;
@@ -81,13 +81,15 @@ public class MixinClientConnection implements FSCConnection {
 	private void fireblanket$enableFSCNow() {
 	    fireblanket$fscStarted = true;
         ChannelPipeline pipeline = channel.pipeline();
+        ClientConnection self = (ClientConnection)(Object)this;
         try {
+            boolean client = self.getSide() == NetworkSide.CLIENTBOUND;
             ReassignableOutputStream ros = new ReassignableOutputStream();
             ZstdOutputStream zos = new ZstdOutputStream(ros);
-            zos.setLevel(4);
-            zos.setLong(27);
+            zos.setLevel(client ? 6 : 4);
+            zos.setLong(client ? 27 : 22);
             zos.setCloseFrameOnFlush(false);
-            ZstdEncoder enc = new ZstdEncoder(ros, zos);
+            ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
     
             ReassignableInputStream ris = new ReassignableInputStream();
             ZstdInputStream zis = new ZstdInputStream(ris);
