@@ -54,7 +54,7 @@ public class MixinClientConnection implements FSCConnection {
 	@Redirect(at=@At(value="INVOKE", target="net/minecraft/network/ClientConnection.sendImmediately(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V"),
 			method="send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V")
 	public void fireblanket$asyncPacketSending(ClientConnection subject, Packet<?> pkt, PacketCallbacks listener) {
-	    if (pkt instanceof GameJoinS2CPacket && !fireblanket$fscStarted) {
+	    if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
 	        fireblanket$enableFSCNow();
 	    }
 	    if (channel.attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get() == NetworkState.PLAY) {
@@ -93,13 +93,8 @@ public class MixinClientConnection implements FSCConnection {
             ZstdInputStream zis = new ZstdInputStream(ris);
             zis.setContinuous(true);
             ZstdDecoder dec = new ZstdDecoder(ris, zis);
-            if (isEncrypted()) {
-                pipeline.addBefore("encrypt", "fireblanket:fsc_enc", enc);
-                pipeline.addBefore("decrypt", "fireblanket:fsc_dec", dec);
-            } else {
-                pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
-                pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
-            }
+            pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
+            pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -98,7 +98,9 @@ public class Fireblanket implements ModInitializer {
             LOGGER.info("Enabling full-stream compression");
 		    ServerLoginConnectionEvents.QUERY_START.addPhaseOrdering(new Identifier("fireblanket:pre"), Event.DEFAULT_PHASE);
     		ServerLoginConnectionEvents.QUERY_START.register(new Identifier("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
-    		    sender.sendPacket(FULL_STREAM_COMPRESSION, PacketByteBufs.empty());
+    		    if (!server.isSingleplayer()) {
+    		        sender.sendPacket(FULL_STREAM_COMPRESSION, PacketByteBufs.empty());
+    		    }
     		});
 		}
 		
