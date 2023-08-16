@@ -19,7 +19,9 @@
     "MixinClientConnection",
     "chunk_cache.MixinChunkDataS2CPacket",
     "chunk_cache.MixinWorldChunk",
-    "ClientConnectionAccessor"
+    "ClientConnectionAccessor",
+    "MixinServerNetworkIo",
+    "ServerLoginNetworkHandlerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -31,6 +33,7 @@
     "client.be_masking.MixinRebuildTask",
     "client.be_masking.sodium.MixinChunkRenderRebuildTask",
     "client.vbo_opto.MixinShaderProgram",
-    "client.vbo_opto.MixinVertexBuffer"
+    "client.vbo_opto.MixinVertexBuffer",
+    "ClientLoginNetworkHandlerAccessor"
   ]
 }
