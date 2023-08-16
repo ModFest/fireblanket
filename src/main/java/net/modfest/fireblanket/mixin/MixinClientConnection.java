@@ -86,7 +86,7 @@ public class MixinClientConnection implements FSCConnection {
             ZstdOutputStream zos = new ZstdOutputStream(ros);
             zos.setLevel(4);
             zos.setLong(27);
-            zos.setCloseFrameOnFlush(true);
+            zos.setCloseFrameOnFlush(false);
             ZstdEncoder enc = new ZstdEncoder(ros, zos);
     
             ReassignableInputStream ris = new ReassignableInputStream();
