@@ -31,7 +31,7 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
         }, 5, 5, TimeUnit.MINUTES);
     }
     
-    private static final long FLUSH_FREQUENCY = TimeUnit.MILLISECONDS.toNanos(50);
+    private final long flushFrequency, unclogFrequency;
     
     private final ReassignableOutputStream out;
     private final ZstdOutputStream stream;
@@ -40,9 +40,11 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
     
     private long lastFlush = System.nanoTime();
 
-    public ZstdEncoder(ReassignableOutputStream out, ZstdOutputStream stream) {
+    public ZstdEncoder(ReassignableOutputStream out, ZstdOutputStream stream, long flushFrequency) {
         this.out = out;
         this.stream = stream;
+        this.flushFrequency = flushFrequency;
+        this.unclogFrequency = (flushFrequency*3)/2;
     }
 
     @Override
@@ -55,7 +57,7 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
         this.out.setDelegate(new ByteBufOutputStream(out));
         int start = out.writerIndex();
         new ByteBufInputStream(msg, false).transferTo(stream);
-        if (System.nanoTime()-lastFlush > FLUSH_FREQUENCY) {
+        if (flushFrequency == 0 || System.nanoTime()-lastFlush > flushFrequency) {
             lastFlush = System.nanoTime();
             stream.flush();
         } else {
@@ -63,7 +65,7 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
             future = sched.schedule(() -> {
                 future = null;
                 ch.writeAndFlush(Unpooled.EMPTY_BUFFER);
-            }, 50, TimeUnit.MILLISECONDS);
+            }, unclogFrequency, TimeUnit.NANOSECONDS);
         }
         outBytes.add(out.writerIndex()-start);
     }
