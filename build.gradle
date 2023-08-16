@@ -22,6 +22,11 @@ repositories {
 			includeGroup "maven.modrinth"
 		}
 	}
+	mavenCentral()
+}
+
+configurations {
+	shade
 }
 
 dependencies {
@@ -34,6 +39,14 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	modCompileOnly "maven.modrinth:sodium:mc1.20-0.4.10"
+	
+	modImplementation "io.netty.incubator:netty-incubator-transport-classes-io_uring:0.0.15.Final"
+	modImplementation "io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.15.Final:linux-x86_64"
+	modImplementation "com.github.luben:zstd-jni:1.5.5-5"
+	
+	shade("io.netty.incubator:netty-incubator-transport-classes-io_uring:0.0.15.Final") { transitive = false }
+	shade("io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.15.Final:linux-x86_64") { transitive = false }
+	shade("com.github.luben:zstd-jni:1.5.5-5") { transitive = false }
 	
 	// Uncomment the following line to enable the deprecated Fabric API modules. 
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
@@ -76,6 +89,12 @@ java {
 jar {
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
+	}
+	
+	configurations.shade.resolve().each {
+		from(zipTree(it)) {
+			exclude 'META-INF/**'
+		}
 	}
 }
 
