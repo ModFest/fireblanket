@@ -93,7 +93,9 @@ jar {
 	
 	configurations.shade.resolve().each {
 		from(zipTree(it)) {
-			exclude 'META-INF/**'
+			exclude 'META-INF/MANIFEST.MF'
+			exclude 'META-INF/INDEX.LIST'
+			exclude 'META-INF/maven/**'
 		}
 	}
 }
