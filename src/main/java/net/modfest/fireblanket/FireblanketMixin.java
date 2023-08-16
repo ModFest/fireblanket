@@ -38,7 +38,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			   Due to the amount of mods that change  how rendering works, Nvidium can experience
 			random crashes and other hard to debug issues. From testing in the build server, Nvidium
 			  doesn't have a lot  of impact on the types of fps lag that the pack causes. As such,
-			      it is not reccomended to use  Nvidium with Blanketcon for stability reasons.
+			      it is not recommended to use  Nvidium with Blanketcon for stability reasons.
 			========================================================================================
 			If you would like to ignore these warnings and launch anyway, you must add the following
 			to your JVM arguments:
@@ -67,11 +67,11 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			####### Fireblanket is cowardly refusing to launch the game with Bobby installed #######
 			----------------------------------------------------------------------------------------
 			   While Bobby can make navigating the map easier,  it is causing difficult to debug
-			issues with chunl culling that keep resulting in false issue reports.  We do not ship it
+			issues with chunk culling that keep resulting in false issue reports.  We do not ship it
 			 with the pack for a reason — we have had so many other issues to chase and fix that we
 			simply do not  have time to field the Bobby issues. It additionally can cause crashes if
 			     its option to keep block entities in  fake chunks is not enabled, so it is not
-			                     reccomended for use due  to stability reasons.
+			                     recommended for use due  to stability reasons.
 			========================================================================================
 			If you would like to ignore these warnings and launch anyway, you must add the following
 			to your JVM arguments:
