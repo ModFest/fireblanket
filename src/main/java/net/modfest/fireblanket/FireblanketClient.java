@@ -1,45 +1,39 @@
 package net.modfest.fireblanket;
 
+import java.util.concurrent.CompletableFuture;
+
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
-import net.minecraft.client.gui.screen.ingame.CommandBlockScreen;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.math.BlockPos;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
+import net.modfest.fireblanket.mixin.ClientLoginNetworkHandlerAccessor;
+import net.modfest.fireblanket.mixinsupport.FSCConnection;
 
 public class FireblanketClient implements ClientModInitializer {
+    
     @Override
     public void onInitializeClient() {
-        if (GlobalFlags.DO_BE_MASKING) {
+        if (FireblanketMixin.DO_BE_MASKING) {
             BERMaskCommand.init();
         }
+
+        ClientLoginNetworking.registerGlobalReceiver(Fireblanket.FULL_STREAM_COMPRESSION, (client, handler, buf, listenerAdder) -> {
+            if (Fireblanket.CAN_USE_ZSTD) {
+                ((FSCConnection)((ClientLoginNetworkHandlerAccessor)handler).fireblanket$getConnection()).fireblanket$enableFullStreamCompression();
+                return CompletableFuture.completedFuture(PacketByteBufs.empty());
+            } else {
+                return CompletableFuture.completedFuture(null);
+            }
+        });
 
         ClientPlayNetworking.registerGlobalReceiver(Fireblanket.BATCHED_BE_UPDATE, (client, handler, buf, sender) -> {
             int size = buf.readVarInt();
 
             for (int i = 0; i < size; i++) {
-                BlockPos pos = buf.readBlockPos();
-                BlockEntityType<?> type = buf.readRegistryValue(Registries.BLOCK_ENTITY_TYPE);
-                NbtCompound nbt = buf.readNbt();
-
-                client.execute(() -> {
-                    BlockEntity be = client.world.getBlockEntity(pos);
-                    if (be == null || be.getType() != type) {
-                        return;
-                    }
-
-                    if (nbt != null) {
-                        be.readNbt(nbt);
-                    }
-
-                    if (be instanceof CommandBlockBlockEntity && client.currentScreen instanceof CommandBlockScreen) {
-                        ((CommandBlockScreen) client.currentScreen).updateCommandBlock();
-                    }
-                });
+                BlockEntityUpdateS2CPacket fakePacket = new BlockEntityUpdateS2CPacket(buf);
+                client.execute(() -> handler.onBlockEntityUpdate(fakePacket));
             }
         });
     }

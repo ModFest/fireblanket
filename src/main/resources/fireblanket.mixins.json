@@ -2,8 +2,10 @@
   "required": true,
   "package": "net.modfest.fireblanket.mixin",
   "compatibilityLevel": "JAVA_17",
+  "plugin": "net.modfest.fireblanket.FireblanketMixin",
   "mixins": [
     "MixinCustomPayloadS2CPacket",
+    "BlockEntityTypeAccessor",
     "EntityTypeAccessor",
     "MixinEntitySelector",
     "MixinRecipeManager",
@@ -11,15 +13,31 @@
     "entity_ticking.MixinMinecraftServer",
     "entity_ticking.MixinThreadedAnvilChunkStorage",
     "improved_be_sync.MixinBlockEntity",
-    "improved_be_sync.MixinChunkHolder"
+    "improved_be_sync.MixinChunkHolder",
+    "pehkui.MixinScaleUtils",
+    "pswg.MixinComplexCollisionManager",
+    "mythicmetals.MixinCarmotShield",
+    "MixinClientConnection",
+    "chunk_cache.MixinChunkDataS2CPacket",
+    "chunk_cache.MixinWorldChunk",
+    "ClientConnectionAccessor",
+    "MixinServerNetworkIo",
+    "ServerLoginNetworkHandlerAccessor",
+    "ServerChunkManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
-    "client.MixinBlockEntityRenderDispatcher",
-    "client.MixinRebuildTask",
+    "client.MixinRenderSystem",
     "client.MixinSignBlockEntityRenderer",
-    "client.sodium.MixinChunkRenderRebuildTask"
+    "client.be_masking.MixinBlockEntityRenderDispatcher",
+    "client.be_masking.MixinRebuildTask",
+    "client.be_masking.sodium.MixinChunkRenderRebuildTask",
+    "client.vbo_opto.MixinShaderProgram",
+    "client.vbo_opto.MixinVertexBuffer",
+    "ClientLoginNetworkHandlerAccessor",
+    "client.entity_ticking.MixinArmorStandEntity",
+    "client.entity_ticking.portal_cubed.MixinCorePhysicsEntity"
   ]
 }
