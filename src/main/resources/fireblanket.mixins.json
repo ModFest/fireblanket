@@ -22,9 +22,7 @@
     "ClientConnectionAccessor",
     "MixinServerNetworkIo",
     "ServerLoginNetworkHandlerAccessor",
-    "ServerChunkManagerAccessor",
-    "client.entity_ticking.MixinArmorStandEntity",
-    "client.entity_ticking.portal_cubed.MixinCorePhysicsEntity"
+    "ServerChunkManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -37,6 +35,8 @@
     "client.be_masking.sodium.MixinChunkRenderRebuildTask",
     "client.vbo_opto.MixinShaderProgram",
     "client.vbo_opto.MixinVertexBuffer",
-    "ClientLoginNetworkHandlerAccessor"
+    "ClientLoginNetworkHandlerAccessor",
+    "client.entity_ticking.MixinArmorStandEntity",
+    "client.entity_ticking.portal_cubed.MixinCorePhysicsEntity"
   ]
 }

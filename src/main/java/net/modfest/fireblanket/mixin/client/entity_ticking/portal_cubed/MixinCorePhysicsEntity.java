@@ -22,7 +22,7 @@ public abstract class MixinCorePhysicsEntity extends PathAwareEntity {
         if (this.getWorld().isClient) {
             EntityTick.minimalTick(instance);
         } else {
-            instance.tick();
+            super.tick();
         }
     }
 }
