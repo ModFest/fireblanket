@@ -21,7 +21,8 @@
     "chunk_cache.MixinWorldChunk",
     "ClientConnectionAccessor",
     "MixinServerNetworkIo",
-    "ServerLoginNetworkHandlerAccessor"
+    "ServerLoginNetworkHandlerAccessor",
+    "ServerChunkManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
