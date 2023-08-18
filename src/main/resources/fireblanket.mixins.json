@@ -22,7 +22,9 @@
     "ClientConnectionAccessor",
     "MixinServerNetworkIo",
     "ServerLoginNetworkHandlerAccessor",
-    "ServerChunkManagerAccessor"
+    "ServerChunkManagerAccessor",
+    "client.entity_ticking.MixinArmorStandEntity",
+    "client.entity_ticking.portal_cubed.MixinCorePhysicsEntity"
   ],
   "injectors": {
     "defaultRequire": 1
