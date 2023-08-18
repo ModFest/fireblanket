@@ -21,7 +21,7 @@ public abstract class MixinArmorStandEntity extends LivingEntity {
         if (this.getWorld().isClient) {
             EntityTick.minimalTick(instance);
         } else {
-            instance.tick();
+            super.tick();
         }
     }
 }
