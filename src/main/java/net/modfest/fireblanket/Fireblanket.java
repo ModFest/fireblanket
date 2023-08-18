@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback;
 import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginNetworking;
@@ -13,11 +14,15 @@ import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.block.Block;
 import net.minecraft.registry.Registries;
+import net.minecraft.server.world.ChunkTicketManager;
+import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ChunkPos;
 import net.modfest.fireblanket.command.DumpCommandBlocksCommand;
 import net.modfest.fireblanket.command.DumpEntityTypesCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.mixin.ClientConnectionAccessor;
+import net.modfest.fireblanket.mixin.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.mixin.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
@@ -26,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.luben.zstd.util.Native;
+
+import com.google.common.base.Stopwatch;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +53,8 @@ public class Fireblanket implements ModInitializer {
 	public static final LinkedBlockingQueue<QueuedPacket>[] PACKET_QUEUES = new LinkedBlockingQueue[4];
     
     public static boolean CAN_USE_ZSTD = false;
+    
+    public static final ChunkTicketType<ChunkPos> KEEP_LOADED = ChunkTicketType.create("fireblanket:keep_loaded", ChunkTicketType.FORCED.getArgumentComparator());
     
 	@Override
 	public void onInitialize() {
@@ -113,6 +122,36 @@ public class Fireblanket implements ModInitializer {
 		if (FabricLoader.getInstance().isModLoaded("polymc")) {
 		    PolyMcCompat.init();
 		}
+		
+		ServerWorldEvents.LOAD.register((server, world) -> {
+		    if (System.getProperty("fireblanket.loadRadius") != null) {
+    		    if (!world.getRegistryKey().getValue().toString().equals("minecraft:overworld")) return;
+    		    int radius = Integer.getInteger("fireblanket.loadRadius");
+    		    int min = (int)Math.floor(-radius/16);
+    		    int max = (int)Math.ceil(radius/16);
+    		    int count = (max-min)*(max-min);
+    		    ChunkTicketManager mgr = ((ServerChunkManagerAccessor)world.getChunkManager()).fireblanket$getTicketManager();
+    		    LOGGER.info("Forcing "+count+" chunks to stay loaded (but not ticking)...");
+    		    int done = 0;
+    		    long lastReport = System.nanoTime();
+    		    Stopwatch sw = Stopwatch.createStarted();
+    		    for (int x = min; x <= max; x++) {
+    		        for (int z = min; z <= max; z++) {
+    		            ChunkPos pos = new ChunkPos(x, z);
+                        // poke the chunk so it loads; a ticket with a distance this high isn't enough to *cause* a load on its own
+                        world.getChunk(x, z);
+                        // one above FULL; out of range, but not so far to unload
+                        mgr.addTicketWithLevel(KEEP_LOADED, pos, 34, pos);
+                        done++;
+                        if (System.nanoTime()-lastReport > 1_000_000_000) {
+                            lastReport = System.nanoTime();
+                            LOGGER.info(done+"/"+count+" loaded ("+((done*100)/count)+"%)...");
+                        }
+                    }
+    		    }
+    		    LOGGER.info("Done after "+sw);
+    		}
+		});
 	}
 
 	public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
