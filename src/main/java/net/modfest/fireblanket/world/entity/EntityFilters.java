@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 public class EntityFilters {
     private static final List<EntityFilter> FILTERS = new ArrayList<>();
     private static final Set<EntityType<?>> FORCE_VELOCITY_UPDATE_OFF = new HashSet<>();
-    private static boolean ran = false;
 
     public static void parse(Path path) {
         List<String> strings = new ArrayList<>();
@@ -55,11 +54,6 @@ public class EntityFilters {
     }
 
     public static void apply() {
-        if (ran) {
-            return;
-        }
-        ran = true;
-
         for (EntityFilter filter : FILTERS) {
             Fireblanket.LOGGER.debug("Applying entity type filter " + filter.pattern().pattern());
             for (EntityType<?> type : Registries.ENTITY_TYPE) {
@@ -67,7 +61,11 @@ public class EntityFilters {
                 if (filter.pattern().asMatchPredicate().test(id.toString())) {
                     ((EntityTypeAccessor)type).setMaxTrackDistance(filter.trackingRangeChunks());
                     ((EntityTypeAccessor)type).setTrackTickInterval(filter.tickRate());
-                    FORCE_VELOCITY_UPDATE_OFF.add(type);
+
+                    if (filter.forceNoVelcityUpdate()) {
+                        FORCE_VELOCITY_UPDATE_OFF.add(type);
+                    }
+
                     Fireblanket.LOGGER.debug("Filter applied to " + id + " successfully");
                 }
             }
