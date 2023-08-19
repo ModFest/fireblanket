@@ -12,6 +12,7 @@
 	"MixinServerPlayerEntity",
 	"entity_ticking.MixinMinecraftServer",
 	"entity_ticking.MixinThreadedAnvilChunkStorage",
+	"entity_ticking.create.MixinSuperGlueEntity",
 	"improved_be_sync.MixinBlockEntity",
 	"improved_be_sync.MixinChunkHolder",
 	"pehkui.MixinScaleUtils",
