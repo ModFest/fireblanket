@@ -3,7 +3,8 @@ package net.modfest.fireblanket.mixin.client.entity_ticking.portal_cubed;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.world.World;
-import net.modfest.fireblanket.client.EntityTick;
+import net.modfest.fireblanket.EntityTick;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
