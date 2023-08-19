@@ -21,10 +21,6 @@ public abstract class MixinSuperGlueEntity extends Entity {
 
 	@Redirect(method="method_5773", at=@At(value="INVOKE", target="net/minecraft/entity/Entity.tick()V"))
 	private void fireblanket$noTick(@Coerce Entity instance) {
-		try {
-			EntityTick.minimalTick(instance);
-		} catch (Throwable t) {
-			t.printStackTrace();
-		}
+		EntityTick.minimalTick(instance);
 	}
 }
