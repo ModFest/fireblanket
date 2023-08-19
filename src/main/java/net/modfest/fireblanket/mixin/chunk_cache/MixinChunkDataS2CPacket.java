@@ -31,7 +31,7 @@ public class MixinChunkDataS2CPacket {
 	@Redirect(at=@At(value="NEW", target="net/minecraft/network/packet/s2c/play/ChunkData"),
 			method="<init>(Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/world/chunk/light/LightingProvider;Ljava/util/BitSet;Ljava/util/BitSet;)V")
 	public ChunkData fireblanket$useCachedChunkData(WorldChunk chunk) {
-        if (!PolyMcAccess.isActive() && chunk instanceof CacheableChunk cc) {
+		if (!PolyMcAccess.isActive() && chunk instanceof CacheableChunk cc) {
 			CachedChunkPacketData data = cc.fireblanket$getCachedPacket();
 			if (data != null) {
 				return data.chunkData();
@@ -55,7 +55,7 @@ public class MixinChunkDataS2CPacket {
 	@Inject(at=@At("TAIL"),
 			method="<init>(Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/world/chunk/light/LightingProvider;Ljava/util/BitSet;Ljava/util/BitSet;)V")
 	public void fireblanket$saveCachedData(WorldChunk chunk, LightingProvider light, BitSet a, BitSet b, CallbackInfo ci) {
-        if (!PolyMcAccess.isActive() && chunk instanceof CacheableChunk cc) {
+		if (!PolyMcAccess.isActive() && chunk instanceof CacheableChunk cc) {
 			CachedChunkPacketData data = cc.fireblanket$getCachedPacket();
 			if (data == null) {
 				cc.fireblanket$setCachedPacket(new CachedChunkPacketData(chunkData, lightData));

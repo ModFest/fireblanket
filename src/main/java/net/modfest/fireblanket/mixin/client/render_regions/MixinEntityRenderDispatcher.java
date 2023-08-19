@@ -13,11 +13,11 @@ import net.modfest.fireblanket.FireblanketClient;
 @Mixin(EntityRenderDispatcher.class)
 public class MixinEntityRenderDispatcher {
 
-    @Inject(at=@At("RETURN"), method="shouldRender", cancellable=true)
-    public void shouldRender(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> ci) {
-        if (ci.getReturnValueZ() && !FireblanketClient.shouldRender(entity)) {
-            ci.setReturnValue(false);
-        }
-    }
-    
+	@Inject(at=@At("RETURN"), method="shouldRender", cancellable=true)
+	public void shouldRender(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> ci) {
+		if (ci.getReturnValueZ() && !FireblanketClient.shouldRender(entity)) {
+			ci.setReturnValue(false);
+		}
+	}
+	
 }

@@ -15,30 +15,30 @@ import net.minecraft.world.chunk.WorldChunk;
 import java.util.Map;
 
 public class DumpCommandBlocksCommand {
-    public static void init() {
-        CommandRegistrationCallback.EVENT.register((event, access, env) -> {
-            event.register(CommandManager.literal("fireblanket:dumpcommandblocks")
-                    .requires(source -> source.hasPermissionLevel(4))
-                    .executes(server -> {
-                        server.getSource().getServer().submit(() -> {
-                            ServerWorld world = server.getSource().getWorld();
-                            for (ChunkHolder holder : world.getChunkManager().threadedAnvilChunkStorage.entryIterator()) {
-                                WorldChunk chunk = holder.getWorldChunk();
-                                if (chunk == null) {
-                                    continue;
-                                }
+	public static void init() {
+		CommandRegistrationCallback.EVENT.register((event, access, env) -> {
+			event.register(CommandManager.literal("fireblanket:dumpcommandblocks")
+					.requires(source -> source.hasPermissionLevel(4))
+					.executes(server -> {
+						server.getSource().getServer().submit(() -> {
+							ServerWorld world = server.getSource().getWorld();
+							for (ChunkHolder holder : world.getChunkManager().threadedAnvilChunkStorage.entryIterator()) {
+								WorldChunk chunk = holder.getWorldChunk();
+								if (chunk == null) {
+									continue;
+								}
 
-                                for (Map.Entry<BlockPos, BlockEntity> e : chunk.getBlockEntities().entrySet()) {
-                                    if (e.getValue() instanceof CommandBlockBlockEntity cbe) {
-                                        server.getSource().sendFeedback(() -> Text.literal("[" + e.getKey().toShortString() + "]: " + cbe.getCommandExecutor().getCommand()), false);
-                                    }
-                                }
-                            }
-                        });
+								for (Map.Entry<BlockPos, BlockEntity> e : chunk.getBlockEntities().entrySet()) {
+									if (e.getValue() instanceof CommandBlockBlockEntity cbe) {
+										server.getSource().sendFeedback(() -> Text.literal("[" + e.getKey().toShortString() + "]: " + cbe.getCommandExecutor().getCommand()), false);
+									}
+								}
+							}
+						});
 
-                        return 0;
-                    })
-            );
-        });
-    }
+						return 0;
+					})
+			);
+		});
+	}
 }

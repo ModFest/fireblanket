@@ -9,7 +9,7 @@ import net.minecraft.network.ClientConnection;
 @Mixin(ClientLoginNetworkHandler.class)
 public interface ClientLoginNetworkHandlerAccessor {
 
-    @Accessor("connection")
-    ClientConnection fireblanket$getConnection();
-    
+	@Accessor("connection")
+	ClientConnection fireblanket$getConnection();
+	
 }

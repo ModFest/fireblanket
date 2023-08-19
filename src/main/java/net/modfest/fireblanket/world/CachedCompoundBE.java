@@ -4,7 +4,7 @@ import net.minecraft.nbt.NbtCompound;
 import org.jetbrains.annotations.Nullable;
 
 public interface CachedCompoundBE {
-    @Nullable NbtCompound fireblanket$getCachedCompound();
+	@Nullable NbtCompound fireblanket$getCachedCompound();
 
-    void fireblanket$setCachedCompound(NbtCompound nbt);
+	void fireblanket$setCachedCompound(NbtCompound nbt);
 }

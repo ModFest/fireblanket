@@ -8,10 +8,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(VertexBuffer.class)
 public class MixinVertexBuffer {
-    @Redirect(method = "drawInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gl/ShaderProgram;addSampler(Ljava/lang/String;Ljava/lang/Object;)V"))
-    private void fireblanket$optimizeVBODraw(ShaderProgram instance, String name, Object sampler) {
-        if (((Integer)sampler) != 0) {
-            instance.addSampler(name, sampler);
-        }
-    }
+	@Redirect(method = "drawInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gl/ShaderProgram;addSampler(Ljava/lang/String;Ljava/lang/Object;)V"))
+	private void fireblanket$optimizeVBODraw(ShaderProgram instance, String name, Object sampler) {
+		if (((Integer)sampler) != 0) {
+			instance.addSampler(name, sampler);
+		}
+	}
 }

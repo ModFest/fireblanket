@@ -9,12 +9,12 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ThreadedAnvilChunkStorage.class)
 public class MixinThreadedAnvilChunkStorage {
-    @Redirect(method = "loadEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityType;alwaysUpdateVelocity()Z"))
-    private boolean fireblanket$forceVelocityOff(EntityType<?> instance) {
-        if (EntityFilters.isTypeForcedVelocityOff(instance)) {
-            return false;
-        }
+	@Redirect(method = "loadEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityType;alwaysUpdateVelocity()Z"))
+	private boolean fireblanket$forceVelocityOff(EntityType<?> instance) {
+		if (EntityFilters.isTypeForcedVelocityOff(instance)) {
+			return false;
+		}
 
-        return instance.alwaysUpdateVelocity();
-    }
+		return instance.alwaysUpdateVelocity();
+	}
 }

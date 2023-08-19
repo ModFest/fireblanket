@@ -8,7 +8,7 @@ import net.minecraft.util.Lazy;
 public class IOUringSupport {
 
 	public static final boolean ENABLED = Boolean.getBoolean("fireblanket.useIoUring");
-    
+	
 	@SuppressWarnings("deprecation")
 	public static final Lazy<IOUringEventLoopGroup> CHANNEL = new Lazy<>(() ->
 		new IOUringEventLoopGroup(0, new ThreadFactoryBuilder()

@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftServer.class)
 public class MixinMinecraftServer {
-    @Inject(method = "createWorlds", at = @At("HEAD"))
-    private void fireblanket$setupEntityTypeFilters(WorldGenerationProgressListener worldGenerationProgressListener, CallbackInfo ci) {
-        WorldLoadAppliers.init();
-    }
+	@Inject(method = "createWorlds", at = @At("HEAD"))
+	private void fireblanket$setupEntityTypeFilters(WorldGenerationProgressListener worldGenerationProgressListener, CallbackInfo ci) {
+		WorldLoadAppliers.init();
+	}
 }

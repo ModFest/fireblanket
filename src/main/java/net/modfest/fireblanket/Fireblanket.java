@@ -47,22 +47,22 @@ import java.util.function.Consumer;
 
 public class Fireblanket implements ModInitializer {
 	public static final Identifier BATCHED_BE_UPDATE = new Identifier("fireblanket", "batched_be_sync");
-    public static final Identifier FULL_STREAM_COMPRESSION = new Identifier("fireblanket", "full_stream_compression");
-    public static final Identifier REGIONS_UPDATE = new Identifier("fireblanket", "regions_update");
+	public static final Identifier FULL_STREAM_COMPRESSION = new Identifier("fireblanket", "full_stream_compression");
+	public static final Identifier REGIONS_UPDATE = new Identifier("fireblanket", "regions_update");
 	
-    public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
-    
-    public record QueuedPacket(ClientConnection conn, Packet<?> packet, PacketCallbacks listener) {}
-    
-    private static final AtomicInteger nextQueue = new AtomicInteger();
-    
-    @SuppressWarnings("unchecked")
+	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
+	
+	public record QueuedPacket(ClientConnection conn, Packet<?> packet, PacketCallbacks listener) {}
+	
+	private static final AtomicInteger nextQueue = new AtomicInteger();
+	
+	@SuppressWarnings("unchecked")
 	public static final LinkedBlockingQueue<QueuedPacket>[] PACKET_QUEUES = new LinkedBlockingQueue[4];
-    
-    public static boolean CAN_USE_ZSTD = false;
-    
-    public static final ChunkTicketType<ChunkPos> KEEP_LOADED = ChunkTicketType.create("fireblanket:keep_loaded", ChunkTicketType.FORCED.getArgumentComparator());
-    
+	
+	public static boolean CAN_USE_ZSTD = false;
+	
+	public static final ChunkTicketType<ChunkPos> KEEP_LOADED = ChunkTicketType.create("fireblanket:keep_loaded", ChunkTicketType.FORCED.getArgumentComparator());
+	
 	@Override
 	public void onInitialize() {
 		DumpCommandBlocksCommand.init();
@@ -103,86 +103,86 @@ public class Fireblanket implements ModInitializer {
 		}
 		
 		try {
-		    Native.load();
-		    CAN_USE_ZSTD = true;
+			Native.load();
+			CAN_USE_ZSTD = true;
 		} catch (UnsatisfiedLinkError e) {
-		    CAN_USE_ZSTD = false;
-		    LOGGER.warn("Could not load zstd, full-stream compression unavailable", e);
+			CAN_USE_ZSTD = false;
+			LOGGER.warn("Could not load zstd, full-stream compression unavailable", e);
 		}
 		
 		if (CAN_USE_ZSTD) {
-            LOGGER.info("Enabling full-stream compression");
-		    ServerLoginConnectionEvents.QUERY_START.addPhaseOrdering(new Identifier("fireblanket:pre"), Event.DEFAULT_PHASE);
-    		ServerLoginConnectionEvents.QUERY_START.register(new Identifier("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
-    		    if (!server.isSingleplayer()) {
-    		        sender.sendPacket(FULL_STREAM_COMPRESSION, PacketByteBufs.empty());
-    		    }
-    		});
+			LOGGER.info("Enabling full-stream compression");
+			ServerLoginConnectionEvents.QUERY_START.addPhaseOrdering(new Identifier("fireblanket:pre"), Event.DEFAULT_PHASE);
+			ServerLoginConnectionEvents.QUERY_START.register(new Identifier("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
+				if (!server.isSingleplayer()) {
+					sender.sendPacket(FULL_STREAM_COMPRESSION, PacketByteBufs.empty());
+				}
+			});
 		}
 		
 		ServerLoginNetworking.registerGlobalReceiver(FULL_STREAM_COMPRESSION, (server, handler, understood, buf, synchronizer, responseSender) -> {
-		    if (understood) {
-		        ((FSCConnection)((ServerLoginNetworkHandlerAccessor)handler).fireblanket$getConnection()).fireblanket$enableFullStreamCompression();
-		    }
+			if (understood) {
+				((FSCConnection)((ServerLoginNetworkHandlerAccessor)handler).fireblanket$getConnection()).fireblanket$enableFullStreamCompression();
+			}
 		});
 		
 		if (FabricLoader.getInstance().isModLoaded("polymc")) {
-		    PolyMcCompat.init();
+			PolyMcCompat.init();
 		}
 		
 		ServerWorldEvents.LOAD.register((server, world) -> {
-		    if (System.getProperty("fireblanket.loadRadius") != null) {
-    		    if (!world.getRegistryKey().getValue().toString().equals("minecraft:overworld")) return;
-    		    int radius = Integer.getInteger("fireblanket.loadRadius");
-    		    int min = (int)Math.floor(-radius/16);
-    		    int max = (int)Math.ceil(radius/16);
-    		    int count = (max-min)*(max-min);
-    		    ChunkTicketManager mgr = ((ServerChunkManagerAccessor)world.getChunkManager()).fireblanket$getTicketManager();
-    		    LOGGER.info("Forcing "+count+" chunks to stay loaded (but not ticking)...");
-    		    int done = 0;
-    		    long lastReport = System.nanoTime();
-    		    Stopwatch sw = Stopwatch.createStarted();
-    		    for (int x = min; x <= max; x++) {
-    		        for (int z = min; z <= max; z++) {
-    		            ChunkPos pos = new ChunkPos(x, z);
-                        // poke the chunk so it loads; a ticket with a distance this high isn't enough to *cause* a load on its own
-                        world.getChunk(x, z);
-                        // one above FULL; out of range, but not so far to unload
-                        mgr.addTicketWithLevel(KEEP_LOADED, pos, 34, pos);
-                        done++;
-                        if (System.nanoTime()-lastReport > 1_000_000_000) {
-                            lastReport = System.nanoTime();
-                            LOGGER.info(done+"/"+count+" loaded ("+((done*100)/count)+"%)...");
-                        }
-                    }
-    		    }
-    		    LOGGER.info("Done after "+sw);
-    		}
+			if (System.getProperty("fireblanket.loadRadius") != null) {
+				if (!world.getRegistryKey().getValue().toString().equals("minecraft:overworld")) return;
+				int radius = Integer.getInteger("fireblanket.loadRadius");
+				int min = (int)Math.floor(-radius/16);
+				int max = (int)Math.ceil(radius/16);
+				int count = (max-min)*(max-min);
+				ChunkTicketManager mgr = ((ServerChunkManagerAccessor)world.getChunkManager()).fireblanket$getTicketManager();
+				LOGGER.info("Forcing "+count+" chunks to stay loaded (but not ticking)...");
+				int done = 0;
+				long lastReport = System.nanoTime();
+				Stopwatch sw = Stopwatch.createStarted();
+				for (int x = min; x <= max; x++) {
+					for (int z = min; z <= max; z++) {
+						ChunkPos pos = new ChunkPos(x, z);
+						// poke the chunk so it loads; a ticket with a distance this high isn't enough to *cause* a load on its own
+						world.getChunk(x, z);
+						// one above FULL; out of range, but not so far to unload
+						mgr.addTicketWithLevel(KEEP_LOADED, pos, 34, pos);
+						done++;
+						if (System.nanoTime()-lastReport > 1_000_000_000) {
+							lastReport = System.nanoTime();
+							LOGGER.info(done+"/"+count+" loaded ("+((done*100)/count)+"%)...");
+						}
+					}
+				}
+				LOGGER.info("Done after "+sw);
+			}
 		});
 		
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-		    fullRegionSync(handler.player.getServerWorld(), sender::sendPacket);
+			fullRegionSync(handler.player.getServerWorld(), sender::sendPacket);
 		});
 		
 		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
-            fullRegionSync(player.getServerWorld(), player.networkHandler::sendPacket);
+			fullRegionSync(player.getServerWorld(), player.networkHandler::sendPacket);
 		});
 		
 		RegionCommand.init();
 	}
 
 	public static void fullRegionSync(ServerWorld world, Consumer<Packet<?>> sender) {
-	    RenderRegions regions = RenderRegionsState.get(world).getRegions();
-	    RegionSyncCommand cmd;
-	    if (regions.getRegionsByName().isEmpty()) {
-	        cmd = new RegionSyncCommand.Reset(true);
-	    } else {
-	        cmd = new RegionSyncCommand.FullState(regions);
-	    }
-        sender.accept(cmd.toPacket(REGIONS_UPDATE));
-    }
+		RenderRegions regions = RenderRegionsState.get(world).getRegions();
+		RegionSyncCommand cmd;
+		if (regions.getRegionsByName().isEmpty()) {
+			cmd = new RegionSyncCommand.Reset(true);
+		} else {
+			cmd = new RegionSyncCommand.FullState(regions);
+		}
+		sender.accept(cmd.toPacket(REGIONS_UPDATE));
+	}
 
-    public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
+	public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
 		return PACKET_QUEUES[Math.floorMod(nextQueue.getAndIncrement(), PACKET_QUEUES.length)];
 	}
 }

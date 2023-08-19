@@ -34,12 +34,12 @@ import net.modfest.fireblanket.net.ZstdEncoder;
 @Mixin(ClientConnection.class)
 public class MixinClientConnection implements FSCConnection {
 
-    @Shadow
-    private Channel channel;
-    
-    @Shadow
-    private void sendImmediately(Packet<?> packet, PacketCallbacks callbacks) { throw new AbstractMethodError(); }
-    
+	@Shadow
+	private Channel channel;
+	
+	@Shadow
+	private void sendImmediately(Packet<?> packet, PacketCallbacks callbacks) { throw new AbstractMethodError(); }
+	
 	private final LinkedBlockingQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
 	private boolean fireblanket$fsc = false;
 	private boolean fireblanket$fscStarted = false;
@@ -54,57 +54,57 @@ public class MixinClientConnection implements FSCConnection {
 	@Redirect(at=@At(value="INVOKE", target="net/minecraft/network/ClientConnection.sendImmediately(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V"),
 			method="send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V")
 	public void fireblanket$asyncPacketSending(ClientConnection subject, Packet<?> pkt, PacketCallbacks listener) {
-	    if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
-	        fireblanket$enableFSCNow();
-	    }
-	    if (channel.attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get() == NetworkState.PLAY) {
-	        fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
-	    } else {
-	        sendImmediately(pkt, listener);
-	    }
+		if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
+			fireblanket$enableFSCNow();
+		}
+		if (channel.attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get() == NetworkState.PLAY) {
+			fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
+		} else {
+			sendImmediately(pkt, listener);
+		}
 	}
 	
 	@Inject(at=@At("HEAD"), method="setCompressionThreshold", cancellable=true)
 	public void fireblanket$handleCompression(int threshold, boolean check, CallbackInfo ci) {
-	    if (fireblanket$fscStarted) {
-	        ci.cancel();
-	    }
+		if (fireblanket$fscStarted) {
+			ci.cancel();
+		}
 	}
 	
 	@Inject(at=@At("HEAD"), method="setState")
 	public void fireblanket$handleFSC(NetworkState state, CallbackInfo ci) {
-	    if (state == NetworkState.PLAY && fireblanket$fsc && !fireblanket$fscStarted) {
-	        fireblanket$enableFSCNow();
-	    }
+		if (state == NetworkState.PLAY && fireblanket$fsc && !fireblanket$fscStarted) {
+			fireblanket$enableFSCNow();
+		}
 	}
 	
 	private void fireblanket$enableFSCNow() {
-	    fireblanket$fscStarted = true;
-        ChannelPipeline pipeline = channel.pipeline();
-        ClientConnection self = (ClientConnection)(Object)this;
-        try {
-            boolean client = self.getSide() == NetworkSide.CLIENTBOUND;
-            ReassignableOutputStream ros = new ReassignableOutputStream();
-            ZstdOutputStream zos = new ZstdOutputStream(ros);
-            zos.setLevel(client ? 6 : 4);
-            zos.setLong(client ? 27 : 22);
-            zos.setCloseFrameOnFlush(false);
-            ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
-    
-            ReassignableInputStream ris = new ReassignableInputStream();
-            ZstdInputStream zis = new ZstdInputStream(ris);
-            zis.setContinuous(true);
-            ZstdDecoder dec = new ZstdDecoder(ris, zis);
-            pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
-            pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+		fireblanket$fscStarted = true;
+		ChannelPipeline pipeline = channel.pipeline();
+		ClientConnection self = (ClientConnection)(Object)this;
+		try {
+			boolean client = self.getSide() == NetworkSide.CLIENTBOUND;
+			ReassignableOutputStream ros = new ReassignableOutputStream();
+			ZstdOutputStream zos = new ZstdOutputStream(ros);
+			zos.setLevel(client ? 6 : 4);
+			zos.setLong(client ? 27 : 22);
+			zos.setCloseFrameOnFlush(false);
+			ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
+	
+			ReassignableInputStream ris = new ReassignableInputStream();
+			ZstdInputStream zis = new ZstdInputStream(ris);
+			zis.setContinuous(true);
+			ZstdDecoder dec = new ZstdDecoder(ris, zis);
+			pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
+			pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
-    @Override
-    public void fireblanket$enableFullStreamCompression() {
-        fireblanket$fsc = true;
-    }
+	@Override
+	public void fireblanket$enableFullStreamCompression() {
+		fireblanket$fsc = true;
+	}
 	
 }

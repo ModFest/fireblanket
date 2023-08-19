@@ -22,11 +22,11 @@ import net.minecraft.util.Identifier;
  * @author Patbox
  */
 public interface ServerPacketWriter {
-    void write(PacketByteBuf buf, Identifier packetId);
+	void write(PacketByteBuf buf, Identifier packetId);
 
-    default Packet<ClientPlayPacketListener> toPacket(Identifier identifier) {
-        CustomPayloadS2CPacket base = new CustomPayloadS2CPacket(identifier, new PacketByteBuf(Unpooled.EMPTY_BUFFER));
-        ((CustomPayloadS2CExt) base).fireblanket$setWriter(this);
-        return base;
-    }
+	default Packet<ClientPlayPacketListener> toPacket(Identifier identifier) {
+		CustomPayloadS2CPacket base = new CustomPayloadS2CPacket(identifier, new PacketByteBuf(Unpooled.EMPTY_BUFFER));
+		((CustomPayloadS2CExt) base).fireblanket$setWriter(this);
+		return base;
+	}
 }

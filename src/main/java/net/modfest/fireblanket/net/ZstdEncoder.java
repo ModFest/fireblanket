@@ -20,54 +20,54 @@ import net.modfest.fireblanket.ReassignableOutputStream;
 
 public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
 
-    private static final ScheduledExecutorService sched = Executors.newSingleThreadScheduledExecutor();
-    
-    private static final LongAdder inBytes = new LongAdder();
-    private static final LongAdder outBytes = new LongAdder();
-    
-    static {
-        sched.scheduleAtFixedRate(() -> {
-            Fireblanket.LOGGER.info("Zstd ratio past 5m: "+((double)inBytes.sumThenReset()/outBytes.sumThenReset()));
-        }, 5, 5, TimeUnit.MINUTES);
-    }
-    
-    private final long flushFrequency, unclogFrequency;
-    
-    private final ReassignableOutputStream out;
-    private final ZstdOutputStream stream;
+	private static final ScheduledExecutorService sched = Executors.newSingleThreadScheduledExecutor();
+	
+	private static final LongAdder inBytes = new LongAdder();
+	private static final LongAdder outBytes = new LongAdder();
+	
+	static {
+		sched.scheduleAtFixedRate(() -> {
+			Fireblanket.LOGGER.info("Zstd ratio past 5m: "+((double)inBytes.sumThenReset()/outBytes.sumThenReset()));
+		}, 5, 5, TimeUnit.MINUTES);
+	}
+	
+	private final long flushFrequency, unclogFrequency;
+	
+	private final ReassignableOutputStream out;
+	private final ZstdOutputStream stream;
 
-    private ScheduledFuture<?> future = null;
-    
-    private long lastFlush = System.nanoTime();
+	private ScheduledFuture<?> future = null;
+	
+	private long lastFlush = System.nanoTime();
 
-    public ZstdEncoder(ReassignableOutputStream out, ZstdOutputStream stream, long flushFrequency) {
-        this.out = out;
-        this.stream = stream;
-        this.flushFrequency = flushFrequency;
-        this.unclogFrequency = (flushFrequency*3)/2;
-    }
+	public ZstdEncoder(ReassignableOutputStream out, ZstdOutputStream stream, long flushFrequency) {
+		this.out = out;
+		this.stream = stream;
+		this.flushFrequency = flushFrequency;
+		this.unclogFrequency = (flushFrequency*3)/2;
+	}
 
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        if (future != null) {
-            future.cancel(false);
-            future = null;
-        }
-        inBytes.add(msg.readableBytes());
-        this.out.setDelegate(new ByteBufOutputStream(out));
-        int start = out.writerIndex();
-        new ByteBufInputStream(msg, false).transferTo(stream);
-        if (flushFrequency == 0 || System.nanoTime()-lastFlush > flushFrequency) {
-            lastFlush = System.nanoTime();
-            stream.flush();
-        } else {
-            Channel ch = ctx.channel();
-            future = sched.schedule(() -> {
-                future = null;
-                ch.writeAndFlush(Unpooled.EMPTY_BUFFER);
-            }, unclogFrequency, TimeUnit.NANOSECONDS);
-        }
-        outBytes.add(out.writerIndex()-start);
-    }
-    
+	@Override
+	protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
+		if (future != null) {
+			future.cancel(false);
+			future = null;
+		}
+		inBytes.add(msg.readableBytes());
+		this.out.setDelegate(new ByteBufOutputStream(out));
+		int start = out.writerIndex();
+		new ByteBufInputStream(msg, false).transferTo(stream);
+		if (flushFrequency == 0 || System.nanoTime()-lastFlush > flushFrequency) {
+			lastFlush = System.nanoTime();
+			stream.flush();
+		} else {
+			Channel ch = ctx.channel();
+			future = sched.schedule(() -> {
+				future = null;
+				ch.writeAndFlush(Unpooled.EMPTY_BUFFER);
+			}, unclogFrequency, TimeUnit.NANOSECONDS);
+		}
+		outBytes.add(out.writerIndex()-start);
+	}
+	
 }
