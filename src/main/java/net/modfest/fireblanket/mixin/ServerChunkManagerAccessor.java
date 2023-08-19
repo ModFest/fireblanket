@@ -9,7 +9,7 @@ import net.minecraft.server.world.ServerChunkManager;
 @Mixin(ServerChunkManager.class)
 public interface ServerChunkManagerAccessor {
 
-    @Accessor("ticketManager")
-    ChunkTicketManager fireblanket$getTicketManager();
-    
+	@Accessor("ticketManager")
+	ChunkTicketManager fireblanket$getTicketManager();
+	
 }

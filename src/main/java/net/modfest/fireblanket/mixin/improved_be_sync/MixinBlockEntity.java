@@ -8,15 +8,15 @@ import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(BlockEntity.class)
 public class MixinBlockEntity implements CachedCompoundBE {
-    private NbtCompound fireblanket$lastSeenCompound = null;
+	private NbtCompound fireblanket$lastSeenCompound = null;
 
-    @Override
-    public @Nullable NbtCompound fireblanket$getCachedCompound() {
-        return this.fireblanket$lastSeenCompound;
-    }
+	@Override
+	public @Nullable NbtCompound fireblanket$getCachedCompound() {
+		return this.fireblanket$lastSeenCompound;
+	}
 
-    @Override
-    public void fireblanket$setCachedCompound(NbtCompound nbt) {
-        this.fireblanket$lastSeenCompound = nbt;
-    }
+	@Override
+	public void fireblanket$setCachedCompound(NbtCompound nbt) {
+		this.fireblanket$lastSeenCompound = nbt;
+	}
 }

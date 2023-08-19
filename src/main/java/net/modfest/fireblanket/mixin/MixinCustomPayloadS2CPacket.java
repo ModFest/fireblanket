@@ -28,45 +28,45 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(CustomPayloadS2CPacket.class)
 public class MixinCustomPayloadS2CPacket implements CustomPayloadS2CExt {
-    @Shadow @Final private Identifier channel;
-    @Nullable
-    @Unique
-    private ServerPacketWriter writer;
+	@Shadow @Final private Identifier channel;
+	@Nullable
+	@Unique
+	private ServerPacketWriter writer;
 
-    @Override
-    public void fireblanket$setWriter(ServerPacketWriter packet) {
-        this.writer = packet;
-    }
+	@Override
+	public void fireblanket$setWriter(ServerPacketWriter packet) {
+		this.writer = packet;
+	}
 
-    @Inject(method = "write", at = @At("TAIL"))
-    private void fireblanket$write(PacketByteBuf buf, CallbackInfo ci) {
-        if (this.writer != null) {
-            this.writer.write(buf, this.channel);
-        }
-    }
+	@Inject(method = "write", at = @At("TAIL"))
+	private void fireblanket$write(PacketByteBuf buf, CallbackInfo ci) {
+		if (this.writer != null) {
+			this.writer.write(buf, this.channel);
+		}
+	}
 
-    /**
-     * This section is a bit of a quick and dirty "hack" to make sure packets behaves more or less the same on singleplayer as on the server.
-     * Proper solution would be implementing full networking api for this where data isn't serialized on singleplayer,
-     * however this would require doing standalone multiplayer testing to make sure it works correctly.
-     *
-     * The original (polymer's) implementation contains similar patch, which has been in use for a long time without issues.
-    */
-    @Environment(EnvType.CLIENT)
-    @ModifyArg(method = "getData", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/PacketByteBuf;<init>(Lio/netty/buffer/ByteBuf;)V"))
-    private ByteBuf fireblanket$replaceEmpty(ByteBuf vanilla) {
-        if (this.writer != null) {
-            return Unpooled.buffer();
-        }
-        return vanilla;
-    }
+	/**
+	 * This section is a bit of a quick and dirty "hack" to make sure packets behaves more or less the same on singleplayer as on the server.
+	 * Proper solution would be implementing full networking api for this where data isn't serialized on singleplayer,
+	 * however this would require doing standalone multiplayer testing to make sure it works correctly.
+	 *
+	 * The original (polymer's) implementation contains similar patch, which has been in use for a long time without issues.
+	*/
+	@Environment(EnvType.CLIENT)
+	@ModifyArg(method = "getData", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/PacketByteBuf;<init>(Lio/netty/buffer/ByteBuf;)V"))
+	private ByteBuf fireblanket$replaceEmpty(ByteBuf vanilla) {
+		if (this.writer != null) {
+			return Unpooled.buffer();
+		}
+		return vanilla;
+	}
 
-    @Environment(EnvType.CLIENT)
-    @Inject(method = "getData", at = @At("RETURN"))
-    private void fireblanket$writeData(CallbackInfoReturnable<PacketByteBuf> cir) {
-        if (this.writer != null) {
-            PacketByteBuf buf = cir.getReturnValue();
-            this.writer.write(buf, this.channel);
-        }
-    }
+	@Environment(EnvType.CLIENT)
+	@Inject(method = "getData", at = @At("RETURN"))
+	private void fireblanket$writeData(CallbackInfoReturnable<PacketByteBuf> cir) {
+		if (this.writer != null) {
+			PacketByteBuf buf = cir.getReturnValue();
+			this.writer.write(buf, this.channel);
+		}
+	}
 }

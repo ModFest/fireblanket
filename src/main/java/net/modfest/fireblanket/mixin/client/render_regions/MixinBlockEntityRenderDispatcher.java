@@ -14,12 +14,12 @@ import net.modfest.fireblanket.FireblanketClient;
 @Mixin(BlockEntityRenderDispatcher.class)
 public class MixinBlockEntityRenderDispatcher {
 
-    @Inject(at=@At("HEAD"), method="render(Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V", cancellable=true)
-    private static void render(BlockEntityRenderer<?> renderer, BlockEntity be, float delta, MatrixStack matrices, VertexConsumerProvider vcp,
-            CallbackInfo ci) {
-        if (!FireblanketClient.shouldRender(be)) {
-            ci.cancel();
-        }
-    }
-    
+	@Inject(at=@At("HEAD"), method="render(Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V", cancellable=true)
+	private static void render(BlockEntityRenderer<?> renderer, BlockEntity be, float delta, MatrixStack matrices, VertexConsumerProvider vcp,
+			CallbackInfo ci) {
+		if (!FireblanketClient.shouldRender(be)) {
+			ci.cancel();
+		}
+	}
+	
 }

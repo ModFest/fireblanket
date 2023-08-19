@@ -12,16 +12,16 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ArmorStandEntity.class)
 public abstract class MixinArmorStandEntity extends LivingEntity {
-    protected MixinArmorStandEntity(EntityType<? extends LivingEntity> entityType, World world) {
-        super(entityType, world);
-    }
+	protected MixinArmorStandEntity(EntityType<? extends LivingEntity> entityType, World world) {
+		super(entityType, world);
+	}
 
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;tick()V"))
-    private void fireblanket$noClientTick(LivingEntity instance) {
-        if (this.getWorld().isClient) {
-            EntityTick.minimalTick(instance);
-        } else {
-            super.tick();
-        }
-    }
+	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;tick()V"))
+	private void fireblanket$noClientTick(LivingEntity instance) {
+		if (this.getWorld().isClient) {
+			EntityTick.minimalTick(instance);
+		} else {
+			super.tick();
+		}
+	}
 }

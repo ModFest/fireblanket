@@ -10,10 +10,10 @@ import java.util.Set;
 
 @Mixin(BlockEntityType.class)
 public interface BlockEntityTypeAccessor {
-    @Accessor
-    Set<Block> getBlocks();
+	@Accessor
+	Set<Block> getBlocks();
 
-    @Mutable
-    @Accessor
-    void setBlocks(Set<Block> blocks);
+	@Mutable
+	@Accessor
+	void setBlocks(Set<Block> blocks);
 }

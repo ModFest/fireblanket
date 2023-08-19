@@ -12,20 +12,20 @@ import net.modfest.fireblanket.ReassignableInputStream;
 
 public class ZstdDecoder extends MessageToMessageDecoder<ByteBuf> {
 
-    private final ReassignableInputStream in;
-    private final ZstdInputStream stream;
+	private final ReassignableInputStream in;
+	private final ZstdInputStream stream;
 
-    public ZstdDecoder(ReassignableInputStream in, ZstdInputStream stream) {
-        this.in = in;
-        this.stream = stream;
-    }
+	public ZstdDecoder(ReassignableInputStream in, ZstdInputStream stream) {
+		this.in = in;
+		this.stream = stream;
+	}
 
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        ByteBuf buf = ctx.alloc().buffer();
-        in.setDelegate(new ByteBufInputStream(msg, false));
-        stream.transferTo(new ByteBufOutputStream(buf));
-        out.add(buf);
-    }
-    
+	@Override
+	protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
+		ByteBuf buf = ctx.alloc().buffer();
+		in.setDelegate(new ByteBufInputStream(msg, false));
+		stream.transferTo(new ByteBufOutputStream(buf));
+		out.add(buf);
+	}
+	
 }
