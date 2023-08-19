@@ -3,11 +3,13 @@ package net.modfest.fireblanket;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginNetworking;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.PacketCallbacks;
@@ -16,6 +18,7 @@ import net.minecraft.block.Block;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.world.ChunkTicketManager;
 import net.minecraft.server.world.ChunkTicketType;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
 import net.modfest.fireblanket.command.DumpCommandBlocksCommand;
@@ -26,22 +29,25 @@ import net.modfest.fireblanket.mixin.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.mixin.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
+import net.modfest.fireblanket.render_regions.RegionSyncCommand;
+import net.modfest.fireblanket.render_regions.RenderRegionsState;
 import net.modfest.fireblanket.world.entity.EntityFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.luben.zstd.util.Native;
-
 import com.google.common.base.Stopwatch;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class Fireblanket implements ModInitializer {
 	public static final Identifier BATCHED_BE_UPDATE = new Identifier("fireblanket", "batched_be_sync");
     public static final Identifier FULL_STREAM_COMPRESSION = new Identifier("fireblanket", "full_stream_compression");
+    public static final Identifier REGIONS_UPDATE = new Identifier("fireblanket", "regions_update");
 	
     public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
     
@@ -152,9 +158,24 @@ public class Fireblanket implements ModInitializer {
     		    LOGGER.info("Done after "+sw);
     		}
 		});
+		
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+		    fullRegionSync(handler.player.getServerWorld(), sender::sendPacket);
+		});
+		
+		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
+            fullRegionSync(player.getServerWorld(), player.networkHandler::sendPacket);
+		});
+		
+		RegionCommand.init();
 	}
 
-	public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
+	public static void fullRegionSync(ServerWorld world, Consumer<Packet<?>> sender) {
+        var cmd = new RegionSyncCommand.FullState(RenderRegionsState.get(world).getRegions());
+        sender.accept(cmd.toPacket(REGIONS_UPDATE));
+    }
+
+    public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
 		return PACKET_QUEUES[Math.floorMod(nextQueue.getAndIncrement(), PACKET_QUEUES.length)];
 	}
 }
