@@ -45,14 +45,14 @@ public class RenderRegionsState extends PersistentState {
 			Mode m = Mode.valueOf(cmp.getString("Mode"));
 			int[] box = cmp.getIntArray("Box");
 			RenderRegion r = new RenderRegion(box[0], box[1], box[2], box[3], box[4], box[5], m);
-			ret.regions.addRegion(k, r);
+			ret.regions.add(k, r);
 			int[] entities = cmp.getIntArray("EAtt");
 			for (int i = 0; i < entities.length; i += 4) {
 				ret.regions.attachEntity(r, Uuids.toUuid(Arrays.copyOfRange(entities, i, i+4)));
 			}
 			long[] blockentities = cmp.getLongArray("BEAtt");
 			for (long l : blockentities) {
-				ret.regions.attachBlockEntity(r, l);
+				ret.regions.attachBlock(r, l);
 			}
 		}
 		return ret;
@@ -70,7 +70,7 @@ public class RenderRegionsState extends PersistentState {
 				entities.addAll(IntList.of(Uuids.toIntArray(entityId)));
 			}
 			cmp.putIntArray("EAtt", entities.toIntArray());
-			Set<Long> bea = regions.getBlockEntityAttachments(r);
+			Set<Long> bea = regions.getBlockAttachments(r);
 			if (bea instanceof LongCollection lc) {
 				cmp.putLongArray("BEAtt", lc.toLongArray());
 			} else {

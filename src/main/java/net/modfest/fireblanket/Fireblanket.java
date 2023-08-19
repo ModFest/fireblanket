@@ -29,6 +29,7 @@ import net.modfest.fireblanket.mixin.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.mixin.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
+import net.modfest.fireblanket.render_regions.RegionCommand;
 import net.modfest.fireblanket.render_regions.RegionSyncCommand;
 import net.modfest.fireblanket.render_regions.RenderRegions;
 import net.modfest.fireblanket.render_regions.RenderRegionsState;
