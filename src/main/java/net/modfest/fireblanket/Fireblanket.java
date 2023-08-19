@@ -30,6 +30,7 @@ import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.mixin.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.render_regions.RegionSyncCommand;
+import net.modfest.fireblanket.render_regions.RenderRegions;
 import net.modfest.fireblanket.render_regions.RenderRegionsState;
 import net.modfest.fireblanket.world.entity.EntityFilters;
 import org.slf4j.Logger;
@@ -171,7 +172,13 @@ public class Fireblanket implements ModInitializer {
 	}
 
 	public static void fullRegionSync(ServerWorld world, Consumer<Packet<?>> sender) {
-        var cmd = new RegionSyncCommand.FullState(RenderRegionsState.get(world).getRegions());
+	    RenderRegions regions = RenderRegionsState.get(world).getRegions();
+	    RegionSyncCommand cmd;
+	    if (regions.getRegionsByName().isEmpty()) {
+	        cmd = new RegionSyncCommand.Reset(true);
+	    } else {
+	        cmd = new RegionSyncCommand.FullState(regions);
+	    }
         sender.accept(cmd.toPacket(REGIONS_UPDATE));
     }
 
