@@ -16,7 +16,7 @@ import net.modfest.fireblanket.render_regions.RenderRegion.Mode;
 import net.modfest.fireblanket.render_regions.RegionSyncCommand.*;
 
 public sealed interface RegionSyncCommand extends ServerPacketWriter permits InvalidCommand, FullState, Reset, AddRegion,
-		DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock {
+		DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock, RedefineRegion {
 
 	public enum Type {
 		INVALID_COMMAND(InvalidCommand::read),
@@ -29,6 +29,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		ATTACH_BLOCK(AttachBlock::read),
 		DETACH_ENTITY(DetachEntity::read),
 		DETACH_BLOCK(DetachBlock::read),
+		REDEFINE_REGION(RedefineRegion::read),
 		;
 		public static final ImmutableList<Type> VALUES = ImmutableList.copyOf(values());
 		public final Function<PacketByteBuf, ? extends RegionSyncCommand> reader;
@@ -118,7 +119,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		public FullState(RenderRegions toCopy) {
 			this(ImmutableMap.copyOf(toCopy.getRegionsByName()),
 					ImmutableMultimap.copyOf(toCopy.getAllEntityAttachments()),
-					ImmutableMultimap.copyOf(toCopy.getAllBlockEntityAttachments()));
+					ImmutableMultimap.copyOf(toCopy.getAllBlockAttachments()));
 		}
 		
 		@Override
@@ -176,9 +177,9 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		@Override
 		public void apply(RenderRegions tgt) {
 			tgt.clear();
-			regions.forEach(tgt::addRegion);
+			regions.forEach(tgt::add);
 			entityAttachments.forEach(tgt::attachEntity);
-			blockAttachments.forEach(tgt::attachBlockEntity);
+			blockAttachments.forEach(tgt::attachBlock);
 		}
 	}
 	
@@ -229,7 +230,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 
 		@Override
 		public void apply(RenderRegions tgt) {
-			tgt.addRegion(name, region);
+			tgt.add(name, region);
 		}
 		
 	}
@@ -257,7 +258,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 
 		@Override
 		public void apply(RenderRegions tgt) {
-			tgt.removeRegion(tgt.getByName(name));
+			tgt.remove(tgt.getByName(name));
 		}
 		
 	}
@@ -342,7 +343,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		}
 		@Override
 		public void apply(RenderRegions tgt) {
-			tgt.attachBlockEntity(tgt.getByName(name), pos);
+			tgt.attachBlock(tgt.getByName(name), pos);
 		}
 		
 	}
@@ -400,7 +401,36 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 
 		@Override
 		public void apply(RenderRegions tgt) {
-			tgt.detachBlockEntity(tgt.getByName(name), pos);
+			tgt.detachBlock(tgt.getByName(name), pos);
+		}
+		
+	}
+	
+	public record RedefineRegion(String name, RenderRegion region) implements RegionSyncCommand {
+
+		@Override
+		public Type type() {
+			return Type.REDEFINE_REGION;
+		}
+
+		@Override
+		public void write(PacketByteBuf buf) {
+			buf.writeString(name);
+			writeRegion(buf, region);
+		}
+		
+		public static RedefineRegion read(PacketByteBuf buf) {
+			return new RedefineRegion(buf.readString(), readRegion(buf));
+		}
+		
+		@Override
+		public boolean valid() {
+			return name != null && region != null;
+		}
+
+		@Override
+		public void apply(RenderRegions tgt) {
+			tgt.redefine(name, region);
 		}
 		
 	}

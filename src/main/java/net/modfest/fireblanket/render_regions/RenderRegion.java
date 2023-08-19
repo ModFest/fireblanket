@@ -30,7 +30,7 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 	}
 
 	public enum Mode {
-		UNKNOWN, ALLOW, DENY,
+		UNKNOWN, ALLOW, DENY, EXCLUSIVE,
 		;
 		public static final ImmutableList<Mode> VALUES = ImmutableList.copyOf(values());
 	}

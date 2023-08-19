@@ -11,15 +11,19 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
+import it.unimi.dsi.fastutil.longs.LongArraySet;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.modfest.fireblanket.render_regions.RenderRegion.Mode;
@@ -29,14 +33,16 @@ public class RenderRegions {
 	private final BiMap<String, RenderRegion> regionsByName = HashBiMap.create();
 	private final Long2ReferenceMultimap<RenderRegion> denyRegionsByChunkSection = new Long2ReferenceMultimap<>();
 	
-	private final Long2ReferenceMultimap<RenderRegion> beRegions = new Long2ReferenceMultimap<>();
+	private final Long2ReferenceMultimap<RenderRegion> blockRegions = new Long2ReferenceMultimap<>();
 	private final ListMultimap<UUID, RenderRegion> entityRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
 	
 	private final SetMultimap<RenderRegion, UUID> entityAttachments = Multimaps.newSetMultimap(new Reference2ReferenceOpenHashMap<>(), ObjectOpenHashSet::new);
-	private final SetMultimap<RenderRegion, Long> beAttachments = Multimaps.newSetMultimap(new Reference2ReferenceOpenHashMap<>(), LongOpenHashSet::new);
+	private final SetMultimap<RenderRegion, Long> blockAttachments = Multimaps.newSetMultimap(new Reference2ReferenceOpenHashMap<>(), LongOpenHashSet::new);
 	
 	private final Runnable dirtyListener;
 	private final Consumer<RegionSyncCommand> syncer;
+	
+	private boolean dontSync = false;
 
 	public RenderRegions() {
 		this(null, null);
@@ -52,6 +58,7 @@ public class RenderRegions {
 	}
 	
 	public void sync(Supplier<RegionSyncCommand> supplier) {
+		if (dontSync) return;
 		if (syncer != null) {
 			var cmd = supplier.get();
 			if (!cmd.valid()) return;
@@ -59,36 +66,61 @@ public class RenderRegions {
 		}
 	}
 
-	public void addRegion(String name, RenderRegion region) {
+	public void add(String name, RenderRegion region) {
 		if (region == null) throw new IllegalArgumentException("region cannot be null");
 		RenderRegion old = regionsByName.put(name, region);
 		if (old != null) {
-			removeRegion(old);
+			remove(old);
 		}
-		addRegionToGlobalDeny(region);
+		addToGlobalDeny(region);
 		markDirty();
 		sync(() -> new RegionSyncCommand.AddRegion(name, region));
 	}
 	
-	public void removeRegion(RenderRegion region) {
+	public void remove(RenderRegion region) {
 		if (region == null) return;
 		String name = regionsByName.inverse().remove(region);
-		removeRegionFromGlobalDeny(region);
+		removeFromGlobalDeny(region);
 		detachAll(region, false);
 		markDirty();
 		if (name != null) {
-			syncer.accept(new RegionSyncCommand.DestroyRegion(name));
+			sync(() -> new RegionSyncCommand.DestroyRegion(name));
+		}
+	}
+
+	public void redefine(String name, RenderRegion nw) {
+		RenderRegion ol = getByName(name);
+		if (ol == null) {
+			add(name, nw);
+			return;
+		}
+		LongSet ba = new LongArraySet(getBlockAttachments(ol));
+		Set<UUID> ea = new ObjectArraySet<>(getEntityAttachments(ol));
+		try {
+			dontSync = true;
+			remove(ol);
+			regionsByName.put(name, nw);
+			if (ba.isEmpty() && ea.isEmpty()) {
+				addToGlobalDeny(nw);
+			} else {
+				ba.forEach(pos -> attachBlock(nw, pos));
+				ea.forEach(id -> attachEntity(nw, id));
+			}
+			dontSync = false;
+			sync(() -> new RegionSyncCommand.RedefineRegion(name, nw));
+		} finally {
+			dontSync = false;
 		}
 	}
 	
-	private void removeRegionFromGlobalDeny(RenderRegion region) {
+	private void removeFromGlobalDeny(RenderRegion region) {
 		if (region.mode() != Mode.DENY) return;
 		region.affectedChunkLongs().forEach(l -> {
 			denyRegionsByChunkSection.remove(l, region);
 		});
 	}
 	
-	private void addRegionToGlobalDeny(RenderRegion region) {
+	private void addToGlobalDeny(RenderRegion region) {
 		if (region.mode() != Mode.DENY) return;
 		region.affectedChunkLongs().forEach(l -> {
 			denyRegionsByChunkSection.put(l, region);
@@ -98,10 +130,10 @@ public class RenderRegions {
 	public void clear() {
 		regionsByName.clear();
 		denyRegionsByChunkSection.clear();
-		beRegions.clear();
+		blockRegions.clear();
 		entityRegions.clear();
 		entityAttachments.clear();
-		beAttachments.clear();
+		blockAttachments.clear();
 		lastPos = Long.MIN_VALUE;
 		lastShouldRender = true;
 		markDirty();
@@ -115,7 +147,7 @@ public class RenderRegions {
 	public void attachEntity(RenderRegion region, UUID id) {
 		if (region == null) return;
 		if (!entityAttachments.containsKey(region)) {
-			removeRegionFromGlobalDeny(region);
+			removeFromGlobalDeny(region);
 		}
 		entityRegions.put(id, region);
 		entityAttachments.put(region, id);
@@ -123,17 +155,17 @@ public class RenderRegions {
 		sync(() -> new RegionSyncCommand.AttachEntity(getName(region), id));
 	}
 	
-	public void attachBlockEntity(RenderRegion region, BlockEntity be) {
-		attachBlockEntity(region, be.getPos().asLong());
+	public void attachBlock(RenderRegion region, BlockEntity be) {
+		attachBlock(region, be.getPos().asLong());
 	}
 	
-	public void attachBlockEntity(RenderRegion region, long pos) {
+	public void attachBlock(RenderRegion region, long pos) {
 		if (region == null) return;
-		if (!beAttachments.containsKey(region)) {
-			removeRegionFromGlobalDeny(region);
+		if (!blockAttachments.containsKey(region)) {
+			removeFromGlobalDeny(region);
 		}
-		beRegions.put(pos, region);
-		beAttachments.put(region, pos);
+		blockRegions.put(pos, region);
+		blockAttachments.put(region, pos);
 		markDirty();
 		sync(() -> new RegionSyncCommand.AttachBlock(getName(region), pos));
 	}
@@ -147,22 +179,22 @@ public class RenderRegions {
 		boolean success = entityRegions.remove(id, region);
 		entityAttachments.remove(region, id);
 		if (!entityAttachments.containsKey(region)) {
-			addRegionToGlobalDeny(region);
+			addToGlobalDeny(region);
 		}
 		sync(() -> new RegionSyncCommand.DetachEntity(getName(region), id));
 		return success;
 	}
 	
-	public boolean detachBlockEntity(RenderRegion region, BlockEntity be) {
-		return detachBlockEntity(region, be.getPos().asLong());
+	public boolean detachBlock(RenderRegion region, BlockEntity be) {
+		return detachBlock(region, be.getPos().asLong());
 	}
 	
-	public boolean detachBlockEntity(RenderRegion region, long pos) {
+	public boolean detachBlock(RenderRegion region, long pos) {
 		if (region == null) return false;
-		boolean success = beRegions.remove(pos, region);
-		beAttachments.remove(region, pos);
-		if (!beAttachments.containsKey(region)) {
-			addRegionToGlobalDeny(region);
+		boolean success = blockRegions.remove(pos, region);
+		blockAttachments.remove(region, pos);
+		if (!blockAttachments.containsKey(region)) {
+			addToGlobalDeny(region);
 		}
 		sync(() -> new RegionSyncCommand.DetachBlock(getName(region), pos));
 		return success;
@@ -179,13 +211,13 @@ public class RenderRegions {
 			entityRegions.remove(u, region);
 			count++;
 		}
-		LongIterator iter = LongIterators.asLongIterator(beAttachments.removeAll(region).iterator());
+		LongIterator iter = LongIterators.asLongIterator(blockAttachments.removeAll(region).iterator());
 		while (iter.hasNext()) {
-			beRegions.remove(iter.nextLong(), region);
+			blockRegions.remove(iter.nextLong(), region);
 			count++;
 		}
 		if (addToGlobalDeny) {
-			addRegionToGlobalDeny(region);
+			addToGlobalDeny(region);
 		}
 		sync(() -> new RegionSyncCommand.DetachAll(getName(region)));
 		return count;
@@ -203,16 +235,16 @@ public class RenderRegions {
 		return regionsByName.inverse().get(region);
 	}
 	
-	public SetMultimap<RenderRegion, Long> getAllBlockEntityAttachments() {
-		return beAttachments;
+	public SetMultimap<RenderRegion, Long> getAllBlockAttachments() {
+		return blockAttachments;
 	}
 	
 	public SetMultimap<RenderRegion, UUID> getAllEntityAttachments() {
 		return entityAttachments;
 	}
 	
-	public Set<Long> getBlockEntityAttachments(RenderRegion region) {
-		return beAttachments.get(region);
+	public Set<Long> getBlockAttachments(RenderRegion region) {
+		return blockAttachments.get(region);
 	}
 	
 	public Set<UUID> getEntityAttachments(RenderRegion region) {
@@ -220,23 +252,27 @@ public class RenderRegions {
 	}
 	
 	public boolean shouldRender(double viewerX, double viewerY, double viewerZ, BlockEntity be) {
-		BlockPos bp = be.getPos();
-		long pos = bp.asLong();
-		for (var rr : beRegions.get(pos)) {
-			if (rr.contains(viewerX, viewerY, viewerZ)) {
-				return rr.mode() == Mode.ALLOW;
-			}
-		}
-		return shouldRender(viewerX, viewerY, viewerZ);
+		return shouldRender(blockRegions.get(be.getPos().asLong()), viewerX, viewerY, viewerZ);
 	}
 	
 	public boolean shouldRender(double viewerX, double viewerY, double viewerZ, Entity e) {
-		UUID id = e.getUuid();
-		for (var rr : entityRegions.get(id)) {
-			if (rr.contains(viewerX, viewerY, viewerZ)) {
+		if (e instanceof PlayerEntity) return true;
+		return shouldRender(entityRegions.get(e.getUuid()), viewerX, viewerY, viewerZ);
+	}
+
+	private boolean shouldRender(Iterable<RenderRegion> assignedRegions, double viewerX, double viewerY, double viewerZ) {
+		boolean anyExclusive = false;
+		for (var rr : assignedRegions) {
+			if (rr.mode() == Mode.EXCLUSIVE) {
+				anyExclusive = true;
+				if (rr.contains(viewerX, viewerY, viewerZ)) {
+					return true;
+				}
+			} else if (rr.contains(viewerX, viewerY, viewerZ)) {
 				return rr.mode() == Mode.ALLOW;
 			}
 		}
+		if (anyExclusive) return false;
 		return shouldRender(viewerX, viewerY, viewerZ);
 	}
 	
