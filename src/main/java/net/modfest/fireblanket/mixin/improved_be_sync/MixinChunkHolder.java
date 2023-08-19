@@ -1,14 +1,12 @@
 package net.modfest.fireblanket.mixin.improved_be_sync;
 
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.util.math.BlockPos;
@@ -17,6 +15,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.net.BEUpdate;
+import net.modfest.fireblanket.net.BundledBlockEntityUpdatePacket;
 import net.modfest.fireblanket.world.CachedCompoundBE;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -97,20 +96,17 @@ public abstract class MixinChunkHolder {
     @Inject(method = "flushUpdates", at = @At("TAIL"))
     private void fireblanket$flushUpdates$tail(WorldChunk chunk, CallbackInfo ci) {
         if (!BATCHED_UPDATES.isEmpty()) {
-            int size = BATCHED_UPDATES.size();
             List<ServerPlayerEntity> list = this.playersWatchingChunkProvider.getPlayersWatchingChunk(this.pos, false);
 
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeVarInt(size);
-            for (int i = 0; i < size; i++) {
-                BEUpdate bup = BATCHED_UPDATES.get(i);
-                buf.writeBlockPos(bup.pos());
-                buf.writeRegistryValue(Registries.BLOCK_ENTITY_TYPE, bup.type());
-                buf.writeNbt(bup.nbt());
+            if (list.isEmpty()) {
+                BATCHED_UPDATES.clear();
+                return;
             }
 
+            Packet<ClientPlayPacketListener> packet = new BundledBlockEntityUpdatePacket(BATCHED_UPDATES.toArray(new BEUpdate[0])).toPacket(Fireblanket.BATCHED_BE_UPDATE);
+
             for (ServerPlayerEntity p : list) {
-                ServerPlayNetworking.send(p, Fireblanket.BATCHED_BE_UPDATE, buf);
+                p.networkHandler.sendPacket(packet);
             }
 
             BATCHED_UPDATES.clear();
