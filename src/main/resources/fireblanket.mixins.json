@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "plugin": "net.modfest.fireblanket.FireblanketMixin",
   "mixins": [
+    "MixinCustomPayloadS2CPacket",
     "BlockEntityTypeAccessor",
     "EntityTypeAccessor",
     "MixinEntitySelector",
