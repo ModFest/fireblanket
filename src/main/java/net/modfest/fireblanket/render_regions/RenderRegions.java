@@ -40,7 +40,7 @@ public class RenderRegions {
 	private final SetMultimap<RenderRegion, Long> blockAttachments = Multimaps.newSetMultimap(new Reference2ReferenceOpenHashMap<>(), LongOpenHashSet::new);
 	
 	private final Runnable dirtyListener;
-	private final Consumer<RegionSyncCommand> syncer;
+	private final Consumer<RegionSyncRequest> syncer;
 	
 	private boolean dontSync = false;
 
@@ -48,7 +48,7 @@ public class RenderRegions {
 		this(null, null);
 	}
 
-	public RenderRegions(Runnable dirtyListener, Consumer<RegionSyncCommand> syncer) {
+	public RenderRegions(Runnable dirtyListener, Consumer<RegionSyncRequest> syncer) {
 		this.dirtyListener = dirtyListener;
 		this.syncer = syncer;
 	}
@@ -57,12 +57,12 @@ public class RenderRegions {
 		if (dirtyListener != null) dirtyListener.run();
 	}
 	
-	public void sync(Supplier<RegionSyncCommand> supplier) {
+	public void sync(Supplier<RegionSyncRequest> supplier) {
 		if (dontSync) return;
 		if (syncer != null) {
-			var cmd = supplier.get();
-			if (!cmd.valid()) return;
-			syncer.accept(cmd);
+			var req = supplier.get();
+			if (!req.valid()) return;
+			syncer.accept(req);
 		}
 	}
 
@@ -74,7 +74,7 @@ public class RenderRegions {
 		}
 		addToGlobalDeny(region);
 		markDirty();
-		sync(() -> new RegionSyncCommand.AddRegion(name, region));
+		sync(() -> new RegionSyncRequest.AddRegion(name, region));
 	}
 	
 	public void remove(RenderRegion region) {
@@ -84,7 +84,7 @@ public class RenderRegions {
 		detachAll(region, false);
 		markDirty();
 		if (name != null) {
-			sync(() -> new RegionSyncCommand.DestroyRegion(name));
+			sync(() -> new RegionSyncRequest.DestroyRegion(name));
 		}
 	}
 
@@ -107,7 +107,7 @@ public class RenderRegions {
 				ea.forEach(id -> attachEntity(nw, id));
 			}
 			dontSync = false;
-			sync(() -> new RegionSyncCommand.RedefineRegion(name, nw));
+			sync(() -> new RegionSyncRequest.RedefineRegion(name, nw));
 		} finally {
 			dontSync = false;
 		}
@@ -137,7 +137,7 @@ public class RenderRegions {
 		lastPos = Long.MIN_VALUE;
 		lastShouldRender = true;
 		markDirty();
-		sync(() -> new RegionSyncCommand.Reset(true));
+		sync(() -> new RegionSyncRequest.Reset(true));
 	}
 	
 	public void attachEntity(RenderRegion region, Entity e) {
@@ -152,7 +152,7 @@ public class RenderRegions {
 		entityRegions.put(id, region);
 		entityAttachments.put(region, id);
 		markDirty();
-		sync(() -> new RegionSyncCommand.AttachEntity(getName(region), id));
+		sync(() -> new RegionSyncRequest.AttachEntity(getName(region), id));
 	}
 	
 	public void attachBlock(RenderRegion region, BlockEntity be) {
@@ -167,7 +167,7 @@ public class RenderRegions {
 		blockRegions.put(pos, region);
 		blockAttachments.put(region, pos);
 		markDirty();
-		sync(() -> new RegionSyncCommand.AttachBlock(getName(region), pos));
+		sync(() -> new RegionSyncRequest.AttachBlock(getName(region), pos));
 	}
 	
 	public boolean detachEntity(RenderRegion region, Entity e) {
@@ -181,7 +181,7 @@ public class RenderRegions {
 		if (!entityAttachments.containsKey(region)) {
 			addToGlobalDeny(region);
 		}
-		sync(() -> new RegionSyncCommand.DetachEntity(getName(region), id));
+		sync(() -> new RegionSyncRequest.DetachEntity(getName(region), id));
 		return success;
 	}
 	
@@ -196,7 +196,7 @@ public class RenderRegions {
 		if (!blockAttachments.containsKey(region)) {
 			addToGlobalDeny(region);
 		}
-		sync(() -> new RegionSyncCommand.DetachBlock(getName(region), pos));
+		sync(() -> new RegionSyncRequest.DetachBlock(getName(region), pos));
 		return success;
 	}
 	
@@ -219,7 +219,7 @@ public class RenderRegions {
 		if (addToGlobalDeny) {
 			addToGlobalDeny(region);
 		}
-		sync(() -> new RegionSyncCommand.DetachAll(getName(region)));
+		sync(() -> new RegionSyncRequest.DetachAll(getName(region)));
 		return count;
 	}
 	

@@ -2,7 +2,12 @@ package net.modfest.fireblanket;
 
 import java.util.concurrent.CompletableFuture;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -16,7 +21,7 @@ import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.EntityMaskCommand;
 import net.modfest.fireblanket.mixin.ClientLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
-import net.modfest.fireblanket.render_regions.RegionSyncCommand;
+import net.modfest.fireblanket.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.render_regions.RenderRegions;
 
 public class FireblanketClient implements ClientModInitializer {
@@ -25,10 +30,17 @@ public class FireblanketClient implements ClientModInitializer {
 	
 	@Override
 	public void onInitializeClient() {
-		if (FireblanketMixin.DO_MASKING) {
-			BERMaskCommand.init();
-			EntityMaskCommand.init();
-		}
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, access) -> {
+			LiteralArgumentBuilder<FabricClientCommandSource> base = ClientCommandManager.literal("fireblanket:client");
+			if (FireblanketMixin.DO_MASKING) {
+				LiteralArgumentBuilder<FabricClientCommandSource> mask = ClientCommandManager.literal("mask");
+				BERMaskCommand.init(mask, access);
+				EntityMaskCommand.init(mask, access);
+				base.then(mask);
+			}
+			dispatcher.register(ClientCommandManager.literal("fbc")
+					.redirect(dispatcher.register(base)));
+		});
 
 		ClientLoginNetworking.registerGlobalReceiver(Fireblanket.FULL_STREAM_COMPRESSION, (client, handler, buf, listenerAdder) -> {
 			if (Fireblanket.CAN_USE_ZSTD) {
@@ -49,7 +61,7 @@ public class FireblanketClient implements ClientModInitializer {
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(Fireblanket.REGIONS_UPDATE, (client, handler, buf, sender) -> {
-			RegionSyncCommand command = RegionSyncCommand.read(buf);
+			RegionSyncRequest command = RegionSyncRequest.read(buf);
 			if (command.valid()) {
 				client.send(() -> {
 					command.apply(renderRegions);
