@@ -33,6 +33,7 @@
   "client": [
 	"client.MixinRenderSystem",
 	"client.MixinSignBlockEntityRenderer",
+	"client.MixinClientPlayNetworkHandler",
 	"client.be_masking.MixinBlockEntityRenderDispatcher",
 	"client.be_masking.MixinRebuildTask",
 	"client.be_masking.sodium.MixinChunkRenderRebuildTask",
