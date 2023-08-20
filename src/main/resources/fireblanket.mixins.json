@@ -36,6 +36,7 @@
 	"client.be_masking.MixinBlockEntityRenderDispatcher",
 	"client.be_masking.MixinRebuildTask",
 	"client.be_masking.sodium.MixinChunkRenderRebuildTask",
+	"client.entity_masking.MixinEntityRenderer",
 	"client.vbo_opto.MixinShaderProgram",
 	"client.vbo_opto.MixinVertexBuffer",
 	"ClientLoginNetworkHandlerAccessor",

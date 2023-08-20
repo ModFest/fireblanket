@@ -13,6 +13,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.Vec3d;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
+import net.modfest.fireblanket.client.command.EntityMaskCommand;
 import net.modfest.fireblanket.mixin.ClientLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.render_regions.RegionSyncCommand;
@@ -24,8 +25,9 @@ public class FireblanketClient implements ClientModInitializer {
 	
 	@Override
 	public void onInitializeClient() {
-		if (FireblanketMixin.DO_BE_MASKING) {
+		if (FireblanketMixin.DO_MASKING) {
 			BERMaskCommand.init();
+			EntityMaskCommand.init();
 		}
 
 		ClientLoginNetworking.registerGlobalReceiver(Fireblanket.FULL_STREAM_COMPRESSION, (client, handler, buf, listenerAdder) -> {
