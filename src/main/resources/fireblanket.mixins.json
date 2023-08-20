@@ -25,7 +25,12 @@
 	"ClientConnectionAccessor",
 	"MixinServerNetworkIo",
 	"ServerLoginNetworkHandlerAccessor",
-	"ServerChunkManagerAccessor"
+	"ServerChunkManagerAccessor",
+	"zstd.MixinChunkStreamVersion",
+	"zstd.MixinRegionFile",
+	"zstd.MixinPersistentStateManager",
+	"zstd.MixinPersistentState",
+	"zstd.MixinLevelStorageSession"
   ],
   "injectors": {
 	"defaultRequire": 1
