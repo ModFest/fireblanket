@@ -1,4 +1,4 @@
-package net.modfest.fireblanket.mixin.chunk_cache;
+package net.modfest.fireblanket.mixin.packet_chunk_cache;
 
 import java.util.BitSet;
 

@@ -14,6 +14,7 @@ import net.minecraft.Bootstrap;
 public class FireblanketMixin implements IMixinConfigPlugin {
 
 	public static final boolean DO_BE_MASKING = Boolean.getBoolean("fireblanket.beMasking");
+	private static final boolean DO_CHUNK_CACHE = System.getProperty("fireblanket.loadRadius") != null;
 
 	@Override
 	public void onLoad(String mixinPackage) {
@@ -92,6 +93,11 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 		if (mixinClassName.contains("be_masking")) {
 			return DO_BE_MASKING;
 		}
+
+		if (mixinClassName.contains("region_chunk_cache")) {
+			return DO_CHUNK_CACHE;
+		}
+
 		return true;
 	}
 
