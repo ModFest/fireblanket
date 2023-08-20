@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 public class ReassignableOutputStream extends OutputStream {
 
-	private OutputStream delegate;
+	private OutputStream delegate = OutputStream.nullOutputStream();
 	
 	public void setDelegate(OutputStream delegate) {
 		this.delegate = delegate;
