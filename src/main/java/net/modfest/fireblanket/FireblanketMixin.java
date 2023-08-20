@@ -13,7 +13,7 @@ import net.minecraft.Bootstrap;
 
 public class FireblanketMixin implements IMixinConfigPlugin {
 
-	public static final boolean DO_BE_MASKING = Boolean.getBoolean("fireblanket.beMasking");
+	public static final boolean DO_MASKING = Boolean.getBoolean("fireblanket.masking");
 	private static final boolean DO_CHUNK_CACHE = System.getProperty("fireblanket.loadRadius") != null;
 
 	@Override
@@ -91,7 +91,11 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
 		if (mixinClassName.contains("be_masking")) {
-			return DO_BE_MASKING;
+			return DO_MASKING;
+		}
+
+		if (mixinClassName.contains("entity_masking")) {
+			return DO_MASKING;
 		}
 
 		if (mixinClassName.contains("region_chunk_cache")) {
