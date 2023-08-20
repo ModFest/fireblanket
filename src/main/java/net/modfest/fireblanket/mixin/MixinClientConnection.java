@@ -12,10 +12,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkSide;
@@ -26,7 +26,6 @@ import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.ReassignableOutputStream;
 import net.modfest.fireblanket.Fireblanket.QueuedPacket;
-import net.modfest.fireblanket.ReassignableInputStream;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.ZstdDecoder;
 import net.modfest.fireblanket.net.ZstdEncoder;
@@ -57,11 +56,17 @@ public class MixinClientConnection implements FSCConnection {
 		if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
 			fireblanket$enableFSCNow();
 		}
+		System.out.println("> "+pkt.getClass().getSimpleName().replace("S2CPacket", ""));
 		if (channel.attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get() == NetworkState.PLAY) {
 			fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
 		} else {
 			sendImmediately(pkt, listener);
 		}
+	}
+
+	@Inject(at=@At("HEAD"), method="channelRead0")
+	protected void channelRead0(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo ci) {
+	    System.out.println("< "+packet.getClass().getSimpleName().replace("C2SPacket", ""));
 	}
 	
 	@Inject(at=@At("HEAD"), method="setCompressionThreshold", cancellable=true)
@@ -79,6 +84,7 @@ public class MixinClientConnection implements FSCConnection {
 	}
 	
 	private void fireblanket$enableFSCNow() {
+		System.out.println("Enable FSC");
 		fireblanket$fscStarted = true;
 		ChannelPipeline pipeline = channel.pipeline();
 		ClientConnection self = (ClientConnection)(Object)this;
@@ -91,10 +97,7 @@ public class MixinClientConnection implements FSCConnection {
 			zos.setCloseFrameOnFlush(false);
 			ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
 	
-			ReassignableInputStream ris = new ReassignableInputStream();
-			ZstdInputStream zis = new ZstdInputStream(ris);
-			zis.setContinuous(true);
-			ZstdDecoder dec = new ZstdDecoder(ris, zis);
+			ZstdDecoder dec = new ZstdDecoder();
 			pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
 			pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
 		} catch (IOException e) {
