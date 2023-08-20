@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.net;
 
+import java.io.OutputStream;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -68,6 +69,13 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
 			}, unclogFrequency, TimeUnit.NANOSECONDS);
 		}
 		outBytes.add(out.writerIndex()-start);
+		this.out.setDelegate(OutputStream.nullOutputStream());
+	}
+	
+	@Override
+	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+		super.handlerRemoved(ctx);
+		stream.close();
 	}
 	
 }
