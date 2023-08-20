@@ -3,6 +3,7 @@ package net.modfest.fireblanket;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -16,28 +17,32 @@ import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.block.Block;
 import net.minecraft.registry.Registries;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ChunkTicketManager;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
-import net.modfest.fireblanket.command.DumpCommandBlocksCommand;
-import net.modfest.fireblanket.command.DumpEntityTypesCommand;
+import net.modfest.fireblanket.command.DumpCommand;
+import net.modfest.fireblanket.command.RegionCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.mixin.ClientConnectionAccessor;
 import net.modfest.fireblanket.mixin.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.mixin.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
-import net.modfest.fireblanket.render_regions.RegionCommand;
-import net.modfest.fireblanket.render_regions.RegionSyncCommand;
+import net.modfest.fireblanket.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.render_regions.RenderRegions;
 import net.modfest.fireblanket.render_regions.RenderRegionsState;
 import net.modfest.fireblanket.world.entity.EntityFilters;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.luben.zstd.util.Native;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+
 import com.google.common.base.Stopwatch;
 
 import java.nio.file.Files;
@@ -66,8 +71,13 @@ public class Fireblanket implements ModInitializer {
 	
 	@Override
 	public void onInitialize() {
-		DumpCommandBlocksCommand.init();
-		DumpEntityTypesCommand.init();
+		CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
+			LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal("fireblanket");
+			DumpCommand.init(base, access);
+			RegionCommand.init(base, access);
+			dispatcher.register(CommandManager.literal("fb")
+					.redirect(dispatcher.register(base)));
+		});
 
 		for (Block block : Registries.BLOCK) {
 			UpdateSignBlockEntityTypes.apply(block);
@@ -169,18 +179,17 @@ public class Fireblanket implements ModInitializer {
 			fullRegionSync(player.getServerWorld(), player.networkHandler::sendPacket);
 		});
 		
-		RegionCommand.init();
 	}
 
 	public static void fullRegionSync(ServerWorld world, Consumer<Packet<?>> sender) {
 		RenderRegions regions = RenderRegionsState.get(world).getRegions();
-		RegionSyncCommand cmd;
+		RegionSyncRequest req;
 		if (regions.getRegionsByName().isEmpty()) {
-			cmd = new RegionSyncCommand.Reset(true);
+			req = new RegionSyncRequest.Reset(true);
 		} else {
-			cmd = new RegionSyncCommand.FullState(regions);
+			req = new RegionSyncRequest.FullState(regions);
 		}
-		sender.accept(cmd.toPacket(REGIONS_UPDATE));
+		sender.accept(req.toPacket(REGIONS_UPDATE));
 	}
 
 	public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {

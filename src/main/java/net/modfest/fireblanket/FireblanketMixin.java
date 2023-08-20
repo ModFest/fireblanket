@@ -90,11 +90,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-		if (mixinClassName.contains("be_masking")) {
-			return DO_MASKING;
-		}
-
-		if (mixinClassName.contains("entity_masking")) {
+		if (mixinClassName.contains("be_masking") || mixinClassName.contains("entity_masking")) {
 			return DO_MASKING;
 		}
 

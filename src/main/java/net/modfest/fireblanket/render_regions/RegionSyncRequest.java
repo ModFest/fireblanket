@@ -13,9 +13,9 @@ import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.net.writer.ServerPacketWriter;
 import net.modfest.fireblanket.render_regions.RenderRegion.Mode;
 
-import net.modfest.fireblanket.render_regions.RegionSyncCommand.*;
+import net.modfest.fireblanket.render_regions.RegionSyncRequest.*;
 
-public sealed interface RegionSyncCommand extends ServerPacketWriter permits InvalidCommand, FullState, Reset, AddRegion,
+public sealed interface RegionSyncRequest extends ServerPacketWriter permits InvalidCommand, FullState, Reset, AddRegion,
 		DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock, RedefineRegion {
 
 	public enum Type {
@@ -32,9 +32,9 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		REDEFINE_REGION(RedefineRegion::read),
 		;
 		public static final ImmutableList<Type> VALUES = ImmutableList.copyOf(values());
-		public final Function<PacketByteBuf, ? extends RegionSyncCommand> reader;
+		public final Function<PacketByteBuf, ? extends RegionSyncRequest> reader;
 
-		Type(Function<PacketByteBuf, ? extends RegionSyncCommand> reader) {
+		Type(Function<PacketByteBuf, ? extends RegionSyncRequest> reader) {
 			this.reader = reader;
 		}
 		
@@ -74,7 +74,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 				mode);
 	}
 	
-	static RegionSyncCommand read(PacketByteBuf buf) {
+	static RegionSyncRequest read(PacketByteBuf buf) {
 		int tid = buf.readUnsignedByte();
 		if (tid >= Type.VALUES.size()) {
 			Fireblanket.LOGGER.warn("Unknown region sync command id "+tid);
@@ -84,7 +84,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		return t.reader.apply(buf);
 	}
 	
-	public record InvalidCommand() implements RegionSyncCommand {
+	public record InvalidCommand() implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -114,7 +114,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 	
 	public record FullState(ImmutableMap<String, RenderRegion> regions,
 			ImmutableMultimap<RenderRegion, UUID> entityAttachments,
-			ImmutableMultimap<RenderRegion, Long> blockAttachments) implements RegionSyncCommand {
+			ImmutableMultimap<RenderRegion, Long> blockAttachments) implements RegionSyncRequest {
 		
 		public FullState(RenderRegions toCopy) {
 			this(ImmutableMap.copyOf(toCopy.getRegionsByName()),
@@ -183,7 +183,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		}
 	}
 	
-	public record Reset(boolean valid) implements RegionSyncCommand {
+	public record Reset(boolean valid) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -206,7 +206,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record AddRegion(String name, RenderRegion region) implements RegionSyncCommand {
+	public record AddRegion(String name, RenderRegion region) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -235,7 +235,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record DestroyRegion(String name) implements RegionSyncCommand {
+	public record DestroyRegion(String name) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -263,7 +263,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record DetachAll(String name) implements RegionSyncCommand {
+	public record DetachAll(String name) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -291,7 +291,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record AttachEntity(String name, UUID entity) implements RegionSyncCommand {
+	public record AttachEntity(String name, UUID entity) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -320,7 +320,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record AttachBlock(String name, long pos) implements RegionSyncCommand {
+	public record AttachBlock(String name, long pos) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -348,7 +348,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record DetachEntity(String name, UUID entity) implements RegionSyncCommand {
+	public record DetachEntity(String name, UUID entity) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -377,7 +377,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record DetachBlock(String name, long pos) implements RegionSyncCommand {
+	public record DetachBlock(String name, long pos) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {
@@ -406,7 +406,7 @@ public sealed interface RegionSyncCommand extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record RedefineRegion(String name, RenderRegion region) implements RegionSyncCommand {
+	public record RedefineRegion(String name, RenderRegion region) implements RegionSyncRequest {
 
 		@Override
 		public Type type() {

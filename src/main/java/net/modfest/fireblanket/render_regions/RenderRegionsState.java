@@ -19,8 +19,8 @@ public class RenderRegionsState extends PersistentState {
 	private final RenderRegions regions;
 	
 	public RenderRegionsState(ServerWorld world) {
-		this.regions = new RenderRegions(this::markDirty, cmd -> {
-			var pkt = cmd.toPacket(Fireblanket.REGIONS_UPDATE);
+		this.regions = new RenderRegions(this::markDirty, req -> {
+			var pkt = req.toPacket(Fireblanket.REGIONS_UPDATE);
 			for (var player : world.getPlayers()) {
 				player.networkHandler.sendPacket(pkt);
 			}

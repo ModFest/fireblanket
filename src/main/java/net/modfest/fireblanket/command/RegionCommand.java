@@ -1,4 +1,4 @@
-package net.modfest.fireblanket.render_regions;
+package net.modfest.fireblanket.command;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -20,7 +21,6 @@ import com.google.common.collect.Iterables;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.pattern.CachedBlockPosition;
@@ -38,188 +38,190 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.compat.WorldEditCompat;
+import net.modfest.fireblanket.render_regions.RegionSyncRequest;
+import net.modfest.fireblanket.render_regions.RenderRegion;
+import net.modfest.fireblanket.render_regions.RenderRegions;
+import net.modfest.fireblanket.render_regions.RenderRegionsState;
 
 public class RegionCommand {
 
 	private static final Predicate<ServerCommandSource> WORLDEDIT = ctx -> FabricLoader.getInstance().isModLoaded("worldedit");
 	
-	public static void init() {
-		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-			dispatcher.register(literal("fireblanket:region")
-				.requires(ctx -> ctx.hasPermissionLevel(4))
-				.then(literal("add")
-					.then(argument("name", StringArgumentType.string())
-						.then(addBranch("deny", RenderRegion.Mode.DENY))
-						.then(addBranch("exclusive", RenderRegion.Mode.EXCLUSIVE))
-						.then(addBranch("allow", RenderRegion.Mode.ALLOW))
-					)
+	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
+		base.then(literal("region")
+			.requires(ctx -> ctx.hasPermissionLevel(4))
+			.then(literal("add")
+				.then(argument("name", StringArgumentType.string())
+					.then(addBranch("deny", RenderRegion.Mode.DENY))
+					.then(addBranch("exclusive", RenderRegion.Mode.EXCLUSIVE))
+					.then(addBranch("allow", RenderRegion.Mode.ALLOW))
 				)
-				.then(literal("redefine")
-					.then(argument("name", StringArgumentType.string())
-						.suggests(RegionCommand::suggestRegionNames)
-						.then(literal("from")
-							.then(literal("worldedit")
-								.requires(WORLDEDIT)
-								.executes(ctx -> {
-									String name = StringArgumentType.getString(ctx, "name");
-									BlockBox box = WorldEditCompat.getSelection(ctx);
-									RenderRegion ol = getRegion(ctx);
-									RenderRegions regions = getRegions(ctx);
-									RenderRegion nw = new RenderRegion(box.getMinX(), box.getMinY(), box.getMinZ(),
-											box.getMaxX(), box.getMaxY(), box.getMaxZ(),
-											ol.mode());
-									regions.redefine(name, nw);
-									ctx.getSource().sendFeedback(() -> Text.literal("Redefined region "+name), true);
-									return 1;
-								})
-							)
+			)
+			.then(literal("redefine")
+				.then(argument("name", StringArgumentType.string())
+					.suggests(RegionCommand::suggestRegionNames)
+					.then(literal("from")
+						.then(literal("worldedit")
+							.requires(WORLDEDIT)
+							.executes(ctx -> {
+								String name = StringArgumentType.getString(ctx, "name");
+								BlockBox box = WorldEditCompat.getSelection(ctx);
+								RenderRegion ol = getRegion(ctx);
+								RenderRegions regions = getRegions(ctx);
+								RenderRegion nw = new RenderRegion(box.getMinX(), box.getMinY(), box.getMinZ(),
+										box.getMaxX(), box.getMaxY(), box.getMaxZ(),
+										ol.mode());
+								regions.redefine(name, nw);
+								ctx.getSource().sendFeedback(() -> Text.literal("Redefined region "+name), true);
+								return 1;
+							})
 						)
-						.then(argument("corner1", BlockPosArgumentType.blockPos())
-							.then(argument("corner2", BlockPosArgumentType.blockPos())
-								.executes(ctx -> {
-									String name = StringArgumentType.getString(ctx, "name");
-									BlockPos min = BlockPosArgumentType.getBlockPos(ctx, "corner1");
-									BlockPos max = BlockPosArgumentType.getBlockPos(ctx, "corner2");
-									RenderRegion ol = getRegion(ctx);
-									RenderRegions regions = getRegions(ctx);
-									RenderRegion nw = new RenderRegion(min.getX(), min.getY(), min.getZ(),
-											max.getX(), max.getY(), max.getZ(),
-											ol.mode());
-									regions.redefine(name, nw);
-									ctx.getSource().sendFeedback(() -> Text.literal("Redefined region "+name), true);
-									return 1;
-								})
-							)
+					)
+					.then(argument("corner1", BlockPosArgumentType.blockPos())
+						.then(argument("corner2", BlockPosArgumentType.blockPos())
+							.executes(ctx -> {
+								String name = StringArgumentType.getString(ctx, "name");
+								BlockPos min = BlockPosArgumentType.getBlockPos(ctx, "corner1");
+								BlockPos max = BlockPosArgumentType.getBlockPos(ctx, "corner2");
+								RenderRegion ol = getRegion(ctx);
+								RenderRegions regions = getRegions(ctx);
+								RenderRegion nw = new RenderRegion(min.getX(), min.getY(), min.getZ(),
+										max.getX(), max.getY(), max.getZ(),
+										ol.mode());
+								regions.redefine(name, nw);
+								ctx.getSource().sendFeedback(() -> Text.literal("Redefined region "+name), true);
+								return 1;
+							})
 						)
 					)
 				)
-				.then(applyBranch(registryAccess, true))
-				.then(applyBranch(registryAccess, false))
-				.then(literal("select")
-					.requires(WORLDEDIT)
-					.then(argument("name", StringArgumentType.string())
-						.suggests(RegionCommand::suggestRegionNames)
-						.executes(ctx -> {
-							RenderRegion r = getRegion(ctx);
-							WorldEditCompat.setSelection(ctx, new BlockBox(r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()));
-							return 1;
-						})
-					)
-				)
-				.then(literal("destroy")
-					.then(literal("everything")
-						.executes(ctx -> {
-							if (!FabricLoader.getInstance().isDevelopmentEnvironment()) {
-								throw new CommandException(Text.literal("Cowardly refusing to destroy everything outside of a dev env"));
-							}
-							RenderRegions regions = getRegions(ctx);
-							int count = regions.getRegionsByName().size();
-							regions.clear();
-							ctx.getSource().sendFeedback(() -> Text.literal("Destroyed "+count+" region"+(count == 1 ? "" : "s")), true);
-							return count;
-						})
-					)
-					.then(argument("name", StringArgumentType.string())
-						.suggests(RegionCommand::suggestRegionNames)
-						.executes(ctx -> {
-							RenderRegion r = getRegion(ctx);
-							RenderRegions regions = getRegions(ctx);
-							regions.remove(r);
-							ctx.getSource().sendFeedback(() -> Text.literal("Destroyed region "+StringArgumentType.getString(ctx, "name")), true);
-							return 1;
-						})
-					)
-				)
-				.then(literal("list")
+			)
+			.then(applyBranch(access, true))
+			.then(applyBranch(access, false))
+			.then(literal("select")
+				.requires(WORLDEDIT)
+				.then(argument("name", StringArgumentType.string())
+					.suggests(RegionCommand::suggestRegionNames)
 					.executes(ctx -> {
+						RenderRegion r = getRegion(ctx);
+						WorldEditCompat.setSelection(ctx, new BlockBox(r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()));
+						return 1;
+					})
+				)
+			)
+			.then(literal("destroy")
+				.then(literal("everything")
+					.executes(ctx -> {
+						if (!FabricLoader.getInstance().isDevelopmentEnvironment()) {
+							throw new CommandException(Text.literal("Cowardly refusing to destroy everything outside of a dev env"));
+						}
 						RenderRegions regions = getRegions(ctx);
-						int size = regions.getRegionsByName().size();
-						if (size == 1) {
-							ctx.getSource().sendMessage(Text.literal("There is 1 region defined"));
-						} else {
-							ctx.getSource().sendMessage(Text.literal("There are "+size+" regions defined"));
-						}
-						for (var en : regions.getRegionsByName().entrySet()) {
-							RenderRegion r = en.getValue();
-							int ea = regions.getEntityAttachments(en.getValue()).size();
-							int ba = regions.getBlockAttachments(en.getValue()).size();
-							ctx.getSource().sendMessage(Text.literal("- "+en.getKey()+" ("+ea+"E, "+ba+"B)"));
-							ctx.getSource().sendMessage(Text.literal("  "+r.minX()+", "+r.minY()+", "+r.minZ()+" → "+r.maxX()+", "+r.maxY()+", "+r.maxZ()));
-						}
-						return 1;
+						int count = regions.getRegionsByName().size();
+						regions.clear();
+						ctx.getSource().sendFeedback(() -> Text.literal("Destroyed "+count+" region"+(count == 1 ? "" : "s")), true);
+						return count;
 					})
 				)
-				.then(literal("query")
-					.then(argument("name", StringArgumentType.string())
-						.suggests(RegionCommand::suggestRegionNames)
-						.executes(ctx -> {
-							RenderRegion r = getRegion(ctx);
-							RenderRegions regions = getRegions(ctx);
-							String mn = r.mode().name();
-							ctx.getSource().sendMessage(Text.literal(mn.charAt(0)+mn.toLowerCase(Locale.ROOT).substring(1)+" region "+StringArgumentType.getString(ctx, "name")));
-							ctx.getSource().sendMessage(Text.literal(""+r.minX()+", "+r.minY()+", "+r.minZ()+" → "+r.maxX()+", "+r.maxY()+", "+r.maxZ()));
-							var ea = regions.getEntityAttachments(r);
-							if (!ea.isEmpty()) {
-								ctx.getSource().sendMessage(Text.literal(ea.size()+" entity attachment"+(ea.size() == 1 ? "" : "s")+":"));
-								for (UUID id : ea) {
-									Entity e = ctx.getSource().getWorld().getEntity(id);
-									if (e == null) {
-										ctx.getSource().sendMessage(Text.literal("  - "+id+" (unknown)"));
-									} else {
-										ctx.getSource().sendMessage(Text.literal("  - "+id+" ("+Registries.ENTITY_TYPE.getId(e.getType())+" @ "+e.getPos()+")"));
-									}
-								}
-							}
-							var ba = regions.getBlockAttachments(r);
-							if (!ba.isEmpty()) {
-								BlockPos.Mutable mut = new BlockPos.Mutable();
-								ctx.getSource().sendMessage(Text.literal(ba.size()+" block attachment"+(ba.size() == 1 ? "" : "s")+":"));
-								for (long posl : ba) {
-									mut.set(posl);
-									BlockEntity be = ctx.getSource().getWorld().getBlockEntity(mut);
-									if (be == null) {
-										ctx.getSource().sendMessage(Text.literal("  - "+mut.toShortString()+" (unknown)"));
-									} else {
-										ctx.getSource().sendMessage(Text.literal("  - "+mut.toShortString()+" ("+Registries.BLOCK_ENTITY_TYPE.getId(be.getType())+")"));
-									}
-								}
-							}
-							if (ea.isEmpty() && ba.isEmpty()) {
-								if (r.mode() == RenderRegion.Mode.DENY) {
-									ctx.getSource().sendMessage(Text.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow region"));
-								} else {
-									ctx.getSource().sendMessage(Text.literal("No attachments, won't do anything"));
-								}
-							}
-							return 1;
-						})
-					)
-				)
-				.then(literal("resync")
-						.requires(ctx -> ctx.isExecutedByPlayer())
-						.executes(ctx -> {
-							Fireblanket.fullRegionSync(ctx.getSource().getWorld(), ctx.getSource().getPlayerOrThrow().networkHandler::sendPacket);
-							return 1;
-						})
-					)
-				.then(literal("ignore")
-					.requires(ctx -> ctx.isExecutedByPlayer())
-					.then(argument("name", StringArgumentType.string())
-						.suggests(RegionCommand::suggestRegionNames)
-						.executes(ctx -> {
-							var cmd = new RegionSyncCommand.DestroyRegion(StringArgumentType.getString(ctx, "name"));
-							ctx.getSource().getPlayer().networkHandler.sendPacket(cmd.toPacket(Fireblanket.REGIONS_UPDATE));
-							return 1;
-						})
-					)
+				.then(argument("name", StringArgumentType.string())
+					.suggests(RegionCommand::suggestRegionNames)
 					.executes(ctx -> {
-						var cmd = new RegionSyncCommand.Reset(true);
-						ctx.getSource().getPlayer().networkHandler.sendPacket(cmd.toPacket(Fireblanket.REGIONS_UPDATE));
+						RenderRegion r = getRegion(ctx);
+						RenderRegions regions = getRegions(ctx);
+						regions.remove(r);
+						ctx.getSource().sendFeedback(() -> Text.literal("Destroyed region "+StringArgumentType.getString(ctx, "name")), true);
 						return 1;
 					})
 				)
-			);
-		});
+			)
+			.then(literal("list")
+				.executes(ctx -> {
+					RenderRegions regions = getRegions(ctx);
+					int size = regions.getRegionsByName().size();
+					if (size == 1) {
+						ctx.getSource().sendMessage(Text.literal("There is 1 region defined"));
+					} else {
+						ctx.getSource().sendMessage(Text.literal("There are "+size+" regions defined"));
+					}
+					for (var en : regions.getRegionsByName().entrySet()) {
+						RenderRegion r = en.getValue();
+						int ea = regions.getEntityAttachments(en.getValue()).size();
+						int ba = regions.getBlockAttachments(en.getValue()).size();
+						ctx.getSource().sendMessage(Text.literal("- "+en.getKey()+" ("+ea+"E, "+ba+"B)"));
+						ctx.getSource().sendMessage(Text.literal("  "+r.minX()+", "+r.minY()+", "+r.minZ()+" → "+r.maxX()+", "+r.maxY()+", "+r.maxZ()));
+					}
+					return 1;
+				})
+			)
+			.then(literal("query")
+				.then(argument("name", StringArgumentType.string())
+					.suggests(RegionCommand::suggestRegionNames)
+					.executes(ctx -> {
+						RenderRegion r = getRegion(ctx);
+						RenderRegions regions = getRegions(ctx);
+						String mn = r.mode().name();
+						ctx.getSource().sendMessage(Text.literal(mn.charAt(0)+mn.toLowerCase(Locale.ROOT).substring(1)+" region "+StringArgumentType.getString(ctx, "name")));
+						ctx.getSource().sendMessage(Text.literal(""+r.minX()+", "+r.minY()+", "+r.minZ()+" → "+r.maxX()+", "+r.maxY()+", "+r.maxZ()));
+						var ea = regions.getEntityAttachments(r);
+						if (!ea.isEmpty()) {
+							ctx.getSource().sendMessage(Text.literal(ea.size()+" entity attachment"+(ea.size() == 1 ? "" : "s")+":"));
+							for (UUID id : ea) {
+								Entity e = ctx.getSource().getWorld().getEntity(id);
+								if (e == null) {
+									ctx.getSource().sendMessage(Text.literal("  - "+id+" (unknown)"));
+								} else {
+									ctx.getSource().sendMessage(Text.literal("  - "+id+" ("+Registries.ENTITY_TYPE.getId(e.getType())+" @ "+e.getPos()+")"));
+								}
+							}
+						}
+						var ba = regions.getBlockAttachments(r);
+						if (!ba.isEmpty()) {
+							BlockPos.Mutable mut = new BlockPos.Mutable();
+							ctx.getSource().sendMessage(Text.literal(ba.size()+" block attachment"+(ba.size() == 1 ? "" : "s")+":"));
+							for (long posl : ba) {
+								mut.set(posl);
+								BlockEntity be = ctx.getSource().getWorld().getBlockEntity(mut);
+								if (be == null) {
+									ctx.getSource().sendMessage(Text.literal("  - "+mut.toShortString()+" (unknown)"));
+								} else {
+									ctx.getSource().sendMessage(Text.literal("  - "+mut.toShortString()+" ("+Registries.BLOCK_ENTITY_TYPE.getId(be.getType())+")"));
+								}
+							}
+						}
+						if (ea.isEmpty() && ba.isEmpty()) {
+							if (r.mode() == RenderRegion.Mode.DENY) {
+								ctx.getSource().sendMessage(Text.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow region"));
+							} else {
+								ctx.getSource().sendMessage(Text.literal("No attachments, won't do anything"));
+							}
+						}
+						return 1;
+					})
+				)
+			)
+			.then(literal("resync")
+					.requires(ctx -> ctx.isExecutedByPlayer())
+					.executes(ctx -> {
+						Fireblanket.fullRegionSync(ctx.getSource().getWorld(), ctx.getSource().getPlayerOrThrow().networkHandler::sendPacket);
+						return 1;
+					})
+				)
+			.then(literal("ignore")
+				.requires(ctx -> ctx.isExecutedByPlayer())
+				.then(argument("name", StringArgumentType.string())
+					.suggests(RegionCommand::suggestRegionNames)
+					.executes(ctx -> {
+						var req = new RegionSyncRequest.DestroyRegion(StringArgumentType.getString(ctx, "name"));
+						ctx.getSource().getPlayer().networkHandler.sendPacket(req.toPacket(Fireblanket.REGIONS_UPDATE));
+						return 1;
+					})
+				)
+				.executes(ctx -> {
+					var req = new RegionSyncRequest.Reset(true);
+					ctx.getSource().getPlayer().networkHandler.sendPacket(req.toPacket(Fireblanket.REGIONS_UPDATE));
+					return 1;
+				})
+			)
+		);
 	}
 
 	private static ArgumentBuilder<ServerCommandSource, ?> addBranch(String arg, RenderRegion.Mode mode) {
