@@ -51,6 +51,8 @@
 	"client.entity_ticking.MixinArmorStandEntity",
 	"client.entity_ticking.portal_cubed.MixinCorePhysicsEntity",
 	"client.render_regions.MixinBlockEntityRenderDispatcher",
-	"client.render_regions.MixinEntityRenderDispatcher"
+	"client.render_regions.MixinEntityRenderDispatcher",
+	"client.render_regions.MixinRegionSubjects",
+	"client.lambdamap.MixinMapRegionFile"
   ]
 }

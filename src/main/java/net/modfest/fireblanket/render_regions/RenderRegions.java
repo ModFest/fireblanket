@@ -39,6 +39,7 @@ import net.minecraft.nbt.NbtString;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Uuids;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.modfest.fireblanket.render_regions.RegionSyncRequest.FullState;
 import net.modfest.fireblanket.render_regions.RenderRegion.Mode;
@@ -58,6 +59,8 @@ public class RenderRegions {
 	private final Consumer<RegionSyncRequest> syncer;
 	
 	private boolean dontSync = false;
+	
+	private int era = 0;
 
 	public RenderRegions() {
 		this(null, null);
@@ -69,6 +72,7 @@ public class RenderRegions {
 	}
 	
 	public void markDirty() {
+		era++;
 		if (dirtyListener != null) dirtyListener.run();
 	}
 	
@@ -363,16 +367,34 @@ public class RenderRegions {
 	}
 	
 	public boolean shouldRender(double viewerX, double viewerY, double viewerZ, BlockEntity be) {
-		return shouldRender(ex -> ex.beTypeAttachments, BlockEntityType.getId(be.getType()),
+		long viewerPos = BlockPos.asLong((int)viewerX, (int)viewerY, (int)viewerZ);
+		if (be instanceof RegionSubject rs) {
+			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos);
+			if (cached != null) return cached;
+		}
+		boolean res = shouldRender(ex -> ex.beTypeAttachments, BlockEntityType.getId(be.getType()),
 				exclusiveBeTypeRegions,
 				blockRegions.get(be.getPos().asLong()), viewerX, viewerY, viewerZ);
+		if (be instanceof RegionSubject rs) {
+			rs.fireblanket$setCachedState(era, viewerPos, res);
+		}
+		return res;
 	}
 	
 	public boolean shouldRender(double viewerX, double viewerY, double viewerZ, Entity e) {
-		if (e instanceof PlayerEntity) return true;
-		return shouldRender(ex -> ex.entityTypeAttachments, EntityType.getId(e.getType()),
+		if (e instanceof PlayerEntity && e.shouldRenderName()) return true;
+		long viewerPos = BlockPos.asLong((int)viewerX, (int)viewerY, (int)viewerZ);
+		if (e instanceof RegionSubject rs) {
+			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos);
+			if (cached != null) return cached;
+		}
+		boolean res = shouldRender(ex -> ex.entityTypeAttachments, EntityType.getId(e.getType()),
 				exclusiveEntityTypeRegions,
 				entityRegions.get(e.getUuid()), viewerX, viewerY, viewerZ);
+		if (e instanceof RegionSubject rs) {
+			rs.fireblanket$setCachedState(era, viewerPos, res);
+		}
+		return res;
 	}
 
 	private boolean shouldRender(Function<ExplainedRenderRegion, Set<Identifier>> typeAttachments, Identifier type,
