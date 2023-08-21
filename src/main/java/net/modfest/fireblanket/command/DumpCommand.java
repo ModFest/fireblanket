@@ -1,5 +1,7 @@
 package net.modfest.fireblanket.command;
 
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.command.CommandRegistryAccess;
@@ -34,7 +36,21 @@ public class DumpCommand {
 	
 							for (Map.Entry<BlockPos, BlockEntity> e : chunk.getBlockEntities().entrySet()) {
 								if (e.getValue() instanceof CommandBlockBlockEntity cbe) {
-									server.getSource().sendFeedback(() -> Text.literal("[" + e.getKey().toShortString() + "]: " + cbe.getCommandExecutor().getCommand()), false);
+									BlockState state = cbe.getCachedState();
+
+									String type;
+									if (state.isOf(Blocks.COMMAND_BLOCK)) {
+										type = "B";
+									} else if (state.isOf(Blocks.CHAIN_COMMAND_BLOCK)) {
+										type = "C";
+									} else if (state.isOf(Blocks.REPEATING_COMMAND_BLOCK)) {
+										type = "R";
+									} else {
+										type = "???";
+									}
+
+									String ft = type;
+									server.getSource().sendFeedback(() -> Text.literal("[" + e.getKey().toShortString() + "] [" + ft + "] : " + cbe.getCommandExecutor().getCommand()), false);
 								}
 							}
 						}
