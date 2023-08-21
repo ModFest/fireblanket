@@ -187,7 +187,7 @@ public class Fireblanket implements ModInitializer {
 		if (regions.getRegionsByName().isEmpty()) {
 			req = new RegionSyncRequest.Reset(true);
 		} else {
-			req = new RegionSyncRequest.FullState(regions);
+			req = regions.toPacket();
 		}
 		sender.accept(req.toPacket(REGIONS_UPDATE));
 	}

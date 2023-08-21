@@ -29,10 +29,14 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.BlockPredicateArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.argument.RegistryKeyArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -138,15 +142,23 @@ public class RegionCommand {
 					RenderRegions regions = getRegions(ctx);
 					int size = regions.getRegionsByName().size();
 					if (size == 1) {
-						ctx.getSource().sendMessage(Text.literal("There is 1 region defined"));
+						ctx.getSource().sendMessage(Text.literal("§lThere is 1 region defined"));
 					} else {
-						ctx.getSource().sendMessage(Text.literal("There are "+size+" regions defined"));
+						ctx.getSource().sendMessage(Text.literal("§lThere are "+size+" regions defined"));
 					}
 					for (var en : regions.getRegionsByName().entrySet()) {
 						RenderRegion r = en.getValue();
 						int ea = regions.getEntityAttachments(en.getValue()).size();
 						int ba = regions.getBlockAttachments(en.getValue()).size();
-						ctx.getSource().sendMessage(Text.literal("- "+en.getKey()+" ("+ea+"E, "+ba+"B)"));
+						int eta = regions.getEntityTypeAttachments(en.getValue()).size();
+						int beta = regions.getBlockEntityTypeAttachments(en.getValue()).size();
+						String mode = switch (r.mode()) {
+							case ALLOW -> "§aallow";
+							case DENY -> "§cdeny";
+							case EXCLUSIVE -> "§bexclusive";
+							case UNKNOWN -> "§dunknown";
+						};
+						ctx.getSource().sendMessage(Text.literal("- §d§o"+en.getKey()+"§r "+mode+"§r ("+ea+"E, "+ba+"B, "+eta+"Et, "+beta+"BEt)"));
 						ctx.getSource().sendMessage(Text.literal("  "+r.minX()+", "+r.minY()+", "+r.minZ()+" → "+r.maxX()+", "+r.maxY()+", "+r.maxZ()));
 					}
 					return 1;
@@ -187,9 +199,23 @@ public class RegionCommand {
 								}
 							}
 						}
-						if (ea.isEmpty() && ba.isEmpty()) {
+						var eta = regions.getEntityTypeAttachments(r);
+						if (!eta.isEmpty()) {
+							ctx.getSource().sendMessage(Text.literal(eta.size()+" entity type attachment"+(eta.size() == 1 ? "" : "s")+":"));
+							for (Identifier id : eta) {
+								ctx.getSource().sendMessage(Text.literal("  - "+id));
+							}
+						}
+						var beta = regions.getBlockEntityTypeAttachments(r);
+						if (!beta.isEmpty()) {
+							ctx.getSource().sendMessage(Text.literal(beta.size()+" block entity type attachment"+(beta.size() == 1 ? "" : "s")+":"));
+							for (Identifier id : beta) {
+								ctx.getSource().sendMessage(Text.literal("  - "+id));
+							}
+						}
+						if (ea.isEmpty() && ba.isEmpty() && eta.isEmpty() && beta.isEmpty()) {
 							if (r.mode() == RenderRegion.Mode.DENY) {
-								ctx.getSource().sendMessage(Text.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow region"));
+								ctx.getSource().sendMessage(Text.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow/exclusive region"));
 							} else {
 								ctx.getSource().sendMessage(Text.literal("No attachments, won't do anything"));
 							}
@@ -402,6 +428,38 @@ public class RegionCommand {
 									return applyBlocksToRegion(ctx, BlockBox.create(corner1, corner2), null, attach);
 								})
 							)
+						)
+					)
+					.then(literal("be-type")
+						.then(argument("type", RegistryKeyArgumentType.registryKey(RegistryKeys.BLOCK_ENTITY_TYPE))
+							.executes(ctx -> {
+								RenderRegion r = getRegion(ctx);
+								RenderRegions regions = getRegions(ctx);
+								Identifier id = ctx.getArgument("type", RegistryKey.class).getValue();
+								if (attach) {
+									regions.attachBlockEntityType(r, id);
+								} else {
+									regions.detachBlockEntityType(r, id);
+								}
+								ctx.getSource().sendFeedback(() -> Text.literal("Attached block entity type "+id+" to region "+StringArgumentType.getString(ctx, "name")), true);
+								return 1;
+							})
+						)
+					)
+					.then(literal("entity-type")
+						.then(argument("type", RegistryKeyArgumentType.registryKey(RegistryKeys.ENTITY_TYPE))
+							.executes(ctx -> {
+								RenderRegion r = getRegion(ctx);
+								RenderRegions regions = getRegions(ctx);
+								Identifier id = ctx.getArgument("type", RegistryKey.class).getValue();
+								if (attach) {
+									regions.attachEntityType(r, id);
+								} else {
+									regions.detachEntityType(r, id);
+								}
+								ctx.getSource().sendFeedback(() -> Text.literal("Attached entity type "+id+" to region "+StringArgumentType.getString(ctx, "name")), true);
+								return 1;
+							})
 						)
 					)
 				);
