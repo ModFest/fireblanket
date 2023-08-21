@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.github.luben.zstd.ZstdOutputStream;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkSide;
@@ -56,17 +55,11 @@ public class MixinClientConnection implements FSCConnection {
 		if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
 			fireblanket$enableFSCNow();
 		}
-		System.out.println("> "+pkt.getClass().getSimpleName().replace("S2CPacket", ""));
 		if (channel.attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get() == NetworkState.PLAY) {
 			fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
 		} else {
 			sendImmediately(pkt, listener);
 		}
-	}
-
-	@Inject(at=@At("HEAD"), method="channelRead0")
-	protected void channelRead0(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo ci) {
-	    System.out.println("< "+packet.getClass().getSimpleName().replace("C2SPacket", ""));
 	}
 	
 	@Inject(at=@At("HEAD"), method="setCompressionThreshold", cancellable=true)
