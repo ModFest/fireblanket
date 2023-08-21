@@ -122,6 +122,7 @@ public class RenderRegions {
 			dontSync = true;
 			remove(ol, false);
 			ExplainedRenderRegion exnw = new ExplainedRenderRegion(name, nw);
+			explaineds.put(nw, exnw);
 			regionsByName.put(name, exnw);
 			addToGlobal(exnw);
 			if (nw.mode() == Mode.DENY) exnw.blanketDeny = true;
@@ -387,6 +388,7 @@ public class RenderRegions {
 		
 		// check explicit id/position first
 		for (var rr : assignedRegions) {
+			if (rr == null) continue;
 			if (rr.reg.mode() == Mode.EXCLUSIVE) {
 				anyExclusive = true;
 				if (rr.reg.contains(viewerX, viewerY, viewerZ)) {
