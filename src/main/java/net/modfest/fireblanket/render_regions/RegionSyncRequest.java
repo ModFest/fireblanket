@@ -7,20 +7,25 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.entity.EntityType;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.net.writer.ServerPacketWriter;
 import net.modfest.fireblanket.render_regions.RenderRegion.Mode;
-
 import net.modfest.fireblanket.render_regions.RegionSyncRequest.*;
 
 public sealed interface RegionSyncRequest extends ServerPacketWriter permits InvalidCommand, FullState, Reset, AddRegion,
-		DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock, RedefineRegion {
+		DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock, RedefineRegion, FullStateLegacy,
+		RegistryRegionSyncRequest {
 
 	public enum Type {
 		INVALID_COMMAND(InvalidCommand::read),
-		FULL_STATE(FullState::read),
+		FULL_STATE_LEGACY(FullStateLegacy::read),
 		RESET(Reset::read),
 		ADD_REGION(AddRegion::read),
 		DESTROY_REGION(DestroyRegion::read),
@@ -30,6 +35,11 @@ public sealed interface RegionSyncRequest extends ServerPacketWriter permits Inv
 		DETACH_ENTITY(DetachEntity::read),
 		DETACH_BLOCK(DetachBlock::read),
 		REDEFINE_REGION(RedefineRegion::read),
+		ATTACH_ENTITY_TYPE(AttachEntityType::read),
+		DETACH_ENTITY_TYPE(DetachEntityType::read),
+		ATTACH_BLOCK_ENTITY_TYPE(AttachBlockEntityType::read),
+		DETACH_BLOCK_ENTITY_TYPE(DetachBlockEntityType::read),
+		FULL_STATE(FullState::read),
 		;
 		public static final ImmutableList<Type> VALUES = ImmutableList.copyOf(values());
 		public final Function<PacketByteBuf, ? extends RegionSyncRequest> reader;
@@ -48,6 +58,26 @@ public sealed interface RegionSyncRequest extends ServerPacketWriter permits Inv
 	void apply(RenderRegions tgt);
 	
 	boolean valid();
+	
+	sealed interface RegistryRegionSyncRequest<T> extends RegionSyncRequest permits AttachEntityType, DetachEntityType,
+			AttachBlockEntityType, DetachBlockEntityType {
+		
+		Registry<T> registry();
+		
+		String name();
+		Identifier id();
+
+		@Override
+		default boolean valid() {
+			return name() != null && registry().get(id()) != null;
+		}
+
+		@Override
+		default void write(PacketByteBuf buf) {
+			buf.writeString(name());
+			writeId(buf, registry(), id());
+		}
+	}
 	
 	@Override
 	default void write(PacketByteBuf buf, Identifier packetId) {
@@ -72,6 +102,14 @@ public sealed interface RegionSyncRequest extends ServerPacketWriter permits Inv
 		return new RenderRegion(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 				buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 				mode);
+	}
+	
+	private static <T> Identifier readId(PacketByteBuf buf, Registry<T> registry) {
+		return registry.getId(registry.get(buf.readVarInt()));
+	}
+	
+	private static <T> void writeId(PacketByteBuf buf, Registry<T> registry, Identifier id) {
+		buf.writeVarInt(registry.getRawId(registry.get(id)));
 	}
 	
 	static RegionSyncRequest read(PacketByteBuf buf) {
@@ -112,42 +150,21 @@ public sealed interface RegionSyncRequest extends ServerPacketWriter permits Inv
 		
 	}
 	
-	public record FullState(ImmutableMap<String, RenderRegion> regions,
+	public record FullStateLegacy(ImmutableMap<String, RenderRegion> regions,
 			ImmutableMultimap<RenderRegion, UUID> entityAttachments,
 			ImmutableMultimap<RenderRegion, Long> blockAttachments) implements RegionSyncRequest {
 		
-		public FullState(RenderRegions toCopy) {
-			this(ImmutableMap.copyOf(toCopy.getRegionsByName()),
-					ImmutableMultimap.copyOf(toCopy.getAllEntityAttachments()),
-					ImmutableMultimap.copyOf(toCopy.getAllBlockAttachments()));
-		}
-		
 		@Override
 		public Type type() {
-			return Type.FULL_STATE;
+			return Type.FULL_STATE_LEGACY;
 		}
 
 		@Override
 		public void write(PacketByteBuf buf) {
-			buf.writeVarInt(regions.size());
-			for (var en : regions.entrySet()) {
-				buf.writeString(en.getKey());
-				RenderRegion r = en.getValue();
-				writeRegion(buf, r);
-				var ea = entityAttachments.get(r);
-				buf.writeVarInt(ea.size());
-				for (UUID id : ea) {
-					buf.writeUuid(id);
-				}
-				var ba = blockAttachments.get(r);
-				buf.writeVarInt(ba.size());
-				for (long pos : ba) {
-					buf.writeLong(pos);
-				}
-			}
+			throw new UnsupportedOperationException();
 		}
 		
-		public static FullState read(PacketByteBuf buf) {
+		public static FullStateLegacy read(PacketByteBuf buf) {
 			ImmutableMap.Builder<String, RenderRegion> regionsBldr = ImmutableMap.builder();
 			ImmutableMultimap.Builder<RenderRegion, UUID> entityAttachmentsBldr = ImmutableMultimap.builder();
 			ImmutableMultimap.Builder<RenderRegion, Long> blockAttachmentsBldr = ImmutableMultimap.builder();
@@ -165,7 +182,7 @@ public sealed interface RegionSyncRequest extends ServerPacketWriter permits Inv
 					blockAttachmentsBldr.put(r, buf.readLong());
 				}
 			}
-			return new FullState(regionsBldr.build(), entityAttachmentsBldr.build(), blockAttachmentsBldr.build());
+			return new FullStateLegacy(regionsBldr.build(), entityAttachmentsBldr.build(), blockAttachmentsBldr.build());
 		}
 		
 		@Override
@@ -433,6 +450,193 @@ public sealed interface RegionSyncRequest extends ServerPacketWriter permits Inv
 			tgt.redefine(name, region);
 		}
 		
+	}
+	
+	public record AttachEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<EntityType<?>> {
+
+		@Override
+		public Type type() {
+			return Type.ATTACH_ENTITY_TYPE;
+		}
+		
+		@Override
+		public Registry<EntityType<?>> registry() {
+			return Registries.ENTITY_TYPE;
+		}
+		
+		public static AttachEntityType read(PacketByteBuf buf) {
+			return new AttachEntityType(buf.readString(), readId(buf, Registries.ENTITY_TYPE));
+		}
+
+		@Override
+		public void apply(RenderRegions tgt) {
+			tgt.attachEntityType(tgt.getByName(name), id);
+		}
+		
+	}
+	
+	public record DetachEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<EntityType<?>> {
+
+		@Override
+		public Type type() {
+			return Type.DETACH_ENTITY_TYPE;
+		}
+		
+		@Override
+		public Registry<EntityType<?>> registry() {
+			return Registries.ENTITY_TYPE;
+		}
+		
+		public static DetachEntityType read(PacketByteBuf buf) {
+			return new DetachEntityType(buf.readString(), readId(buf, Registries.ENTITY_TYPE));
+		}
+
+		@Override
+		public void apply(RenderRegions tgt) {
+			tgt.detachEntityType(tgt.getByName(name), id);
+		}
+		
+	}
+	
+	public record AttachBlockEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
+
+		@Override
+		public Type type() {
+			return Type.ATTACH_BLOCK_ENTITY_TYPE;
+		}
+		
+		@Override
+		public Registry<BlockEntityType<?>> registry() {
+			return Registries.BLOCK_ENTITY_TYPE;
+		}
+		
+		public static AttachBlockEntityType read(PacketByteBuf buf) {
+			return new AttachBlockEntityType(buf.readString(), readId(buf, Registries.BLOCK_ENTITY_TYPE));
+		}
+
+		@Override
+		public void apply(RenderRegions tgt) {
+			tgt.attachBlockEntityType(tgt.getByName(name), id);
+		}
+		
+	}
+	
+	public record DetachBlockEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
+
+		@Override
+		public Type type() {
+			return Type.DETACH_BLOCK_ENTITY_TYPE;
+		}
+		
+		@Override
+		public Registry<BlockEntityType<?>> registry() {
+			return Registries.BLOCK_ENTITY_TYPE;
+		}
+		
+		public static DetachBlockEntityType read(PacketByteBuf buf) {
+			return new DetachBlockEntityType(buf.readString(), readId(buf, Registries.BLOCK_ENTITY_TYPE));
+		}
+
+		@Override
+		public void apply(RenderRegions tgt) {
+			tgt.detachBlockEntityType(tgt.getByName(name), id);
+		}
+		
+	}
+	
+	public record FullState(ImmutableList<ExplainedRenderRegion> regions) implements RegionSyncRequest {
+		
+		@Override
+		public Type type() {
+			return Type.FULL_STATE;
+		}
+
+		@Override
+		public void write(PacketByteBuf buf) {
+			buf.writeVarInt(regions.size());
+			for (var ex : regions) {
+				buf.writeString(ex.name);
+				int sizePos = buf.writerIndex();
+				buf.writeMedium(0);
+				int start = buf.writerIndex();
+				RenderRegion r = ex.reg;
+				writeRegion(buf, r);
+				var ea = ex.entityAttachments;
+				buf.writeVarInt(ea.size());
+				for (UUID id : ea) {
+					buf.writeUuid(id);
+				}
+				var ba = ex.blockAttachments;
+				buf.writeVarInt(ba.size());
+				LongIterator iter = ba.longIterator();
+				while (iter.hasNext()) {
+					buf.writeLong(iter.nextLong());
+				}
+				var et = ex.entityTypeAttachments;
+				buf.writeVarInt(et.size());
+				for (Identifier id : et) {
+					writeId(buf, Registries.ENTITY_TYPE, id);
+				}
+				var bet = ex.beTypeAttachments;
+				buf.writeVarInt(bet.size());
+				for (Identifier id : bet) {
+					writeId(buf, Registries.BLOCK_ENTITY_TYPE, id);
+				}
+				int len = buf.writerIndex()-start;
+				buf.markWriterIndex();
+				buf.writerIndex(sizePos);
+				buf.writeMedium(len);
+				buf.resetWriterIndex();
+			}
+		}
+		
+		public static FullState read(PacketByteBuf buf) {
+			ImmutableList.Builder<ExplainedRenderRegion> bldr = ImmutableList.builder();
+			int regionCount = buf.readVarInt();
+			for (int i = 0; i < regionCount; i++) {
+				String name = buf.readString();
+				int len = buf.readUnsignedMedium();
+				int start = buf.readerIndex();
+				RenderRegion r = readRegion(buf);
+				ExplainedRenderRegion ex = new ExplainedRenderRegion(name, r);
+				int entityCount = buf.readVarInt();
+				for (int j = 0; j < entityCount; j++) {
+					ex.entityAttachments.add(buf.readUuid());
+				}
+				int blockCount = buf.readVarInt();
+				for (int j = 0; j < blockCount; j++) {
+					ex.blockAttachments.add(buf.readLong());
+				}
+				int entityTypeCount = buf.readVarInt();
+				for (int j = 0; j < entityTypeCount; j++) {
+					ex.entityTypeAttachments.add(readId(buf, Registries.ENTITY_TYPE));
+				}
+				int beTypeCount = buf.readVarInt();
+				for (int j = 0; j < beTypeCount; j++) {
+					ex.beTypeAttachments.add(readId(buf, Registries.BLOCK_ENTITY_TYPE));
+				}
+				buf.readerIndex(start+len);
+				bldr.add(ex);
+			}
+			return new FullState(bldr.build());
+		}
+		
+		@Override
+		public boolean valid() {
+			return regions != null && !regions.isEmpty();
+		}
+		
+		@Override
+		public void apply(RenderRegions tgt) {
+			tgt.clear();
+			for (var ex : regions) {
+				tgt.add(ex.name, ex.reg);
+				ex.entityAttachments.forEach(id -> tgt.attachEntity(ex.reg, id));
+				ex.blockAttachments.forEach(pos -> tgt.attachBlock(ex.reg, pos));
+				ex.entityTypeAttachments.forEach(id -> tgt.attachEntityType(ex.reg, id));
+				ex.beTypeAttachments.forEach(id -> tgt.attachBlockEntityType(ex.reg, id));
+			}
+		}
 	}
 	
 }
