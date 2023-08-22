@@ -43,11 +43,11 @@ public class ZestyWorldSaveHandler extends WorldSaveHandler {
 		try {
 			InputStream in;
 			File zstd = new File(playerDataDir, player.getUuidAsString()+".zat");
-			if (zstd.exists()) {
+			if (zstd.isFile()) {
 				in = new FastBufferedInputStream(new ZstdInputStream(new FileInputStream(zstd)));
 			} else {
 				File vanilla = new File(playerDataDir, player.getUuidAsString()+".dat");
-				if (vanilla.exists()) {
+				if (vanilla.isFile()) {
 					in = new FastBufferedInputStream(new GZIPInputStream(new FileInputStream(zstd)));
 				} else {
 					return null;
