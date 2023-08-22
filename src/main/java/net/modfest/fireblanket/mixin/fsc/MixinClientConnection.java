@@ -1,4 +1,4 @@
-package net.modfest.fireblanket.mixin;
+package net.modfest.fireblanket.mixin.fsc;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
