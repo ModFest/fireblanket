@@ -15,6 +15,7 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.chunk.ChunkOcclusionDataBuilder;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
+import net.modfest.fireblanket.client.ClientState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 public class MixinChunkRenderRebuildTask {
 	@Inject(method = "performBuild", at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderDispatcher;get(Lnet/minecraft/block/entity/BlockEntity;)Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;", shift = At.Shift.AFTER), locals = LocalCapture.CAPTURE_FAILHARD)
 	private void fireblanket$AddBEAnyway_Sodium(ChunkBuildContext buildContext, CancellationSource cancellationSource, CallbackInfoReturnable<ChunkBuildResult> cir, ChunkRenderData.Builder renderData, ChunkOcclusionDataBuilder occluder, ChunkRenderBounds.Builder bounds, ChunkBuildBuffers buffers, BlockRenderCache cache, WorldSlice slice, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, BlockPos.Mutable blockPos, BlockPos.Mutable modelOffset, BlockRenderContext context, int y, int z, int x, BlockState blockState, boolean rendered, FluidState fluidState, BlockEntity entity, BlockEntityRenderer renderer) {
-		if (renderer == null) {
+		if (renderer == null && ClientState.MASKED_BERS.contains(entity.getType())) {
 			renderData.addBlockEntity(entity, false);
 		}
 	}
