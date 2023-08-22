@@ -9,12 +9,15 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.RegistryEntryArgumentType;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
 import net.modfest.fireblanket.client.ClientState;
+
+import java.util.stream.Collectors;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -34,7 +37,7 @@ public class BERMaskCommand {
 
 						client.getSource().sendFeedback(Text.literal("Added " + type.registryKey().getValue() + " to the mask."));
 
-						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_BERS.add(type.registryKey().getValue()));
+						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_BERS.add(type.value()));
 						return 0;
 					})
 				)
@@ -51,7 +54,7 @@ public class BERMaskCommand {
 
 						client.getSource().sendFeedback(Text.literal("Removed " + type.registryKey().getValue() + " to the mask."));
 
-						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_BERS.remove(type.registryKey().getValue()));
+						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_BERS.remove(type.value()));
 						return 0;
 					})
 				)
@@ -61,7 +64,8 @@ public class BERMaskCommand {
 					if (ClientState.MASKED_BERS.isEmpty()) {
 						client.getSource().sendFeedback(Text.literal("Your mask is empty."));
 					} else {
-						client.getSource().sendFeedback(Text.literal("You are currently masking: " + ClientState.MASKED_BERS));
+						String string = ClientState.MASKED_BERS.stream().map(t -> Registries.BLOCK_ENTITY_TYPE.getId(t).toString()).collect(Collectors.joining(", "));
+						client.getSource().sendFeedback(Text.literal("You are currently masking: [" + string + "]"));
 					}
 					return 0;
 				})

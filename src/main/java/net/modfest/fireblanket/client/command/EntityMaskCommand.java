@@ -13,12 +13,15 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.RegistryEntryArgumentType;
 import net.minecraft.entity.EntityType;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
 import net.modfest.fireblanket.client.ClientState;
+
+import java.util.stream.Collectors;
 
 public class EntityMaskCommand {
 	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandRegistryAccess access) {
@@ -29,13 +32,13 @@ public class EntityMaskCommand {
 						RegistryEntry.Reference<EntityType<?>> type = getRegistryEntry(client, "type", RegistryKeys.ENTITY_TYPE);
 
 						if (type.getKey().isEmpty()) {
-							client.getSource().sendFeedback(Text.literal("This Entity seems to not be registered??"));
+							client.getSource().sendFeedback(Text.literal("This entity seems to not be registered??"));
 							return 1;
 						}
 
 						client.getSource().sendFeedback(Text.literal("Added " + type.registryKey().getValue() + " to the mask."));
 
-						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.add(type.registryKey().getValue()));
+						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.add(type.value()));
 						return 0;
 					})
 				)
@@ -46,13 +49,13 @@ public class EntityMaskCommand {
 						RegistryEntry.Reference<EntityType<?>> type = getRegistryEntry(client, "type", RegistryKeys.ENTITY_TYPE);
 
 						if (type.getKey().isEmpty()) {
-							client.getSource().sendFeedback(Text.literal("This Entity seems to not be registered??"));
+							client.getSource().sendFeedback(Text.literal("This entity seems to not be registered??"));
 							return 1;
 						}
 
 						client.getSource().sendFeedback(Text.literal("Removed " + type.registryKey().getValue() + " to the mask."));
 
-						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.remove(type.registryKey().getValue()));
+						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.remove(type.value()));
 						return 0;
 					})
 				)
@@ -62,7 +65,8 @@ public class EntityMaskCommand {
 					if (ClientState.MASKED_ENTITIES.isEmpty()) {
 						client.getSource().sendFeedback(Text.literal("Your mask is empty."));
 					} else {
-						client.getSource().sendFeedback(Text.literal("You are currently masking: " + ClientState.MASKED_ENTITIES));
+						String string = ClientState.MASKED_ENTITIES.stream().map(t -> Registries.ENTITY_TYPE.getId(t).toString()).collect(Collectors.joining(", "));
+						client.getSource().sendFeedback(Text.literal("You are currently masking: " + string));
 					}
 					return 0;
 				})
@@ -72,7 +76,7 @@ public class EntityMaskCommand {
 					int size = ClientState.MASKED_ENTITIES.size();
 					MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.clear());
 
-					client.getSource().sendFeedback(Text.literal("Cleared " + size + " Entities" + (size == 1 ? "" : "s") + " out of the mask."));
+					client.getSource().sendFeedback(Text.literal("Cleared " + size + " entit" + (size == 1 ? "y" : "ies") + " out of the mask."));
 					return 0;
 				})
 			)
