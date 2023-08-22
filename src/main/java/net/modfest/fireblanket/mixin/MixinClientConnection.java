@@ -77,7 +77,6 @@ public class MixinClientConnection implements FSCConnection {
 	}
 	
 	private void fireblanket$enableFSCNow() {
-		System.out.println("Enable FSC");
 		fireblanket$fscStarted = true;
 		ChannelPipeline pipeline = channel.pipeline();
 		ClientConnection self = (ClientConnection)(Object)this;
@@ -89,8 +88,9 @@ public class MixinClientConnection implements FSCConnection {
 			zos.setLong(client ? 27 : 22);
 			zos.setCloseFrameOnFlush(false);
 			ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
-	
 			ZstdDecoder dec = new ZstdDecoder();
+			pipeline.remove("compress");
+			pipeline.remove("decompress");
 			pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
 			pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
 		} catch (IOException e) {
