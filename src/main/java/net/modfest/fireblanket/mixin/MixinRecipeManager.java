@@ -22,7 +22,7 @@ public class MixinRecipeManager {
 			"getFirstMatch(Lnet/minecraft/recipe/RecipeType;Lnet/minecraft/inventory/Inventory;Lnet/minecraft/world/World;)Ljava/util/Optional;"
 		}, cancellable=true)
 	public void fireblanket$getFirstMatch$DontScanEmptyGrids(RecipeType<?> type, Inventory inv, World world, CallbackInfoReturnable<Optional<?>> ci) {
-		if (inv != null && inv.isEmpty()) {
+		if (type == RecipeType.CRAFTING && inv != null && inv.isEmpty()) {
 			ci.setReturnValue(Optional.empty());
 		}
 	}
@@ -31,7 +31,7 @@ public class MixinRecipeManager {
 			"getFirstMatch(Lnet/minecraft/recipe/RecipeType;Lnet/minecraft/inventory/Inventory;Lnet/minecraft/world/World;Lnet/minecraft/util/Identifier;)Ljava/util/Optional;",
 		}, cancellable=true)
 	public void fireblanket$getFirstMatch$DontScanEmptyGrids(RecipeType<?> type, Inventory inv, World world, Identifier id, CallbackInfoReturnable<Optional<?>> ci) {
-		if (inv != null && inv.isEmpty()) {
+		if (type == RecipeType.CRAFTING && inv != null && inv.isEmpty()) {
 			ci.setReturnValue(Optional.empty());
 		}
 	}
@@ -40,7 +40,7 @@ public class MixinRecipeManager {
 			"getAllMatches(Lnet/minecraft/recipe/RecipeType;Lnet/minecraft/inventory/Inventory;Lnet/minecraft/world/World;)Ljava/util/List;",
 		}, cancellable=true)
 	public void fireblanket$getAllMatches$DontScanEmptyGrids(RecipeType<?> type, Inventory inv, World world, CallbackInfoReturnable<List<?>> ci) {
-		if (inv != null && inv.isEmpty()) {
+		if (type == RecipeType.CRAFTING && inv != null && inv.isEmpty()) {
 			ci.setReturnValue(List.of());
 		}
 	}
@@ -49,7 +49,7 @@ public class MixinRecipeManager {
 			"getRemainingStacks(Lnet/minecraft/recipe/RecipeType;Lnet/minecraft/inventory/Inventory;Lnet/minecraft/world/World;)Lnet/minecraft/util/collection/DefaultedList;"
 		}, cancellable=true)
 	public void fireblanket$getRemainingStacks$DontScanEmptyGrids(RecipeType<?> type, Inventory inv, World world, CallbackInfoReturnable<DefaultedList<?>> ci) {
-		if (inv != null && inv.isEmpty()) {
+		if (type == RecipeType.CRAFTING && inv != null && inv.isEmpty()) {
 			ci.setReturnValue(DefaultedList.of());
 		}
 	}
