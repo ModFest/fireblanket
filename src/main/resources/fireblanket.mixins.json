@@ -10,6 +10,7 @@
 	"MixinEntitySelector",
 	"MixinRecipeManager",
 	"MixinServerPlayerEntity",
+	"block_format.MixinChunkSection",
 	"entity_ticking.MixinMinecraftServer",
 	"entity_ticking.MixinThreadedAnvilChunkStorage",
 	"entity_ticking.create.MixinSuperGlueEntity",
