@@ -16,6 +16,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 	public static final boolean DO_MASKING = Boolean.getBoolean("fireblanket.masking");
 	private static final boolean DO_CHUNK_CACHE = System.getProperty("fireblanket.loadRadius") != null;
 	public static final boolean ALLOW_LAMBDAMAP_SAVING = Boolean.getBoolean("fireblanket.allowLambdaMapSaving");
+	private static final boolean DO_CHUNKSECTION_OPTO = Boolean.getBoolean("fireblanket.flattenChunkPalettes");
 
 	@Override
 	public void onLoad(String mixinPackage) {
@@ -101,6 +102,10 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 		
 		if (mixinClassName.contains("lambdamap")) {
 			return !ALLOW_LAMBDAMAP_SAVING;
+		}
+
+		if (mixinClassName.contains("block_format")) {
+			return DO_CHUNKSECTION_OPTO;
 		}
 
 		return true;
