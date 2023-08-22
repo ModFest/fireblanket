@@ -107,6 +107,11 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 		if (mixinClassName.contains("block_format")) {
 			return DO_CHUNKSECTION_OPTO;
 		}
+		
+		if (mixinClassName.contains("SplitterHandler") && FabricLoader.getInstance().isModLoaded("krypton")) {
+			// Conflicts with Krypton, which also lifts the limit
+			return false;
+		}
 
 		return true;
 	}
