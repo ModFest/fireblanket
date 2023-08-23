@@ -22,6 +22,8 @@
 	"pehkui.MixinScaleUtils",
 	"pswg.MixinComplexCollisionManager",
 	"mythicmetals.MixinCarmotShield",
+	"create.MixinMechanicalBearingBlockEntity",
+	"create.AccessorSmartBlockEntity",
 	"fsc.MixinClientConnection",
 	"fsc.MixinSizePrepender",
 	"fsc.MixinSplitterHandler",
