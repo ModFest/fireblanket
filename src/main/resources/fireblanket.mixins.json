@@ -34,6 +34,7 @@
 	"ServerChunkManagerAccessor",
 	"MixinNbtCompound",
 	"ai.MixinTemptGoal",
+	"ai.terracotta_knights.MixinItemPickupGoal",
 	"zstd.MixinChunkStreamVersion",
 	"zstd.MixinRegionFile",
 	"zstd.MixinPersistentStateManager",

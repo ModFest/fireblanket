@@ -9,6 +9,7 @@ import net.minecraft.util.crash.CrashReport;
 import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.PalettedContainer;
+import net.modfest.fireblanket.world.blocks.FlatBlockstateArray;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -20,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
@@ -43,9 +45,9 @@ public abstract class MixinChunkSection {
 
 	// 20 bits per block, so 3 blocks per long. ceil(4096/3) --> 1366
 	private final long[] fireblanket$denseBlockStorage = new long[1366];
+	private final BitSet fireblanket$dirty = new BitSet(4096);
 
 	private final AtomicLong fireblanket$stamp = new AtomicLong();
-	private boolean fireblanket$dirty = false;
 
 	@Redirect(method = "<init>(Lnet/minecraft/world/chunk/PalettedContainer;Lnet/minecraft/world/chunk/ReadableContainer;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;calculateCounts()V"))
 	private void fireblanket$setupState(ChunkSection instance) {
@@ -63,7 +65,7 @@ public abstract class MixinChunkSection {
 			}
 		}
 
-		fireblanket$dirty = false;
+		fireblanket$dirty.clear();
 	}
 
 	/**
@@ -86,7 +88,7 @@ public abstract class MixinChunkSection {
 		try {
 			// Get the old state that we already see
 			long oldBits = this.fireblanket$denseBlockStorage[arrIdx];
-			oldState = Block.STATE_IDS.get((int)(oldBits >>> shift) & MASK_BITS);
+			oldState = FlatBlockstateArray.FROM_ID[((int)(oldBits >>> shift) & MASK_BITS)];
 
 			// Make data for the new state
 			long newId = Block.STATE_IDS.getRawId(state);
@@ -98,7 +100,7 @@ public abstract class MixinChunkSection {
 
 			// Commit to memory, mark dirty
 			this.fireblanket$denseBlockStorage[arrIdx] = newBits;
-			fireblanket$dirty = true;
+			fireblanket$dirty.set(rawIdx);
 		} finally {
 			// Nightmare scenario. The stamp is not the same as the one we obtained at the start, so
 			// we were probably written to concurrently. This is bad, we need to stop immediately.
@@ -164,7 +166,7 @@ public abstract class MixinChunkSection {
 
 		long rawVal = (this.fireblanket$denseBlockStorage[arrIdx] >>> (20L * shlIdx)) & MASK_BITS;
 
-		return Block.STATE_IDS.get((int) rawVal);
+		return FlatBlockstateArray.FROM_ID[((int) rawVal)];
 	}
 
 	private static int arrayIndex(int x, int y, int z) {
@@ -190,17 +192,19 @@ public abstract class MixinChunkSection {
 	 */
 	@Overwrite
 	public PalettedContainer<BlockState> getBlockStateContainer() {
-		if (fireblanket$dirty) {
-			for (int y = 0; y < 16; y++) {
-				for (int x = 0; x < 16; x++) {
-					for (int z = 0; z < 16; z++) {
-						this.blockStateContainer.swapUnsafe(x, y, z, getBlockState(x, y, z));
-					}
+		if (fireblanket$dirty.cardinality() > 0) {
+			for (int i = 0; i < 4096; i++) {
+				if (fireblanket$dirty.get(i)) {
+					int y = (i >> 8) & 15;
+					int x = (i >> 4) & 15;
+					int z = (i >> 0) & 15;
+
+					this.blockStateContainer.swapUnsafe(x, y, z, getBlockState(x, y, z));
 				}
 			}
 		}
 
-		fireblanket$dirty = false;
+		fireblanket$dirty.clear();
 
 		return this.blockStateContainer;
 	}
