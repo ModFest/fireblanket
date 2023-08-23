@@ -13,6 +13,6 @@ public class MixinCarriage {
      */
     @Overwrite
     public boolean isOnIncompatibleTrack() {
-        return true;
+        return false;
     }
 }
