@@ -11,7 +11,7 @@ public class MixinCarriage {
      * @author IThundxr
      * @reason This is not needed for the con since this is mostly a survival feature.
      */
-    @Overwrite
+    @Overwrite(remap = false)
     public boolean isOnIncompatibleTrack() {
         return false;
     }
