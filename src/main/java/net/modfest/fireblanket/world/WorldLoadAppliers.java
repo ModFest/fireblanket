@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.world;
 
+import net.modfest.fireblanket.world.blocks.FlatBlockstateArray;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.world.entity.EntityFilters;
 
@@ -13,5 +14,6 @@ public class WorldLoadAppliers {
 		ran = true;
 
 		EntityFilters.apply();
+		FlatBlockstateArray.apply();
 	}
 }
