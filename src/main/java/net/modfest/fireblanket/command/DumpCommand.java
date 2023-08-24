@@ -49,6 +49,14 @@ public class DumpCommand {
 										type = "???";
 									}
 
+									if (cbe.isPowered()) {
+										type += "*";
+									}
+
+									if (cbe.isAuto()) {
+										type += "!";
+									}
+
 									String ft = type;
 									server.getSource().sendFeedback(() -> Text.literal("[" + e.getKey().toShortString() + "] [" + ft + "] : " + cbe.getCommandExecutor().getCommand()), false);
 								}
