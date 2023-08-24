@@ -24,7 +24,7 @@ public class MixinEntityRenderer {
 
             Box box = entity.getBoundingBox().offset(-entity.getX(), -entity.getY(), -entity.getZ());
 
-            QuadEmitter.buildBox(buffer, matrices, (float) box.minX, (float) box.maxX, (float) box.minY, (float) box.maxY, (float) box.minZ, (float) box.maxZ, 30, 200, 220, 40);
+            QuadEmitter.buildBox(buffer, matrices, (float) box.minX, (float) box.maxX, (float) box.minY, (float) box.maxY, (float) box.minZ, (float) box.maxZ, 255, 101, 80, 40);
 
             // Please let this be a normal field trip
             if (vertexConsumers instanceof VertexConsumerProvider.Immediate imm) {
