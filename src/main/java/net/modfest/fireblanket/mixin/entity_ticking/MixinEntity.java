@@ -13,6 +13,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkSection;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -67,7 +68,14 @@ public abstract class MixinEntity {
 			// This probably breaks stuff. Unfortunately, it also eats performance, so out it goes.
 
 			Chunk chunk = this.getWorld().getChunk(pos);
-			if (!chunk.getSection(chunk.getSectionIndex(pos.getY())).hasRandomFluidTicks()) {
+			int sec = chunk.getSectionIndex(pos.getY());
+
+			ChunkSection[] sections = chunk.getSectionArray();
+			if (sec <= 0 || sec >= sections.length) {
+				return false;
+			}
+
+			if (!sections[sec].hasRandomFluidTicks()) {
 				return false;
 			}
 
