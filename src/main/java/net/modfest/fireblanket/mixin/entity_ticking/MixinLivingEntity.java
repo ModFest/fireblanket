@@ -29,9 +29,7 @@ public abstract class MixinLivingEntity extends Entity implements ImmmovableLivi
 
 	@Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
 	private void fireblanket$readFromNbt(NbtCompound nbt, CallbackInfo ci) {
-		if (nbt.getBoolean("NoMovement")) {
-			fireblanket$movementless = true;
-		}
+		fireblanket$movementless = nbt.getBoolean("NoMovement");
 	}
 
 	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;isRemoved()Z", ordinal = 0))

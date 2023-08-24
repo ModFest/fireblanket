@@ -159,12 +159,12 @@ public abstract class MixinChunkSection {
 	@Overwrite
 	public BlockState getBlockState(int x, int y, int z) {
 		int rawIdx = arrayIndex(x, y, z);
-		// Since this is a constant divmod, it *should* be ok, and C2 shouldn't emit any divisions
-		// TODO: check generated assembly and use manual magic fake division if needed
-		int arrIdx = rawIdx / 3;
-		int shlIdx = rawIdx % 3;
 
-		long rawVal = (this.fireblanket$denseBlockStorage[arrIdx] >>> (20L * shlIdx)) & MASK_BITS;
+		// Optimized divmod routine
+		int divRes = (rawIdx * 0xAAAB) >>> 17;             // rawIdx / 3;
+		int modRes = -((divRes + (divRes << 1)) - rawIdx);  // rawIdx % 3;
+
+		long rawVal = (this.fireblanket$denseBlockStorage[divRes] >>> (20L * modRes)) & MASK_BITS;
 
 		return FlatBlockstateArray.FROM_ID[((int) rawVal)];
 	}

@@ -14,6 +14,7 @@
 	"entity_ticking.MixinDebugStickItem",
 	"entity_ticking.MixinLivingEntity",
 	"entity_ticking.MixinItemGroups",
+	"entity_ticking.MixinEntity",
 	"entity_ticking.MixinMinecraftServer",
 	"entity_ticking.MixinThreadedAnvilChunkStorage",
 	"entity_ticking.create.MixinSuperGlueEntity",
