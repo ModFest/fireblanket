@@ -21,7 +21,7 @@ public abstract class MixinCorePhysicsEntity extends PathAwareEntity {
 	@Redirect(method = "method_5773", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/mob/PathAwareEntity;tick()V"))
 	private void fireblanket$noClientTick(PathAwareEntity instance) {
 		if (this.getWorld().isClient) {
-			EntityTick.minimalTick(instance);
+			EntityTick.minimalLivingTick(instance);
 		} else {
 			super.tick();
 		}

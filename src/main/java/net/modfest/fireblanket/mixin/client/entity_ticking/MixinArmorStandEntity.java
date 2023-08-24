@@ -8,7 +8,6 @@ import net.modfest.fireblanket.EntityTick;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ArmorStandEntity.class)
@@ -20,7 +19,7 @@ public abstract class MixinArmorStandEntity extends LivingEntity {
 	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;tick()V"))
 	private void fireblanket$noClientTick(LivingEntity instance) {
 		if (this.getWorld().isClient) {
-			EntityTick.minimalTick(instance);
+			EntityTick.minimalLivingTick(instance);
 		} else {
 			super.tick();
 		}
