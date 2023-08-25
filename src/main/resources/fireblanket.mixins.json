@@ -42,7 +42,8 @@
 	"zstd.MixinRegionFile",
 	"zstd.MixinPersistentStateManager",
 	"zstd.MixinPersistentState",
-	"zstd.MixinLevelStorageSession"
+	"zstd.MixinLevelStorageSession",
+	"adventure_fix.MixinFlowerPotBlock"
   ],
   "injectors": {
 	"defaultRequire": 1
@@ -62,7 +63,6 @@
 	"ClientLoginNetworkHandlerAccessor",
 	"client.entity_ticking.MixinArmorStandEntity",
     "client.entity_ticking.MixinLivingEntity",
-    "client.entity_ticking.portal_cubed.MixinCorePhysicsEntity",
 	"client.render_regions.MixinBlockEntityRenderDispatcher",
 	"client.render_regions.MixinEntityRenderDispatcher",
 	"client.render_regions.MixinRegionSubjects",
