@@ -27,6 +27,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.RegionCommand;
+import net.modfest.fireblanket.command.SpawnCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.mixin.ClientConnectionAccessor;
 import net.modfest.fireblanket.mixin.ServerChunkManagerAccessor;
@@ -79,6 +80,10 @@ public class Fireblanket implements ModInitializer {
 			CmdFindReplaceCommand.init(base, access);
 			dispatcher.register(CommandManager.literal("fb")
 					.redirect(dispatcher.register(base)));
+
+			LiteralArgumentBuilder<ServerCommandSource> spawn = CommandManager.literal("spawn");
+			SpawnCommand.init(spawn, access);
+			dispatcher.register(spawn);
 		});
 
 		for (Block block : Registries.BLOCK) {
