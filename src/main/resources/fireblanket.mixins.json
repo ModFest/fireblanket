@@ -37,6 +37,7 @@
 	"ServerLoginNetworkHandlerAccessor",
 	"ServerChunkManagerAccessor",
 	"MixinNbtCompound",
+	"MixinEggItem",
 	"ai.MixinTemptGoal",
 	"ai.terracotta_knights.MixinItemPickupGoal",
 	"zstd.MixinChunkStreamVersion",
