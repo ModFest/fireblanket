@@ -3,24 +3,19 @@
 	"id": "fireblanket",
 	"version": "${version}",
 	"name": "Fireblanket",
-	"description": "Performance and bugfixing utilities for Modfest events.",
+	"description": "Performance and bugfixing utilities for ModFest events.",
 	"authors": [
-		"Jasmine"
+		"Jasmine",
+		"unascribed"
 	],
-	"license": "MIT",
+	"license": "AGPL-3.0-or-later",
 	"icon": "assets/fireblanket/icon.png",
 	"environment": "*",
 	"entrypoints": {
-		"main": [
-			"net.modfest.fireblanket.Fireblanket"
-		],
-		"client": [
-			"net.modfest.fireblanket.FireblanketClient"
-		]
+		"main": [ "net.modfest.fireblanket.Fireblanket" ],
+		"client": [ "net.modfest.fireblanket.FireblanketClient" ]
 	},
-	"mixins": [
-		"fireblanket.mixins.json"
-	],
+	"mixins": [ "fireblanket.mixins.json" ],
 	"accessWidener": "fireblanket.aw",
 	"depends": {
 		"minecraft": "~1.20.1",
