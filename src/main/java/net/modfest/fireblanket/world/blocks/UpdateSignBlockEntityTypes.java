@@ -4,7 +4,7 @@ import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.registry.Registries;
 import net.modfest.fireblanket.Fireblanket;
-import net.modfest.fireblanket.mixin.BlockEntityTypeAccessor;
+import net.modfest.fireblanket.mixin.accessor.BlockEntityTypeAccessor;
 
 import java.util.HashSet;
 

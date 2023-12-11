@@ -3,7 +3,6 @@ package net.modfest.fireblanket.compat;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.mixin.ChunkPacketStaticHack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.modfest.fireblanket.PolyMcAccess;
 
 public class PolyMcCompat {
 

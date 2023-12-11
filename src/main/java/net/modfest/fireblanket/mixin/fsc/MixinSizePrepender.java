@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixin.fsc;
 
+import net.minecraft.network.handler.SizePrepender;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
-import net.minecraft.network.SizePrepender;
 
 @Mixin(SizePrepender.class)
 public class MixinSizePrepender {

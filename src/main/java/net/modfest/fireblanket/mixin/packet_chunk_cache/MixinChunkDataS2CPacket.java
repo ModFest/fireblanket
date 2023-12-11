@@ -16,7 +16,7 @@ import net.minecraft.network.packet.s2c.play.LightData;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.chunk.light.LightingProvider;
-import net.modfest.fireblanket.PolyMcAccess;
+import net.modfest.fireblanket.compat.PolyMcAccess;
 import net.modfest.fireblanket.mixinsupport.CacheableChunk;
 import net.modfest.fireblanket.mixinsupport.CacheableChunk.CachedChunkPacketData;
 

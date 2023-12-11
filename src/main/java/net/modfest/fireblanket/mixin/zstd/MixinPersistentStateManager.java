@@ -25,9 +25,13 @@ import net.minecraft.nbt.NbtHelper;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateManager;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PersistentStateManager.class)
-public class MixinPersistentStateManager {
+public abstract class MixinPersistentStateManager {
 
 	@Shadow @Final
 	private static Logger LOGGER;
@@ -41,7 +45,9 @@ public class MixinPersistentStateManager {
 
 	@Shadow
 	private File getFile(String id) { throw new AbstractMethodError(); }
-	
+
+	@Shadow public abstract NbtCompound readNbt(String id, DataFixTypes dataFixTypes, int currentSaveVersion) throws IOException;
+
 	private File getZstdFile(String id) {
 		return new File(directory, id+".zat");
 	}
@@ -51,9 +57,9 @@ public class MixinPersistentStateManager {
 	 * @reason Don't check file before calling readNbt
 	 */
 	@Overwrite
-	private <T extends PersistentState> T readFromFile(Function<NbtCompound, T> reader, String id) {
+	private <T extends PersistentState> T readFromFile(Function<NbtCompound, T> reader,  DataFixTypes dataFixTypes, String id) {
 		try {
-			NbtCompound cmp = readNbt(id, SharedConstants.getGameVersion().getSaveVersion().getId());
+			NbtCompound cmp = readNbt(id, dataFixTypes, SharedConstants.getGameVersion().getSaveVersion().getId());
 			if (cmp == null) return null;
 			return reader.apply(cmp.getCompound("data"));
 		} catch (Exception e) {
@@ -67,8 +73,9 @@ public class MixinPersistentStateManager {
 	 * @author Una
 	 * @reason Zstd support, code cleanup
 	 */
-	@Overwrite
-	public NbtCompound readNbt(String id, int dataVersion) throws IOException {
+	@Inject(method = "readNbt", at = @At("HEAD"), cancellable = true)
+	public void fireblanket$readNbt(String id, DataFixTypes dataFixTypes, int dataVersion, CallbackInfoReturnable<NbtCompound> cir) throws IOException {
+		// TODO: this uses an unconditional head cancel because Fabric API wants to mix into the same spot, and has LVT errors when encountering our method.
 		InputStream in;
 		File zstd = getZstdFile(id);
 		if (zstd.exists()) {
@@ -78,16 +85,16 @@ public class MixinPersistentStateManager {
 			if (vanilla.exists()) {
 				in = new FastBufferedInputStream(new GZIPInputStream(new FileInputStream(vanilla)));
 			} else {
-				return null;
+				cir.setReturnValue(null);
+				return;
 			}
 		}
 		
 		try (in) {
 			DataInputStream dis = new DataInputStream(in);
-			NbtCompound nbt = NbtIo.read(dis);
+			NbtCompound nbt = NbtIo.readCompound(dis);
 			int version = NbtHelper.getDataVersion(nbt, 1343);
-			nbt = DataFixTypes.SAVED_DATA.update(dataFixer, nbt, version, dataVersion);
-			return nbt;
+			cir.setReturnValue(dataFixTypes == null ? nbt : dataFixTypes.update(dataFixer, nbt, version, dataVersion));
 		}
 	}
 	

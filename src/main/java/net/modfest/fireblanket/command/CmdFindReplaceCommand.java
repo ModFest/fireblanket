@@ -2,7 +2,6 @@ package net.modfest.fireblanket.command;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ChunkHolder;
@@ -63,7 +62,7 @@ public class CmdFindReplaceCommand {
 							}
 						}
 						if (matches == 0) {
-							throw new CommandException(Text.literal("No command blocks matched the regex"));
+							throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("No command blocks matched the regex"));
 						} else {
 							final int fmatches = matches;
 							final int fblocks = blocks;

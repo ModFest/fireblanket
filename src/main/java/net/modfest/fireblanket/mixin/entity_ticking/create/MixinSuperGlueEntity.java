@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.world.World;
-import net.modfest.fireblanket.EntityTick;
+import net.modfest.fireblanket.world.entity.EntityTick;
 
 @Pseudo
 @Mixin(targets="com.simibubi.create.content.contraptions.glue.SuperGlueEntity")

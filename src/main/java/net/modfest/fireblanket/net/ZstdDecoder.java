@@ -8,7 +8,7 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import net.modfest.fireblanket.EndlessByteBufInputStream;
+import net.modfest.fireblanket.util.EndlessByteBufInputStream;
 
 public class ZstdDecoder extends MessageToMessageDecoder<ByteBuf> {
 

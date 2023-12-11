@@ -45,14 +45,15 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modCompileOnly "maven.modrinth:sodium:mc1.20-0.4.10"
-	
+//	modCompileOnly "maven.modrinth:sodium:mc1.20.3-0.5.5"
+	modImplementation "maven.modrinth:sodium:mc1.20.3-0.5.5"
+
 	modImplementation "io.netty.incubator:netty-incubator-transport-classes-io_uring:0.0.15.Final"
 	modImplementation "io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.15.Final:linux-x86_64"
 	modImplementation "com.github.luben:zstd-jni:1.5.5-5"
 	
 	modImplementation "com.sk89q.worldedit:worldedit-core:7.2.15"
-	modImplementation "com.sk89q.worldedit:worldedit-fabric-mc1.20:7.2.15"
+	modImplementation "com.sk89q.worldedit:worldedit-fabric-mc1.20.4:7.2.18-SNAPSHOT"
 	
 	shade("io.netty.incubator:netty-incubator-transport-classes-io_uring:0.0.15.Final") { transitive = false }
 	shade("io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.15.Final:linux-x86_64") { transitive = false }

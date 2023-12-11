@@ -28,20 +28,19 @@ import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.RegionCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
-import net.modfest.fireblanket.mixin.ClientConnectionAccessor;
-import net.modfest.fireblanket.mixin.ServerChunkManagerAccessor;
+import net.modfest.fireblanket.mixin.accessor.ClientConnectionAccessor;
+import net.modfest.fireblanket.mixin.accessor.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
-import net.modfest.fireblanket.mixin.ServerLoginNetworkHandlerAccessor;
+import net.modfest.fireblanket.mixin.accessor.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
-import net.modfest.fireblanket.render_regions.RegionSyncRequest;
-import net.modfest.fireblanket.render_regions.RenderRegions;
-import net.modfest.fireblanket.render_regions.RenderRegionsState;
+import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
+import net.modfest.fireblanket.world.render_regions.RenderRegions;
+import net.modfest.fireblanket.world.render_regions.RenderRegionsState;
 import net.modfest.fireblanket.world.entity.EntityFilters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.luben.zstd.util.Native;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
 import com.google.common.base.Stopwatch;
@@ -105,7 +104,7 @@ public class Fireblanket implements ModInitializer {
 				while (true) {
 					try {
 						QueuedPacket p = q.take();
-						((ClientConnectionAccessor)p.conn()).fireblanket$sendImmediately(p.packet(), p.listener());
+						((ClientConnectionAccessor)p.conn()).fireblanket$sendImmediately(p.packet(), p.listener(), true);
 					} catch (Throwable t) {
 						LOGGER.error("Exception in packet thread", t);
 					}
@@ -116,8 +115,9 @@ public class Fireblanket implements ModInitializer {
 		}
 		
 		try {
-			Native.load();
-			CAN_USE_ZSTD = true;
+			// TODO: ZSTD compression does not work with 1.20.2+ packet handling
+//			Native.load();
+//			CAN_USE_ZSTD = true;
 		} catch (UnsatisfiedLinkError e) {
 			CAN_USE_ZSTD = false;
 			LOGGER.warn("Could not load zstd, full-stream compression unavailable", e);

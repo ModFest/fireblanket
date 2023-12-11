@@ -12,7 +12,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Bootstrap;
 
 public class FireblanketMixin implements IMixinConfigPlugin {
-
+	public static final boolean GAMEPLAY_CHANGES = Boolean.getBoolean("fireblanket.gameplayChanges");
 	public static final boolean DO_MASKING = Boolean.getBoolean("fireblanket.masking");
 	private static final boolean DO_CHUNK_CACHE = System.getProperty("fireblanket.loadRadius") != null;
 	public static final boolean ALLOW_LAMBDAMAP_SAVING = Boolean.getBoolean("fireblanket.allowLambdaMapSaving");
@@ -106,6 +106,10 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 
 		if (mixinClassName.contains("block_format")) {
 			return DO_CHUNKSECTION_OPTO;
+		}
+
+		if (mixinClassName.contains("ai") || mixinClassName.contains("sounds")) {
+			return GAMEPLAY_CHANGES;
 		}
 		
 		if (mixinClassName.contains("SplitterHandler") && FabricLoader.getInstance().isModLoaded("krypton")) {

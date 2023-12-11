@@ -4,7 +4,7 @@ import org.spongepowered.asm.mixin.Mixin;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
-import net.modfest.fireblanket.render_regions.RegionSubject;
+import net.modfest.fireblanket.world.render_regions.RegionSubject;
 
 @Mixin({Entity.class, BlockEntity.class})
 public class MixinRegionSubjects implements RegionSubject {

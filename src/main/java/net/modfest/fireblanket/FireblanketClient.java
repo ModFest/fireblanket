@@ -19,10 +19,10 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.Vec3d;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.EntityMaskCommand;
-import net.modfest.fireblanket.mixin.ClientLoginNetworkHandlerAccessor;
+import net.modfest.fireblanket.mixin.accessor.ClientLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
-import net.modfest.fireblanket.render_regions.RegionSyncRequest;
-import net.modfest.fireblanket.render_regions.RenderRegions;
+import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
+import net.modfest.fireblanket.world.render_regions.RenderRegions;
 
 public class FireblanketClient implements ClientModInitializer {
 	

@@ -5,6 +5,8 @@ import java.io.UncheckedIOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import net.minecraft.network.listener.PacketListener;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,21 +25,25 @@ import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.modfest.fireblanket.Fireblanket;
-import net.modfest.fireblanket.ReassignableOutputStream;
+import net.modfest.fireblanket.util.ReassignableOutputStream;
 import net.modfest.fireblanket.Fireblanket.QueuedPacket;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.ZstdDecoder;
 import net.modfest.fireblanket.net.ZstdEncoder;
 
 @Mixin(ClientConnection.class)
-public class MixinClientConnection implements FSCConnection {
+public abstract class MixinClientConnection implements FSCConnection {
 
 	@Shadow
 	private Channel channel;
 	
 	@Shadow
-	private void sendImmediately(Packet<?> packet, PacketCallbacks callbacks) { throw new AbstractMethodError(); }
-	
+	private void sendImmediately(Packet<?> packet, PacketCallbacks callbacks, boolean flush) { throw new AbstractMethodError(); }
+
+	@Shadow private volatile @Nullable PacketListener packetListener;
+
+	@Shadow public abstract void flush();
+
 	private final LinkedBlockingQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
 	private boolean fireblanket$fsc = false;
 	private boolean fireblanket$fscStarted = false;
@@ -49,16 +55,16 @@ public class MixinClientConnection implements FSCConnection {
 	 * The client already does networking roughly like this, so the protocol stack is already
 	 * designed to expect this behavior.
 	 */
-	@Redirect(at=@At(value="INVOKE", target="net/minecraft/network/ClientConnection.sendImmediately(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V"),
-			method="send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V")
-	public void fireblanket$asyncPacketSending(ClientConnection subject, Packet<?> pkt, PacketCallbacks listener) {
+	@Redirect(at=@At(value="INVOKE", target="net/minecraft/network/ClientConnection.sendImmediately(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;Z)V"),
+			method="send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;Z)V")
+	public void fireblanket$asyncPacketSending(ClientConnection subject, Packet<?> pkt, PacketCallbacks listener, boolean flush) {
 		if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
 			fireblanket$enableFSCNow();
 		}
-		if (channel.attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get() == NetworkState.PLAY) {
+		if (this.packetListener != null && this.packetListener.getState() == NetworkState.PLAY) {
 			fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
 		} else {
-			sendImmediately(pkt, listener);
+			sendImmediately(pkt, listener, flush);
 		}
 	}
 	
@@ -69,9 +75,9 @@ public class MixinClientConnection implements FSCConnection {
 		}
 	}
 	
-	@Inject(at=@At("HEAD"), method="setState")
-	public void fireblanket$handleFSC(NetworkState state, CallbackInfo ci) {
-		if (state == NetworkState.PLAY && fireblanket$fsc && !fireblanket$fscStarted) {
+	@Inject(at=@At("HEAD"), method="setPacketListener")
+	public void fireblanket$handleFSC(PacketListener listener, CallbackInfo ci) {
+		if (listener.getState() == NetworkState.PLAY && fireblanket$fsc && !fireblanket$fscStarted) {
 			fireblanket$enableFSCNow();
 		}
 	}

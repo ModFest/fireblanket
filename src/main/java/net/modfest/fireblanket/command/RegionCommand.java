@@ -14,6 +14,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
@@ -24,7 +25,6 @@ import it.unimi.dsi.fastutil.longs.LongIterators;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.pattern.CachedBlockPosition;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.BlockPredicateArgumentType;
@@ -42,23 +42,25 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.compat.WorldEditCompat;
-import net.modfest.fireblanket.render_regions.RegionSyncRequest;
-import net.modfest.fireblanket.render_regions.RenderRegion;
-import net.modfest.fireblanket.render_regions.RenderRegions;
-import net.modfest.fireblanket.render_regions.RenderRegionsState;
+import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
+import net.modfest.fireblanket.world.render_regions.RenderRegion;
+import net.modfest.fireblanket.world.render_regions.RenderRegion.Mode;
+import net.modfest.fireblanket.world.render_regions.RenderRegions;
+import net.modfest.fireblanket.world.render_regions.RenderRegionsState;
 
 public class RegionCommand {
+	private static final DynamicCommandExceptionType GENERIC_EXCEPTION = new DynamicCommandExceptionType(message -> (Text)message);
 
 	private static final Predicate<ServerCommandSource> WORLDEDIT = ctx -> FabricLoader.getInstance().isModLoaded("worldedit");
-	
+
 	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
 		base.then(literal("region")
 			.requires(ctx -> ctx.hasPermissionLevel(4))
 			.then(literal("add")
 				.then(argument("name", StringArgumentType.string())
-					.then(addBranch("deny", RenderRegion.Mode.DENY))
-					.then(addBranch("exclusive", RenderRegion.Mode.EXCLUSIVE))
-					.then(addBranch("allow", RenderRegion.Mode.ALLOW))
+					.then(addBranch("deny", Mode.DENY))
+					.then(addBranch("exclusive", Mode.EXCLUSIVE))
+					.then(addBranch("allow", Mode.ALLOW))
 				)
 			)
 			.then(literal("redefine")
@@ -117,7 +119,7 @@ public class RegionCommand {
 				.then(literal("everything")
 					.executes(ctx -> {
 						if (!FabricLoader.getInstance().isDevelopmentEnvironment()) {
-							throw new CommandException(Text.literal("Cowardly refusing to destroy everything outside of a dev env"));
+							throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("Cowardly refusing to destroy everything outside of a dev env"));
 						}
 						RenderRegions regions = getRegions(ctx);
 						int count = regions.getRegionsByName().size();
@@ -214,7 +216,7 @@ public class RegionCommand {
 							}
 						}
 						if (ea.isEmpty() && ba.isEmpty() && eta.isEmpty() && beta.isEmpty()) {
-							if (r.mode() == RenderRegion.Mode.DENY) {
+							if (r.mode() == Mode.DENY) {
 								ctx.getSource().sendMessage(Text.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow/exclusive region"));
 							} else {
 								ctx.getSource().sendMessage(Text.literal("No attachments, won't do anything"));
@@ -299,7 +301,7 @@ public class RegionCommand {
 										RenderRegion r1 = getRegion(ctx);
 										RenderRegion r2 = getRegion(ctx, "src-name");
 										if (r1 == r2 && attach)
-											throw new CommandException(Text.literal("All of the objects in "+name+" are already attached to "+name+"… wait…"));
+											throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("All of the objects in "+name+" are already attached to "+name+"… wait…"));
 										applyEntitiesByIdToRegion(ctx, r -> rr.getEntityAttachments(r2), attach);
 										applyBlocksToRegion(ctx, (Iterable<BlockPos>)() -> {
 											BlockPos.Mutable mut = new BlockPos.Mutable();
@@ -326,7 +328,7 @@ public class RegionCommand {
 						)
 						.executes(ctx -> {
 							if (attach) {
-								throw new CommandException(Text.literal("Cowardly refusing to attach every single block and entity to this region"));
+								throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("Cowardly refusing to attach every single block and entity to this region"));
 							}
 							RenderRegion r = getRegion(ctx);
 							RenderRegions regions = getRegions(ctx);
@@ -483,11 +485,11 @@ public class RegionCommand {
 		Iterable<UUID> supply(RenderRegion region) throws CommandSyntaxException;
 	}
 
-	private static int applyBlocksToRegion(CommandContext<ServerCommandSource> ctx, BlockBox region, Predicate<CachedBlockPosition> pred, boolean attach) {
+	private static int applyBlocksToRegion(CommandContext<ServerCommandSource> ctx, BlockBox region, Predicate<CachedBlockPosition> pred, boolean attach) throws CommandSyntaxException {
 		return applyBlocksToRegion(ctx, iterate(region), pred, attach);
 	}
-	
-	private static int applyBlocksToRegion(CommandContext<ServerCommandSource> ctx, Iterable<BlockPos> region, Predicate<CachedBlockPosition> pred, boolean attach) {
+
+	private static int applyBlocksToRegion(CommandContext<ServerCommandSource> ctx, Iterable<BlockPos> region, Predicate<CachedBlockPosition> pred, boolean attach) throws CommandSyntaxException {
 		RenderRegion r = getRegion(ctx);
 		RenderRegions regions = getRegions(ctx);
 		int count = 0;
@@ -504,13 +506,13 @@ public class RegionCommand {
 		final int fcount = count;
 		if (attach) {
 			if (count == 0) {
-				throw new CommandException(Text.literal("None of the blocks matched the filter"));
+				throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("None of the blocks matched the filter"));
 			} else {
 				ctx.getSource().sendFeedback(() -> Text.literal("Attached "+fcount+" block"+(fcount == 1 ? "" : "s")+" to region "+StringArgumentType.getString(ctx, "name")), true);
 			}
 		} else {
 			if (count == 0) {
-				throw new CommandException(Text.literal("None of those blocks are attached to the region"));
+				throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("None of those blocks are attached to the region"));
 			} else {
 				ctx.getSource().sendFeedback(() -> Text.literal("Detached "+fcount+" block"+(fcount == 1 ? "" : "s")+" from region "+StringArgumentType.getString(ctx, "name")), true);
 			}
@@ -542,9 +544,9 @@ public class RegionCommand {
 		} else {
 			if (count == 0) {
 				if (anything) {
-					throw new CommandException(Text.literal("None of those entities are attached to the region"));
+					throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("None of those entities are attached to the region"));
 				} else {
-					throw new CommandException(Text.literal("No entities were specified"));
+					throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("No entities were specified"));
 				}
 			} else {
 				ctx.getSource().sendFeedback(() -> Text.literal("Detached "+fcount+" entit"+(fcount == 1 ? "y" : "ies")+" from region "+StringArgumentType.getString(ctx, "name")), true);
@@ -556,15 +558,15 @@ public class RegionCommand {
 	public static RenderRegions getRegions(CommandContext<ServerCommandSource> ctx) {
 		return RenderRegionsState.get(ctx.getSource().getWorld()).getRegions();
 	}
-	
-	private static RenderRegion getRegion(CommandContext<ServerCommandSource> ctx) {
+
+	private static RenderRegion getRegion(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
 		return getRegion(ctx, "name");
 	}
-	
-	private static RenderRegion getRegion(CommandContext<ServerCommandSource> ctx, String tgt) {
+
+	private static RenderRegion getRegion(CommandContext<ServerCommandSource> ctx, String tgt) throws CommandSyntaxException {
 		String name = StringArgumentType.getString(ctx, tgt);
 		RenderRegion r = getRegions(ctx).getByName(name);
-		if (r == null) throw new CommandException(Text.literal("No render region with name \""+name+"\" exists"));
+		if (r == null) throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("No render region with name \""+name+"\" exists"));
 		return r;
 	}
 
@@ -577,11 +579,11 @@ public class RegionCommand {
 		return builder.buildFuture();
 	}
 
-	public static int addRegion(CommandContext<ServerCommandSource> ctx, RenderRegion rr) {
+	public static int addRegion(CommandContext<ServerCommandSource> ctx, RenderRegion rr) throws CommandSyntaxException {
 		String name = StringArgumentType.getString(ctx, "name");
 		RenderRegions regions = RegionCommand.getRegions(ctx);
 		if (regions.getByName(name) != null) {
-			throw new CommandException(Text.literal("A region with that name already exists"));
+			throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("A region with that name already exists"));
 		}
 		regions.add(name, rr);
 		ctx.getSource().sendFeedback(() -> Text.literal("Created new "+rr.mode().name().toLowerCase(Locale.ROOT)+" region "+name), true);

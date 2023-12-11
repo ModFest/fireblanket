@@ -5,7 +5,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.modfest.fireblanket.Fireblanket;
-import net.modfest.fireblanket.mixin.EntityTypeAccessor;
+import net.modfest.fireblanket.mixin.accessor.EntityTypeAccessor;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;

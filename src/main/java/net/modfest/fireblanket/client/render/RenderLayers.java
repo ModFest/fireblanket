@@ -24,8 +24,6 @@ public abstract class RenderLayers extends RenderLayer {
 				.depthTest(new NoDepthTest())
 				.cull(RenderPhase.DISABLE_CULLING)
 				.build(true);
-
-
 	}
 
 	private static final class NoDepthTest extends DepthTest {

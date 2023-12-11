@@ -54,7 +54,7 @@ public class ZestyWorldSaveHandler extends WorldSaveHandler {
 				}
 			}
 			try (in) {
-				NbtCompound nbt = NbtIo.read(new DataInputStream(in));
+				NbtCompound nbt = NbtIo.readCompound(new DataInputStream(in));
 				int ver = NbtHelper.getDataVersion(nbt, -1);
 				player.readNbt(DataFixTypes.PLAYER.update(dataFixer, nbt, ver));
 				return nbt;
@@ -77,7 +77,7 @@ public class ZestyWorldSaveHandler extends WorldSaveHandler {
 			}
 			File tgt = new File(playerDataDir, player.getUuidAsString()+".zat");
 			File backup = new File(playerDataDir, player.getUuidAsString()+".zat_old");
-			Util.backupAndReplace(tgt, tmp, backup);
+			Util.backupAndReplace(tgt.toPath(), tmp.toPath(), backup.toPath());
 			File oldTgt = new File(playerDataDir, player.getUuidAsString()+".dat");
 			File oldBackup = new File(playerDataDir, player.getUuidAsString()+".dat_old");
 			oldTgt.delete();
