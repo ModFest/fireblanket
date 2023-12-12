@@ -55,7 +55,8 @@ public class Fireblanket implements ModInitializer {
 	public static final Identifier BATCHED_BE_UPDATE = new Identifier("fireblanket", "batched_be_sync");
 	public static final Identifier FULL_STREAM_COMPRESSION = new Identifier("fireblanket", "full_stream_compression");
 	public static final Identifier REGIONS_UPDATE = new Identifier("fireblanket", "regions_update");
-	
+	public static final Identifier PLACE_COMMAND_BLOCK = new Identifier("fireblanket", "place_command_block");
+
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 	
 	public record QueuedPacket(ClientConnection conn, Packet<?> packet, PacketCallbacks listener) {}

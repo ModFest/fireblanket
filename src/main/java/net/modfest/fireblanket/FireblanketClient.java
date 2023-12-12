@@ -19,6 +19,7 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.Vec3d;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.EntityMaskCommand;
+import net.modfest.fireblanket.client.screen.PlaceCommandBlockScreen;
 import net.modfest.fireblanket.mixin.accessor.ClientLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
@@ -67,6 +68,10 @@ public class FireblanketClient implements ClientModInitializer {
 					command.apply(renderRegions);
 				});
 			}
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(Fireblanket.PLACE_COMMAND_BLOCK, (client, handler, buf, sender) -> {
+			client.execute(() -> MinecraftClient.getInstance().setScreen(new PlaceCommandBlockScreen()));
 		});
 		
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
