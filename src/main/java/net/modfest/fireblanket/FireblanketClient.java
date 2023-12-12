@@ -20,6 +20,7 @@ import net.minecraft.util.math.Vec3d;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.ClientRegionCommand;
 import net.modfest.fireblanket.client.command.EntityMaskCommand;
+import net.modfest.fireblanket.client.command.WireframeCommand;
 import net.modfest.fireblanket.client.screen.PlaceCommandBlockScreen;
 import net.modfest.fireblanket.mixin.accessor.ClientLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
@@ -39,6 +40,7 @@ public class FireblanketClient implements ClientModInitializer {
 				BERMaskCommand.init(mask, access);
 				EntityMaskCommand.init(mask, access);
 				ClientRegionCommand.init(base, access);
+				WireframeCommand.init(base, access);
 				base.then(mask);
 			}
 			dispatcher.register(ClientCommandManager.literal("fbc")

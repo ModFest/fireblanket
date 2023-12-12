@@ -14,4 +14,6 @@ public final class ClientState {
 	public static final Set<BlockEntityType<?>> MASKED_BERS = new HashSet<>();
 	// entities that are set to render a mask around them for identification
 	public static final Set<EntityType<?>> MASKED_ENTITIES = new HashSet<>();
+
+	public static boolean wireframe = false;
 }
