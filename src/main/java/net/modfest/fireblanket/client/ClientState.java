@@ -16,4 +16,5 @@ public final class ClientState {
 	public static final Set<EntityType<?>> MASKED_ENTITIES = new HashSet<>();
 
 	public static boolean wireframe = false;
+	public static boolean displayTickTimes = false;
 }

@@ -69,6 +69,11 @@
 	"client.render_regions.MixinEntityRenderDispatcher",
 	"client.render_regions.MixinRegionSubjects",
 	"client.lambdamap.MixinMapRegionFile",
-	"client.hooks.MixinWorldRenderer"
+	"client.hooks.MixinWorldRenderer",
+	"client.timing.MixinObservables",
+	"client.timing.MixinClientWorld",
+	"client.timing.MixinWorld",
+	"client.timing.MixinBlockEntityRenderDispatcher",
+	"client.timing.MixinEntityRenderer"
   ]
 }
