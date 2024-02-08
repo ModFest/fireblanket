@@ -1,0 +1,4 @@
+{
+    "argument.entity.selector.limit.unforced": "Targeting too many entities with no distance filter; add `force=true` to the selector to bypass",
+    "argument.entity.options.force.description": "Force-allow more than 50 entities targeted with no distance filter"
+}

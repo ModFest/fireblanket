@@ -17,6 +17,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 	private static final boolean DO_CHUNK_CACHE = System.getProperty("fireblanket.loadRadius") != null;
 	public static final boolean ALLOW_LAMBDAMAP_SAVING = Boolean.getBoolean("fireblanket.allowLambdaMapSaving");
 	private static final boolean DO_CHUNKSECTION_OPTO = Boolean.getBoolean("fireblanket.flattenChunkPalettes");
+	public static final boolean ALLOW_FOOTGUNS = Boolean.getBoolean("fireblanket.allowFootguns");
 
 	@Override
 	public void onLoad(String mixinPackage) {
@@ -110,6 +111,10 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 
 		if (mixinClassName.contains("ai") || mixinClassName.contains("sounds")) {
 			return GAMEPLAY_CHANGES;
+		}
+
+		if (mixinClassName.contains("footgun")) {
+			return !ALLOW_FOOTGUNS;
 		}
 		
 		if (mixinClassName.contains("SplitterHandler") && FabricLoader.getInstance().isModLoaded("krypton")) {
