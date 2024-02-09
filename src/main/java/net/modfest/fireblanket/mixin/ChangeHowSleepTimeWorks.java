@@ -24,7 +24,7 @@ public abstract class ChangeHowSleepTimeWorks extends World {
     @ModifyArg(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;setTimeOfDay(J)V"))
     long changeSleep(long input) {
         if (this.isDay()) {
-            return input - 24000L;
+            return this.properties.getTimeOfDay();
         }
         return input;
     }
