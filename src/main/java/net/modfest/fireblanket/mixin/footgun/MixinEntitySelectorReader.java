@@ -41,15 +41,9 @@ public class MixinEntitySelectorReader implements ForceableArgument {
 	@Inject(method = "read", at = @At("RETURN"))
 	private void preventFootgun(CallbackInfoReturnable<EntitySelector> info) throws CommandSyntaxException {
 		if (this.includesNonPlayers
-				&& (this.limit > 50  || this.distance == NumberRange.DoubleRange.ANY)
+				&& (this.limit > 1 && (this.limit > 50  || this.distance == NumberRange.DoubleRange.ANY))
 				&& !forced) {
 			throw LIMIT_UNFORCED.create(this.limit);
 		}
-	}
-
-	@Inject(method = "readRegular", at = @At("HEAD"))
-	private void allowRegular(CallbackInfo info) {
-		//if it's regular it can only target a single entity, let it through
-		this.forced = true;
 	}
 }
