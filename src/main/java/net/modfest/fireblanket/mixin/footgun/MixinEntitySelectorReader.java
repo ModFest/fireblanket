@@ -25,6 +25,9 @@ public class MixinEntitySelectorReader implements ForceableArgument {
 	@Shadow private boolean includesNonPlayers;
 	@Shadow private int limit;
 	@Shadow private NumberRange.DoubleRange distance;
+	@Shadow private Double dx;
+	@Shadow private Double dy;
+	@Shadow private Double dz;
 	private boolean forced = false;
 
 	private static final DynamicCommandExceptionType LIMIT_UNFORCED = new DynamicCommandExceptionType(
@@ -46,6 +49,7 @@ public class MixinEntitySelectorReader implements ForceableArgument {
 		if (this.includesNonPlayers
 				//main anti-footgun: don't allow someone to affect every single entity on the server at once
 				&& (this.limit > 50  && this.distance == NumberRange.DoubleRange.ANY)
+				&& (this.dx == null && this.dy == null && this.dz == null)
 				&& !forced) {
 			throw LIMIT_UNFORCED.create(this.limit);
 		}
