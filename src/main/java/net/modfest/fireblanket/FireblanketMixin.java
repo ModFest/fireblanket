@@ -17,6 +17,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 	public static final boolean ALLOW_LAMBDAMAP_SAVING = Boolean.getBoolean("fireblanket.allowLambdaMapSaving");
 	private static final boolean DO_CHUNKSECTION_OPTO = Boolean.getBoolean("fireblanket.flattenChunkPalettes");
 	public static final boolean ALLOW_FOOTGUNS = Boolean.getBoolean("fireblanket.allowFootguns");
+	public static final boolean AVOID_ZTSD = Boolean.getBoolean("fireblanket.saveAsDat");
 
 	@Override
 	public void onLoad(String mixinPackage) {
@@ -114,6 +115,14 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 
 		if (mixinClassName.contains("footgun")) {
 			return !ALLOW_FOOTGUNS;
+		}
+
+		if (mixinClassName.contains("footgun")) {
+			return !ALLOW_FOOTGUNS;
+		}
+
+		if (mixinClassName.contains("MixinRegionFile") || mixinClassName.contains("MixinPersistentState") || mixinClassName.contains("MixinLevelStorageSession")) {
+			return !AVOID_ZTSD;
 		}
 
 		// Conflicts with Krypton, which also lifts the limit

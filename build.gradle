@@ -5,8 +5,8 @@ plugins {
 	alias libs.plugins.loom
 }
 
-version = "$project.baseVersion+$project.branch"
-archivesBaseName = project.archivesName
+version = "$baseVersion+$branch"
+archivesBaseName = project.slug
 
 repositories {
 	maven { url "https://api.modrinth.com/maven" }
@@ -23,6 +23,7 @@ dependencies {
 	mappings variantOf(libs.yarn) { classifier "v2" }
 	modImplementation libs.fl
 	modImplementation libs.fapi
+
 	modImplementation libs.sodium
 
 	modImplementation libs.nettyIoUringClasses
@@ -43,18 +44,20 @@ processResources {
 		modId         : modId,
 		modName       : modName,
 		modDescription: modDescription,
-		homepage      : homepage,
-		issues        : issues,
-		sources       : sources,
+		homepage      : "https://modrinth.com/mod/${slug}",
+		issues        : "https://github.com/${user}/${slug}/issues",
+		sources       : "https://github.com/${user}/${slug}",
 		license       : license,
 		authors       : authors.split(", ").join("\",\n    \""),
 		contributors  : contributors.split(", ").join("\",\n    \""),
-		mc            : libs.versions.mc.get(),
+		members       : "${authors}. Contributions by ${contributors}",
+		mc            : compatibleVersions.split(", ")[0],
 		fl            : libs.versions.fl.get(),
 		fapi          : libs.versions.fapi.get()
 	]
-	inputs.properties meta
-	filesMatching("fabric.mod.json") { expand meta }
+	inputs.properties(meta)
+	filesMatching("*.mod.json") { expand(meta) }
+	filesMatching("META-INF/*mods.toml") { expand(meta) }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -63,7 +66,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 loom {
-	accessWidenerPath = file("src/main/resources/fireblanket.aw")
+	accessWidenerPath = file("src/main/resources/fireblanket.accesswidener")
 }
 
 sourceSets {
@@ -77,12 +80,13 @@ sourceSets {
 
 java {
 	withSourcesJar()
-	sourceCompatibility = targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
 	from("LICENSE") {
-		rename { "${it}_${project.base.archivesName.get()}" }
+		rename { "${it}_${archivesBaseName}" }
 	}
 
 	configurations.shade.resolve().each {

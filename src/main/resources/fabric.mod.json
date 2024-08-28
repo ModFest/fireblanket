@@ -16,7 +16,16 @@
 		"sources": "${sources}"
 	},
 	"license": "${license}",
-	"icon": "assets/fireblanket/icon.png",
+	"icon": "assets/${modId}/icon.png",
+	"accessWidener": "${modId}.accesswidener",
+	"mixins": [
+		"${modId}.mixins.json"
+	],
+	"depends": {
+		"minecraft": ">=${mc}",
+		"fabricloader": ">=${fl}",
+		"fabric-api": ">=${fapi}"
+	},
 	"entrypoints": {
 		"main": [
 			"net.modfest.fireblanket.Fireblanket"
@@ -24,14 +33,5 @@
 		"client": [
 			"net.modfest.fireblanket.FireblanketClient"
 		]
-	},
-	"mixins": [
-		"fireblanket.mixins.json"
-	],
-	"accessWidener": "fireblanket.aw",
-	"depends": {
-		"minecraft": ">=${mc}",
-		"fabricloader": ">=${fl}",
-		"fabric-api": ">=${fapi}"
 	}
 }

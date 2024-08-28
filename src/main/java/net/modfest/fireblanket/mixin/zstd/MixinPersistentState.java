@@ -1,6 +1,8 @@
 package net.modfest.fireblanket.mixin.zstd;
 
 import com.github.luben.zstd.ZstdOutputStream;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.world.PersistentState;
@@ -17,10 +19,8 @@ import java.nio.file.Path;
 
 @Mixin(PersistentState.class)
 public class MixinPersistentState {
-
-	@Redirect(at = @At(value = "INVOKE", target = "net/minecraft/nbt/NbtIo.writeCompressed(Lnet/minecraft/nbt/NbtCompound;Ljava/nio/file/Path;)V"),
-		method = "save")
-	public void fireblanket$writeZstd(NbtCompound nbt, Path vanilla) throws IOException {
+	@WrapOperation(at = @At(value = "INVOKE", target = "net/minecraft/nbt/NbtIo.writeCompressed(Lnet/minecraft/nbt/NbtCompound;Ljava/nio/file/Path;)V"), method = "save")
+	public void fireblanket$writeZstd(NbtCompound nbt, Path vanilla, Operation<Void> original) throws IOException {
 		String path = vanilla.toAbsolutePath().toString();
 		if (path.endsWith(".dat")) {
 			File zstd = new File(path.substring(0, path.length() - 4) + ".zat");
@@ -33,8 +33,7 @@ public class MixinPersistentState {
 			Files.deleteIfExists(vanilla);
 		} else {
 			// oookay, I dunno what you want. have fun.
-			NbtIo.writeCompressed(nbt, vanilla);
+			original.call(nbt, vanilla);
 		}
 	}
-
 }
