@@ -27,6 +27,7 @@ import java.util.zip.GZIPInputStream;
 
 public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 	private static final Logger LOGGER = LogUtils.getLogger();
+	public static final boolean AVOID_ZTSD = Boolean.getBoolean("fireblanket.saveAsDat");
 
 	private final File playerDataDir;
 
@@ -64,6 +65,10 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 
 	@Override
 	public void savePlayerData(PlayerEntity player) {
+		if (AVOID_ZTSD) {
+			super.savePlayerData(player);
+			return;
+		}
 		try {
 			NbtCompound nbt = player.writeNbt(new NbtCompound());
 			File tmp = File.createTempFile(player.getUuidAsString() + "-", ".zat", playerDataDir);

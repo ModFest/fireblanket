@@ -117,11 +117,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			return !ALLOW_FOOTGUNS;
 		}
 
-		if (mixinClassName.contains("footgun")) {
-			return !ALLOW_FOOTGUNS;
-		}
-
-		if (mixinClassName.contains("MixinRegionFile") || mixinClassName.contains("MixinPersistentState") || mixinClassName.contains("MixinLevelStorageSession")) {
+		if (mixinClassName.contains("MixinRegionFile") || mixinClassName.contains("MixinPersistentState")) {
 			return !AVOID_ZTSD;
 		}
 
