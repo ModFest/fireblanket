@@ -1,0 +1,17 @@
+{
+	"values": [
+		"#minecraft:trapdoors",
+		"#minecraft:shulker_boxes",
+		"#minecraft:fence_gates",
+		"minecraft:chest",
+		"minecraft:trapped_chest",
+		"minecraft:chiseled_bookshelf",
+		"minecraft:repeater",
+		"minecraft:comparator",
+		"minecraft:daylight_detector",
+		"minecraft:dispenser",
+		"minecraft:dropper",
+		"minecraft:hopper",
+		"minecraft:flower_pot"
+	]
+}

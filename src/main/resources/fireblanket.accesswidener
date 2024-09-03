@@ -3,6 +3,7 @@ accessWidener v2 named
 accessible class net/minecraft/client/render/chunk/ChunkBuilder$BuiltChunk$RebuildTask
 accessible class net/minecraft/server/world/ServerChunkManager$MainThreadExecutor
 
+accessible class net/minecraft/server/network/ServerPlayNetworkHandler$Interaction
 accessible method net/minecraft/server/world/ServerChunkLoadingManager entryIterator ()Ljava/lang/Iterable;
 
 accessible method net/minecraft/world/storage/ChunkCompressionFormat <init> (ILjava/lang/String;Lnet/minecraft/world/storage/ChunkCompressionFormat$Wrapper;Lnet/minecraft/world/storage/ChunkCompressionFormat$Wrapper;)V
