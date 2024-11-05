@@ -1,4 +1,4 @@
-package net.modfest.fireblanket.mixin.client.be_masking.sodium;
+package net.modfest.fireblanket.mixin.mods.masking.sodium;
 
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildContext;

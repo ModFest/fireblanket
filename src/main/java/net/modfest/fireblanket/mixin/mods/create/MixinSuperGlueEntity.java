@@ -1,4 +1,4 @@
-package net.modfest.fireblanket.mixin.entity_ticking.create;
+package net.modfest.fireblanket.mixin.mods.create;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;

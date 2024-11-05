@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.world;
 
 import net.modfest.fireblanket.world.blocks.FlatBlockstateArray;
-import net.modfest.fireblanket.world.entity.EntityFilters;
+import net.modfest.fireblanket.config.EntityFilters;
 
 public class WorldLoadAppliers {
 	private static boolean ran = false;

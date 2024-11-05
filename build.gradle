@@ -11,6 +11,7 @@ archivesBaseName = project.slug
 repositories {
 	maven { url "https://api.modrinth.com/maven" }
 	maven { url "https://maven.enginehub.org/repo/" }
+	maven { url "https://maven.gegy.dev/releases/" }
 	mavenCentral()
 }
 
@@ -32,6 +33,8 @@ dependencies {
 
 	modImplementation libs.worldeditCore
 	modImplementation libs.worldeditFabric
+
+	modImplementation "dev.gegy:player-roles-api:1.6.11"
 
 	shade(libs.nettyIoUringClasses) { transitive = false }
 	shade(variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }) { transitive = false }

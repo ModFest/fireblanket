@@ -18,11 +18,14 @@ import java.util.regex.Pattern;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import net.modfest.fireblanket.compat.roles.Roles;
 
 public class CmdFindReplaceCommand {
 	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
 		base.then(literal("cmd-find-replace")
-			.requires(source -> source.hasPermissionLevel(4))
+			.requires(source -> source.hasPermissionLevel(4) && Roles.isNetadmin(source.getPlayer()))
 			.then(argument("regex", StringArgumentType.string())
 				.then(argument("replacement", StringArgumentType.string())
 					.executes(ctx -> {

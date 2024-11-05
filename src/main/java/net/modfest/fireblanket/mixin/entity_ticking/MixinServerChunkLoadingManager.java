@@ -2,7 +2,7 @@ package net.modfest.fireblanket.mixin.entity_ticking;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.server.world.ServerChunkLoadingManager;
-import net.modfest.fireblanket.world.entity.EntityFilters;
+import net.modfest.fireblanket.config.EntityFilters;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;

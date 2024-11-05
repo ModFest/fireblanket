@@ -24,11 +24,13 @@ import java.util.Collections;
 import java.util.Map;
 
 import static net.minecraft.server.command.CommandManager.literal;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import net.modfest.fireblanket.compat.roles.Roles;
 
 public class DumpCommand {
 	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
 		base.then(literal("dump")
-			.requires(source -> source.hasPermissionLevel(4))
+			.requires(source -> source.hasPermissionLevel(4) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("command-blocks")
 				.executes(server -> {
 					server.getSource().getServer().submit(() -> {

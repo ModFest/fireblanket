@@ -15,6 +15,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -44,7 +45,8 @@ public class MixinDebugStickItem extends Item {
 	public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
 		NbtCompound nbt = stack.getComponents().getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 		if (isCustomFireblanket(nbt)) {
-			if (!user.getWorld().isClient) {
+			// Only builder+ should be able to use debug hammers
+			if (!user.getWorld().isClient && Roles.isBuilder(user)) {
 				if (nbt.getBoolean(NOAI)) {
 					if (entity instanceof MobEntity mob) {
 						mob.setAiDisabled(true);

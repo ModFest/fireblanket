@@ -1,13 +1,16 @@
-package net.modfest.fireblanket.world.entity;
+package net.modfest.fireblanket.config;
 
-import com.google.common.io.Files;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.EntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.mixin.accessor.EntityTypeAccessor;
+import net.modfest.fireblanket.world.entity.EntityFilter;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,7 +26,7 @@ public class EntityFilters {
 		List<String> strings = new ArrayList<>();
 
 		try {
-			List<String> read = Files.readLines(path.toFile(), Charset.defaultCharset());
+			List<String> read = Files.readAllLines(path, Charset.defaultCharset());
 			strings.addAll(read);
 		} catch (Exception e) {
 			Fireblanket.LOGGER.error("Exception parsing entity filters", e);
@@ -50,6 +53,32 @@ public class EntityFilters {
 			}
 
 			FILTERS.add(new EntityFilter(pattern, range, ticks, forceNoUpdates));
+		}
+	}
+
+	public static void writeDefault(Path path) {
+		try {
+			Files.writeString(path, """
+				# Pattern, Tracking range (in chunks), update rate (ticks), Force alwaysUpdateVelocity off [optional]
+				# Octothorpes on newlines are comments, each definition is delimited by newlines
+				# Example:
+				#
+				# Don't tick item displays and text displays as often.
+				# minecraft:\\w+_display 5 8 true
+				""");
+		} catch (IOException e) {
+			Fireblanket.LOGGER.error("Exception writing initial entity filters", e);
+		}
+	}
+
+	public static void init() {
+		Path configs = FabricLoader.getInstance().getConfigDir().resolve("fireblanket");
+		Path types = configs.resolve("entityfilters.txt");
+
+		if (Files.exists(types)) {
+			parse(types);
+		} else {
+			writeDefault(types);
 		}
 	}
 

@@ -32,6 +32,9 @@ import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.RegionCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
+import net.modfest.fireblanket.compat.roles.PlayerRolesCompat;
+import net.modfest.fireblanket.config.ConfigSpecs;
+import net.modfest.fireblanket.config.FireblanketConfig;
 import net.modfest.fireblanket.mixin.accessor.ClientConnectionAccessor;
 import net.modfest.fireblanket.mixin.accessor.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.mixin.accessor.ServerLoginNetworkHandlerAccessor;
@@ -39,13 +42,14 @@ import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
 import net.modfest.fireblanket.net.CommandBlockPacket;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
-import net.modfest.fireblanket.world.entity.EntityFilters;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
 import net.modfest.fireblanket.world.render_regions.RenderRegionsState;
+import net.modfest.fireblanket.config.EntityFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -90,14 +94,9 @@ public class Fireblanket implements ModInitializer {
 			UpdateSignBlockEntityTypes.apply(block);
 		});
 
-		Path configs = FabricLoader.getInstance().getConfigDir().resolve("fireblanket");
-		if (Files.exists(configs)) {
-			Path types = configs.resolve("entityfilters.txt");
 
-			if (Files.exists(types)) {
-				EntityFilters.parse(types);
-			}
-		}
+
+		EntityFilters.init();
 
 		for (int i = 0; i < PACKET_QUEUES.length; i++) {
 			LinkedBlockingQueue<QueuedPacket> q = new LinkedBlockingQueue<>();
@@ -150,10 +149,12 @@ public class Fireblanket implements ModInitializer {
 			PolyMcCompat.init();
 		}
 
+		PlayerRolesCompat.init();
+
 		ServerWorldEvents.LOAD.register((server, world) -> {
-			if (System.getProperty("fireblanket.loadRadius") != null) {
+			if (FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS) > 0) {
 				if (!world.getRegistryKey().getValue().toString().equals("minecraft:overworld")) return;
-				int radius = Integer.getInteger("fireblanket.loadRadius");
+				int radius = FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS);
 				int min = (int) Math.floor(-radius / 16);
 				int max = (int) Math.ceil(radius / 16);
 				int count = (max - min) * (max - min);

@@ -15,6 +15,8 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.ChunkStatusChangeListener;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.level.storage.LevelStorage;
+import net.modfest.fireblanket.config.ConfigSpecs;
+import net.modfest.fireblanket.config.FireblanketConfig;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -65,7 +67,7 @@ public abstract class MixinServerChunkManager {
 		// Will be real due to mixin plugin
 
 		if (this.world.getRegistryKey().equals(World.OVERWORLD)) {
-			int radius = Integer.getInteger("fireblanket.loadRadius");
+			int radius = FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS);
 			int min = (int) Math.floor(-radius / 16);
 			int max = (int) Math.ceil(radius / 16);
 

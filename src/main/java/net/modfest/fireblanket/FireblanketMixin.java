@@ -2,87 +2,38 @@ package net.modfest.fireblanket;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Bootstrap;
+import net.modfest.fireblanket.config.ConfigSpecs;
+import net.modfest.fireblanket.config.FireblanketConfig;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
 public class FireblanketMixin implements IMixinConfigPlugin {
-	public static final boolean GAMEPLAY_CHANGES = Boolean.getBoolean("fireblanket.gameplayChanges");
 	public static final boolean DO_MASKING = Boolean.getBoolean("fireblanket.masking");
-	private static final boolean DO_CHUNK_CACHE = System.getProperty("fireblanket.loadRadius") != null;
-	public static final boolean ALLOW_LAMBDAMAP_SAVING = Boolean.getBoolean("fireblanket.allowLambdaMapSaving");
-	private static final boolean DO_CHUNKSECTION_OPTO = Boolean.getBoolean("fireblanket.flattenChunkPalettes");
-	public static final boolean ALLOW_FOOTGUNS = Boolean.getBoolean("fireblanket.allowFootguns");
-	public static final boolean AVOID_ZTSD = Boolean.getBoolean("fireblanket.saveAsDat");
 
 	@Override
 	public void onLoad(String mixinPackage) {
-		// aaaaagh
+		Path configs = FabricLoader.getInstance().getConfigDir().resolve("fireblanket");
+		if (!Files.exists(configs)) {
+			try {
+				Files.createDirectory(configs);
+			} catch (IOException e) {
+				Fireblanket.LOGGER.error("Exception creating fireblanket directory!", e);
+			}
+		}
+
+		FireblanketConfig.init();
+
 		boolean ignoreRenderingMods = Boolean.getBoolean("fireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage");
 		if (ignoreRenderingMods) {
-			if (FabricLoader.getInstance().isModLoaded("nvidium")) {
-				LoggerFactory.getLogger("Fireblanket").error("===================================================");
-				LoggerFactory.getLogger("Fireblanket").error("         IGNORING THE PRESENCE OF NVIDIUM.         ");
-				LoggerFactory.getLogger("Fireblanket").error("YOU ACCEPT EVERYTHING THAT WILL HAPPEN FROM NOW ON.");
-				LoggerFactory.getLogger("Fireblanket").error("===================================================");
-			}
-			if (FabricLoader.getInstance().isModLoaded("bobby")) {
-				LoggerFactory.getLogger("Fireblanket").error("Ignoring the presence of Bobby. Be ready for missing chunks.");
-			}
-		}
-		if (!ignoreRenderingMods && FabricLoader.getInstance().isModLoaded("nvidium")) {
-			Bootstrap.SYSOUT.println("""
-				----------------------------------------------------------------------------------------
-				###### Fireblanket is cowardly refusing to launch the game with Nvidium installed ######
-				----------------------------------------------------------------------------------------
-				   Due to the amount of mods that change  how rendering works, Nvidium can experience
-				random crashes and other hard to debug issues. From testing in the build server, Nvidium
-				  doesn't have a lot  of impact on the types of fps lag that the pack causes. As such,
-					  it is not recommended to use  Nvidium with Blanketcon for stability reasons.
-				========================================================================================
-				If you would like to ignore these warnings and launch anyway, you must add the following
-				to your JVM arguments:
-				   -Dfireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage=true
-				The JVM will now exit.
-				""");
-			System.exit(0xDEAD);
-		}
-		if (FabricLoader.getInstance().isModLoaded("entityculling")) {
-			Bootstrap.SYSOUT.println("""
-				----------------------------------------------------------------------------------------
-				### Fireblanket is cowardly refusing to launch the game with EntityCulling installed ###
-				----------------------------------------------------------------------------------------
-				  EntityCulling causes performance issues and hard-to-debug crashes due to poor use of
-				  threading. Sodium's entity culling is already enabled to optimize this behavior, and
-				  Fireblanket contains additional fixes and  optimizations for entities that are tuned
-											  specifically for Blanketcon.
-				========================================================================================
-				You may not override this. The JVM will now exit.
-				""");
-			System.exit(0xDEAD);
-		}
-		if (!ignoreRenderingMods && FabricLoader.getInstance().isModLoaded("bobby")) {
-			Bootstrap.SYSOUT.println("""
-				----------------------------------------------------------------------------------------
-				####### Fireblanket is cowardly refusing to launch the game with Bobby installed #######
-				----------------------------------------------------------------------------------------
-				   While Bobby can make navigating the map easier,  it is causing difficult to debug
-				issues with chunk culling that keep resulting in false issue reports.  We do not ship it
-				 with the pack for a reason — we have had so many other issues to chase and fix that we
-				simply do not  have time to field the Bobby issues. It additionally can cause crashes if
-					 its option to keep block entities in  fake chunks is not enabled, so it is not
-									 recommended for use due  to stability reasons.
-				========================================================================================
-				If you would like to ignore these warnings and launch anyway, you must add the following
-				to your JVM arguments:
-				   -Dfireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage=true
-				The JVM will now exit.
-				""");
-			System.exit(0xDEAD);
+			LoggerFactory.getLogger("Fireblanket").error("Ignoring the presence of rendering mods. You are proceeding at your own mortal peril.");
 		}
 	}
 
@@ -98,27 +49,23 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 		}
 
 		if (mixinClassName.contains("region_chunk_cache")) {
-			return DO_CHUNK_CACHE;
-		}
-
-		if (mixinClassName.contains("lambdamap")) {
-			return !ALLOW_LAMBDAMAP_SAVING;
+			return FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS) > 0;
 		}
 
 		if (mixinClassName.contains("block_format")) {
-			return DO_CHUNKSECTION_OPTO;
+			return FireblanketConfig.get(ConfigSpecs.FLATTEN_CHUNK_PALETTES);
 		}
 
 		if (mixinClassName.contains("ai") || mixinClassName.contains("sounds")) {
-			return GAMEPLAY_CHANGES;
+			return FireblanketConfig.get(ConfigSpecs.GAMEPLAY_CHANGES);
 		}
 
 		if (mixinClassName.contains("footgun")) {
-			return !ALLOW_FOOTGUNS;
+			return !FireblanketConfig.get(ConfigSpecs.ALLOW_FOOTGUNS);
 		}
 
 		if (mixinClassName.contains("MixinRegionFile") || mixinClassName.contains("MixinPersistentState")) {
-			return !AVOID_ZTSD;
+			return !FireblanketConfig.get(ConfigSpecs.AVOID_ZSTD);
 		}
 
 		// Conflicts with Krypton, which also lifts the limit
