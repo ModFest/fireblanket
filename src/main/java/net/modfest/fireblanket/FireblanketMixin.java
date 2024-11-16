@@ -56,6 +56,10 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			return FireblanketConfig.get(ConfigSpecs.FLATTEN_CHUNK_PALETTES);
 		}
 
+		if (mixinClassName.contains("entity_immutability")) {
+			return FireblanketConfig.get(ConfigSpecs.ENTITY_IMMUTABILITY);
+		}
+
 		if (mixinClassName.contains("ai") || mixinClassName.contains("sounds")) {
 			return FireblanketConfig.get(ConfigSpecs.GAMEPLAY_CHANGES);
 		}
