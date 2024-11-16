@@ -44,11 +44,6 @@ public final class ConfigSpecs {
 			Disables the usage of zstd to save world data and compress network connections.
 			""", "no", ConfigParsers.BOOLEAN);
 
-	public static final ConfigSpec<Boolean> ENTITY_IMMUTABILITY = new ConfigSpec<>("entity-immutability", "Entity Immutability by Default",
-		"""
-			Makes entities default to being immutable. For example, it will set frames to fixed by default.
-			""", "no", ConfigParsers.BOOLEAN);
-
 	public static final ConfigSpec<Boolean> GAMEPLAY_CHANGES = new ConfigSpec<>("gameplay-changes", "Gameplay Changes",
 		"""
 			Allow altering features in a way that impacts gameplay.
@@ -72,7 +67,6 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(FLATTEN_CHUNK_PALETTES);
 		ALL_SPECS.add(ALLOW_FOOTGUNS);
 		ALL_SPECS.add(AVOID_ZSTD);
-		ALL_SPECS.add(ENTITY_IMMUTABILITY);
 		ALL_SPECS.add(GAMEPLAY_CHANGES);
 
 		// We have registries at home:
