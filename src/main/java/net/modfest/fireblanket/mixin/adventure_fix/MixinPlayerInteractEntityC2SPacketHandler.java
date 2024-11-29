@@ -6,6 +6,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.util.Hand;
 import net.modfest.fireblanket.FireblanketConstants;
+import net.modfest.fireblanket.mixinsupport.InteractionCheck;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -34,9 +35,8 @@ public class MixinPlayerInteractEntityC2SPacketHandler {
 	private void fireblanket$filterEntityInteractByTag(Hand hand, ServerPlayNetworkHandler.Interaction action, CallbackInfo ci) {
 		PlayerEntity player = field_28963.player;
 		ItemStack stack = player.getStackInHand(hand);
-		if (!player.getAbilities().allowModifyWorld && (
-				stack.isIn(FireblanketConstants.ITEM_INTERACTION_RESTRICTED) ||
-				field_28962.getType().isIn(FireblanketConstants.ENTITY_INTERACTION_RESTRICTED))) {
+		if (!player.getAbilities().allowModifyWorld &&
+			(InteractionCheck.preventUseItem(player, stack) || InteractionCheck.preventUseEntity(player, field_28962.getType()))) {
 			ci.cancel();
 		}
 	}
@@ -48,7 +48,7 @@ public class MixinPlayerInteractEntityC2SPacketHandler {
 	)
 	private void fireblanket$filterAttackEntityByTag(CallbackInfo ci) {
 		PlayerEntity player = field_28963.player;
-		if (!player.getAbilities().allowModifyWorld && field_28962.getType().isIn(FireblanketConstants.ENTITY_ATTACK_RESTRICTED)) {
+		if (!player.getAbilities().allowModifyWorld && InteractionCheck.preventAttackEntity(player, field_28962.getType())) {
 			ci.cancel();
 		}
 	}

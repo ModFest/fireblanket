@@ -14,6 +14,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.world.World;
 import net.modfest.fireblanket.FireblanketConstants;
+import net.modfest.fireblanket.mixinsupport.InteractionCheck;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,8 +29,8 @@ public class MixinClientPlayerInteractionManager {
 		cancellable = true)
 	private void fireblanket$filterEntityInteractByTag(PlayerEntity player, Entity entity, Hand hand, CallbackInfoReturnable<ActionResult> ci) {
 		if (!player.getAbilities().allowModifyWorld && (
-				entity.getType().isIn(FireblanketConstants.ENTITY_INTERACTION_RESTRICTED) ||
-				player.getStackInHand(hand).isIn(FireblanketConstants.ITEM_INTERACTION_RESTRICTED))) {
+				InteractionCheck.preventUseEntity(player, entity.getType()) ||
+				InteractionCheck.preventUseItem(player, player.getStackInHand(hand)))) {
 			ci.setReturnValue(ActionResult.FAIL);
 			ci.cancel();
 		}
@@ -42,8 +43,8 @@ public class MixinClientPlayerInteractionManager {
 	)
 	private void fireblanket$filterEntityInteractAtLocationByTag(PlayerEntity player, Entity entity, EntityHitResult hitResult, Hand hand, CallbackInfoReturnable<ActionResult> ci) {
 		if (!player.getAbilities().allowModifyWorld && (
-				entity.getType().isIn(FireblanketConstants.ENTITY_INTERACTION_RESTRICTED) ||
-				player.getStackInHand(hand).isIn(FireblanketConstants.ITEM_INTERACTION_RESTRICTED))) {
+			InteractionCheck.preventUseEntity(player, entity.getType()) ||
+			InteractionCheck.preventUseItem(player, player.getStackInHand(hand)))) {
 			ci.setReturnValue(ActionResult.FAIL);
 			ci.cancel();
 		}
@@ -55,10 +56,10 @@ public class MixinClientPlayerInteractionManager {
 	)
 	private ItemActionResult fireblanket$filterItemBlockInteractByTag(BlockState blockState, ItemStack stack, World world, PlayerEntity player, Hand hand, BlockHitResult hitResult, Operation<ItemActionResult> op) {
  		if (!player.getAbilities().allowModifyWorld) {
-			if (stack.isIn(FireblanketConstants.ITEM_INTERACTION_RESTRICTED)) {
+			if (InteractionCheck.preventUseItem(player, stack)) {
 				return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 			}
-			if (blockState.isIn(FireblanketConstants.BLOCK_INTERACTION_RESTRICTED)) {
+			if (InteractionCheck.preventUseBlock(player, blockState)) {
 				return ItemActionResult.FAIL;
 			}
 		}
@@ -70,7 +71,7 @@ public class MixinClientPlayerInteractionManager {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;onUse(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/hit/BlockHitResult;)Lnet/minecraft/util/ActionResult;")
 	)
 	private ActionResult fireblanket$filterBlockInteractByTag(BlockState blockState, World world, PlayerEntity player, BlockHitResult hitResult, Operation<ActionResult> op) {
-		if (!player.getAbilities().allowModifyWorld && blockState.isIn(FireblanketConstants.BLOCK_INTERACTION_RESTRICTED)) {
+		if (!player.getAbilities().allowModifyWorld && InteractionCheck.preventUseBlock(player, blockState)) {
 			return ActionResult.FAIL;
 		}
 		return op.call(blockState, world, player, hitResult);
@@ -82,7 +83,7 @@ public class MixinClientPlayerInteractionManager {
 		cancellable = true
 	)
 	private void fireblanket$filterAttackEntityByTag(PlayerEntity player, Entity target, CallbackInfo ci) {
-		if (!player.getAbilities().allowModifyWorld && target.getType().isIn(FireblanketConstants.ENTITY_ATTACK_RESTRICTED)) {
+		if (!player.getAbilities().allowModifyWorld && InteractionCheck.preventAttackEntity(player, target.getType())) {
 			ci.cancel();
 		}
 	}

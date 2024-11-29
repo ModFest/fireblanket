@@ -10,6 +10,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import net.modfest.fireblanket.FireblanketConstants;
+import net.modfest.fireblanket.mixinsupport.InteractionCheck;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,7 +28,7 @@ public abstract class MixinItemStack {
 	private void fireblanket$filterItemUseOnBlockByTag(ItemUsageContext context, CallbackInfoReturnable<ActionResult> ci) {
 		PlayerEntity player = context.getPlayer();
 		if (player == null) return;
-		if (!player.getAbilities().allowModifyWorld && this.isIn(FireblanketConstants.ITEM_INTERACTION_RESTRICTED)) {
+		if (!player.getAbilities().allowModifyWorld && InteractionCheck.preventUseItem(player, (ItemStack)(Object)this)) {
 			ci.setReturnValue(ActionResult.FAIL);
 			ci.cancel();
 		}
@@ -35,7 +36,7 @@ public abstract class MixinItemStack {
 
 	@Inject(method = "use", at = @At("HEAD"), cancellable = true)
 	private void fireblanket$filterItemUseByTag(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> ci) {
-		if (!user.getAbilities().allowModifyWorld && this.isIn(FireblanketConstants.ITEM_INTERACTION_RESTRICTED)) {
+		if (!user.getAbilities().allowModifyWorld && InteractionCheck.preventUseItem(user, (ItemStack)(Object)this)) {
 			ci.setReturnValue(TypedActionResult.fail(user.getStackInHand(hand)));
 			ci.cancel();
 		}
