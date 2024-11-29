@@ -13,8 +13,11 @@ public class FireblanketConstants {
 	public static final String MOD_ID = "fireblanket";
 
 	public static final TagKey<Block> BLOCK_INTERACTION_RESTRICTED = tag(RegistryKeys.BLOCK, "block_interaction_restricted");
+	public static final TagKey<Block> BLOCK_SNEAK_INTERACTION_RESTRICTED = tag(RegistryKeys.BLOCK, "block_sneak_interaction_restricted");
 	public static final TagKey<Item> ITEM_INTERACTION_RESTRICTED = tag(RegistryKeys.ITEM, "item_interaction_restricted");
+	public static final TagKey<Item> ITEM_SNEAK_INTERACTION_RESTRICTED = tag(RegistryKeys.ITEM, "item_sneak_interaction_restricted");
 	public static final TagKey<EntityType<?>> ENTITY_INTERACTION_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_interaction_restricted");
+	public static final TagKey<EntityType<?>> ENTITY_SNEAK_INTERACTION_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_sneak_interaction_restricted");
 
 	public static final TagKey<EntityType<?>> ENTITY_ATTACK_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_attack_restricted");
 
