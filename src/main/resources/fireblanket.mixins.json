@@ -14,6 +14,7 @@
 		"adventure_fix.MixinItemStack",
 		"adventure_fix.MixinPlayerInteractEntityC2SPacketHandler",
 		"adventure_fix.MixinServerPlayerInteractionManager",
+		"adventure_fix.MixinFarmlandBlock",
 		"ai.MixinTemptGoal",
 		"be_sync.MixinBlockEntity",
 		"be_sync.MixinChunkHolder",
