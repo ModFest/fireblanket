@@ -7,8 +7,9 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback;
+import net.fabricmc.fabric.api.gamerule.v1.GameRuleFactory;
+import net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
@@ -28,6 +29,7 @@ import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.GameRules;
 import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.RegionCommand;
@@ -49,9 +51,6 @@ import net.modfest.fireblanket.config.EntityFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -60,6 +59,13 @@ public class Fireblanket implements ModInitializer {
 	public static final Identifier BATCHED_BE_UPDATE = Identifier.of("fireblanket", "batched_be_sync");
 	public static final Identifier FULL_STREAM_COMPRESSION = Identifier.of("fireblanket", "full_stream_compression");
 	public static final Identifier REGIONS_UPDATE = Identifier.of("fireblanket", "regions_update");
+
+	/**
+	 * Whether new entities will be fixed.
+	 * @see net.modfest.fireblanket.mixin.entity_immutability
+	 */
+	public static final GameRules.Key<GameRules.BooleanRule> NEW_ENTITIES_IMMUTABLE =
+		GameRuleRegistry.register("newEntitiesImmutable", GameRules.Category.MOBS, GameRuleFactory.createBooleanRule(true));
 
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 
