@@ -108,7 +108,7 @@ public abstract class MixinChunkHolder extends AbstractChunkHolder {
 			}
 
 			for (ServerPlayerEntity p : list) {
-				ServerPlayNetworking.send(p, new BatchedBEUpdatePayload(BATCHED_UPDATES));
+				ServerPlayNetworking.send(p, new BatchedBEUpdatePayload(new ArrayList<>(BATCHED_UPDATES)));
 			}
 
 			BATCHED_UPDATES.clear();

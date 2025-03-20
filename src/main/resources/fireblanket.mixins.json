@@ -25,6 +25,7 @@
 		"entity_immutability.MixinEntityType",
 		"entity_ticking.MixinDebugStickItem",
 		"entity_ticking.MixinEntity",
+		"entity_ticking.MixinEntityTracker",
 		"entity_ticking.MixinItemGroups",
 		"entity_ticking.MixinLivingEntity",
 		"entity_ticking.MixinMinecraftServer",
