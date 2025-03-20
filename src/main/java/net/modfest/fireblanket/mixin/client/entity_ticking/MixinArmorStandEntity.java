@@ -15,12 +15,13 @@ public abstract class MixinArmorStandEntity extends LivingEntity {
 		super(entityType, world);
 	}
 
-	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;tick()V"))
-	private void fireblanket$noClientTick(LivingEntity instance) {
-		if (this.getWorld().isClient) {
-			EntityTick.minimalLivingTick(instance);
-		} else {
-			super.tick();
-		}
-	}
+	// TODO: still useful?
+//	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;tick()V"))
+//	private void fireblanket$noClientTick(LivingEntity instance) {
+//		if (this.getWorld().isClient) {
+//			EntityTick.minimalLivingTick(instance);
+//		} else {
+//			super.tick();
+//		}
+//	}
 }

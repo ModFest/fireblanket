@@ -16,6 +16,7 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.Vec3d;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.ClientRegionCommand;
+import net.modfest.fireblanket.client.command.CountParticleTypesCommand;
 import net.modfest.fireblanket.client.command.EntityMaskCommand;
 import net.modfest.fireblanket.client.command.TickTimeCommand;
 import net.modfest.fireblanket.client.command.WireframeCommand;
@@ -31,6 +32,7 @@ import net.modfest.fireblanket.world.render_regions.RenderRegions;
 import java.util.concurrent.CompletableFuture;
 
 public class FireblanketClient implements ClientModInitializer {
+	public static final boolean VERIFY_RENDER = true; // Disable for prod !!
 
 	public static final RenderRegions renderRegions = new RenderRegions();
 
@@ -42,11 +44,13 @@ public class FireblanketClient implements ClientModInitializer {
 				LiteralArgumentBuilder<FabricClientCommandSource> mask = ClientCommandManager.literal("mask");
 				BERMaskCommand.init(mask, access);
 				EntityMaskCommand.init(mask, access);
-				ClientRegionCommand.init(base, access);
-				WireframeCommand.init(base, access);
-				TickTimeCommand.init(base, access);
 				base.then(mask);
 			}
+			ClientRegionCommand.init(base, access);
+			WireframeCommand.init(base, access);
+			TickTimeCommand.init(base, access);
+			CountParticleTypesCommand.init(base, access);
+
 			dispatcher.register(ClientCommandManager.literal("fbc")
 				.redirect(dispatcher.register(base)));
 		});
