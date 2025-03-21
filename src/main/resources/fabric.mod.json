@@ -23,7 +23,7 @@
 	],
 	"depends": {
 		"minecraft": ">=${mc}",
-		"fabricloader": ">=${fl}",
+		"fabricloader": "*",
 		"fabric-api": ">=${fapi}"
 	},
 	"entrypoints": {

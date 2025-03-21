@@ -25,7 +25,9 @@ import net.modfest.fireblanket.mixin.accessor.ClientLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.BEUpdate;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
+import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
+import net.modfest.fireblanket.net.VelocityUpdate;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
 
@@ -68,6 +70,22 @@ public class FireblanketClient implements ClientModInitializer {
 			for (BEUpdate update : payload.updates()) {
 				BlockEntityUpdateS2CPacket fakePacket = new BlockEntityUpdateS2CPacket(update.pos(), update.type(), update.nbt());
 				context.client().execute(() -> context.client().getNetworkHandler().onBlockEntityUpdate(fakePacket));
+			}
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(BatchedEntityVelocityUpdatePacket.ID, (payload, context) -> {
+			for (VelocityUpdate update : payload.updates()) {
+				int id = update.entity();
+				double vx = update.getVelocityX();
+				double vy = update.getVelocityY();
+				double vz = update.getVelocityZ();
+
+				context.client().execute(() -> {
+					Entity entity = context.client().world.getEntityById(id);
+					if (entity != null) {
+						entity.setVelocityClient(vx, vy, vz);
+					}
+				});
 			}
 		});
 

@@ -47,21 +47,21 @@ public class DumpCommand {
 
 									String type;
 									if (state.isOf(Blocks.COMMAND_BLOCK)) {
-										type = "B";
+										type = "Regular";
 									} else if (state.isOf(Blocks.CHAIN_COMMAND_BLOCK)) {
-										type = "C";
+										type = "Chain";
 									} else if (state.isOf(Blocks.REPEATING_COMMAND_BLOCK)) {
-										type = "R";
+										type = "Repeat";
 									} else {
 										type = "???";
 									}
 
 									if (cbe.isPowered()) {
-										type += "*";
+										type += "-Powered";
 									}
 
 									if (cbe.isAuto()) {
-										type += "!";
+										type += "-AlwaysActive";
 									}
 
 									String ft = type;

@@ -25,7 +25,9 @@ public class MixinRenderSystem {
 	@Overwrite
 	public static void recordRenderCall(RenderCall renderCall) {
 		if (!RenderSystem.isOnRenderThread()) {
-			Fireblanket.LOGGER.warn("A render call was made off the render thread! This is likely to lead to race conditions!", new Throwable());
+			Fireblanket.LOGGER.warn("A render call was made off the render thread, on '"
+				+ Thread.currentThread().getName()
+				+ "'! This is likely to lead to race conditions!", new Throwable());
 		}
 		recordingQueue.add(new BlamefulRenderCall(renderCall));
 	}

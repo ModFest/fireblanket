@@ -42,6 +42,7 @@ import net.modfest.fireblanket.mixin.accessor.ServerChunkManagerAccessor;
 import net.modfest.fireblanket.mixin.accessor.ServerLoginNetworkHandlerAccessor;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
+import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
@@ -57,6 +58,7 @@ import java.util.function.Consumer;
 
 public class Fireblanket implements ModInitializer {
 	public static final Identifier BATCHED_BE_UPDATE = Identifier.of("fireblanket", "batched_be_sync");
+	public static final Identifier BATCHED_VELOCITY_SYNC = Identifier.of("fireblanket", "batched_velocity_sync");
 	public static final Identifier FULL_STREAM_COMPRESSION = Identifier.of("fireblanket", "full_stream_compression");
 	public static final Identifier REGIONS_UPDATE = Identifier.of("fireblanket", "regions_update");
 
@@ -132,6 +134,7 @@ public class Fireblanket implements ModInitializer {
 
 		// Networking
 		PayloadTypeRegistry.playS2C().register(BatchedBEUpdatePayload.ID, BatchedBEUpdatePayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(BatchedEntityVelocityUpdatePacket.ID, BatchedEntityVelocityUpdatePacket.CODEC);
 		PayloadTypeRegistry.playS2C().register(CommandBlockPacket.ID, CommandBlockPacket.CODEC);
 		PayloadTypeRegistry.playS2C().register(RegionSyncRequest.ID, RegionSyncRequest.CODEC);
 
