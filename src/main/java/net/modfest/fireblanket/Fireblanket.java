@@ -1,5 +1,6 @@
 package net.modfest.fireblanket;
 
+import com.github.luben.zstd.util.Native;
 import com.google.common.base.Stopwatch;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.api.ModInitializer;
@@ -124,9 +125,8 @@ public class Fireblanket implements ModInitializer {
 		}
 
 		try {
-			// TODO: ZSTD compression does not work with 1.20.2+ packet handling
-//			Native.load();
-//			CAN_USE_ZSTD = true;
+			Native.load();
+			CAN_USE_ZSTD = true;
 		} catch (UnsatisfiedLinkError e) {
 			CAN_USE_ZSTD = false;
 			LOGGER.warn("Could not load zstd, full-stream compression unavailable", e);

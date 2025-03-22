@@ -87,7 +87,5 @@ public class FireblanketConfig {
 				put(spec, spec.parser().parse(value));
 			}
 		}
-
-		System.out.println(map);
 	}
 }
