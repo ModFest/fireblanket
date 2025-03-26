@@ -73,6 +73,7 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(ALLOW_FOOTGUNS);
 		ALL_SPECS.add(AVOID_ZSTD);
 		ALL_SPECS.add(GAMEPLAY_CHANGES);
+		ALL_SPECS.add(ASYNC_PACKET_THREADS);
 
 		// We have registries at home:
 		buildMap();
