@@ -34,6 +34,8 @@ public class MixinBlockEntityRenderDispatcher {
 			if (fireblanket$depth != size) {
 				throw new IllegalStateException("Block entity " + blockEntity.getClass() + " had different matrix depths before and after rendering: should be " + fireblanket$verify + " but was " + size);
 			}
+
+			fireblanket$verify = null;
 		}
 	}
 }

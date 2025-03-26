@@ -7,8 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,6 +67,8 @@ public class FireblanketConfig {
 
 
 	public static void parse(List<String> text) {
+		Set<ConfigSpec<?>> specs = new HashSet<>(ConfigSpecs.ALL_SPECS);
+
 		// TODO: proper multiline parsing
 		// ^([\w|-]+):\s+(.*);
 		Pattern pattern = Pattern.compile("^([\\w|-]+):\\s+(.*);");
@@ -84,8 +88,14 @@ public class FireblanketConfig {
 					throw new RuntimeException("Unknown config option " + name);
 				}
 
+				if (!specs.remove(spec)) {
+					throw new RuntimeException("Duplicate config option " + name);
+				}
+
 				put(spec, spec.parser().parse(value));
 			}
 		}
+
+		System.out.println("Didn't find values for these config values, using default: " + specs);
 	}
 }

@@ -3,6 +3,7 @@ package net.modfest.fireblanket;
 import com.github.luben.zstd.util.Native;
 import com.google.common.base.Stopwatch;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
@@ -78,9 +79,10 @@ public class Fireblanket implements ModInitializer {
 	private static final AtomicInteger nextQueue = new AtomicInteger();
 
 	@SuppressWarnings("unchecked")
-	public static final LinkedBlockingQueue<QueuedPacket>[] PACKET_QUEUES = new LinkedBlockingQueue[4];
+	public static LinkedBlockingQueue<QueuedPacket>[] PACKET_QUEUES;
 
 	public static boolean CAN_USE_ZSTD = false;
+	public static boolean IS_FIREBLANKET_SERVER = false;
 
 	public static final ChunkTicketType<ChunkPos> KEEP_LOADED = ChunkTicketType.create("fireblanket:keep_loaded", ChunkTicketType.FORCED.getArgumentComparator());
 
@@ -107,26 +109,56 @@ public class Fireblanket implements ModInitializer {
 
 		EntityFilters.init();
 
-		for (int i = 0; i < PACKET_QUEUES.length; i++) {
-			LinkedBlockingQueue<QueuedPacket> q = new LinkedBlockingQueue<>();
-			PACKET_QUEUES[i] = q;
+		IS_FIREBLANKET_SERVER = FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
+
+		if (IS_FIREBLANKET_SERVER) {
+			PACKET_QUEUES = new LinkedBlockingQueue[FireblanketConfig.get(ConfigSpecs.ASYNC_PACKET_THREADS)];
+			for (int i = 0; i < PACKET_QUEUES.length; i++) {
+				LinkedBlockingQueue<QueuedPacket> q = new LinkedBlockingQueue<>();
+				PACKET_QUEUES[i] = q;
+				Thread thread = new Thread(() -> {
+					while (true) {
+						try {
+							QueuedPacket p = q.take();
+							((ClientConnectionAccessor) p.conn()).fireblanket$sendImmediately(p.packet(), p.listener(), true);
+						} catch (Throwable t) {
+							LOGGER.error("Exception in packet thread", t);
+						}
+					}
+				}, "Fireblanket async packet send thread #" + (i + 1));
+				thread.setDaemon(true);
+				thread.start();
+			}
+
 			Thread thread = new Thread(() -> {
 				while (true) {
 					try {
-						QueuedPacket p = q.take();
-						((ClientConnectionAccessor) p.conn()).fireblanket$sendImmediately(p.packet(), p.listener(), true);
+						StringBuilder sb = new StringBuilder();
+						sb.append("Packet queue lengths: [");
+						for (int i = 0; i < PACKET_QUEUES.length; i++) {
+							LinkedBlockingQueue<QueuedPacket> q = PACKET_QUEUES[i];
+							sb.append(q.size());
+							if (i != PACKET_QUEUES.length - 1) {
+								sb.append(", ");
+							}
+						}
+						sb.append("]");
+						System.out.println(sb);
+						Thread.sleep(15_000);
 					} catch (Throwable t) {
 						LOGGER.error("Exception in packet thread", t);
 					}
 				}
-			}, "Fireblanket async packet send thread #" + (i + 1));
+			}, "Fireblanket packet thread sentinel");
 			thread.setDaemon(true);
 			thread.start();
 		}
 
 		try {
-			Native.load();
-			CAN_USE_ZSTD = true;
+			if (!FireblanketConfig.get(ConfigSpecs.AVOID_ZSTD)) {
+				Native.load();
+				CAN_USE_ZSTD = true;
+			}
 		} catch (UnsatisfiedLinkError e) {
 			CAN_USE_ZSTD = false;
 			LOGGER.warn("Could not load zstd, full-stream compression unavailable", e);
@@ -211,6 +243,10 @@ public class Fireblanket implements ModInitializer {
 	}
 
 	public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
+		if (!IS_FIREBLANKET_SERVER) {
+			return null;
+		}
+
 		return PACKET_QUEUES[Math.floorMod(nextQueue.getAndIncrement(), PACKET_QUEUES.length)];
 	}
 }

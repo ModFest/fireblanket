@@ -2,16 +2,25 @@ package net.modfest.fireblanket.mixin.fsc;
 
 import com.github.luben.zstd.ZstdOutputStream;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkPhase;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.NetworkState;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.listener.PacketListener;
+import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.c2s.common.CustomPayloadC2SPacket;
 import net.minecraft.network.packet.c2s.config.ReadyC2SPacket;
+import net.minecraft.network.packet.s2c.common.CustomPayloadS2CPacket;
+import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
 import net.minecraft.network.packet.s2c.config.ReadyS2CPacket;
+import net.minecraft.network.packet.s2c.login.LoginCompressionS2CPacket;
+import net.minecraft.network.packet.s2c.login.LoginDisconnectS2CPacket;
 import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.Fireblanket.QueuedPacket;
@@ -63,30 +72,52 @@ public abstract class MixinClientConnection implements FSCConnection {
 	@Redirect(at=@At(value="INVOKE", target="net/minecraft/network/ClientConnection.sendImmediately(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;Z)V"),
 			method="send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;Z)V")
 	public void fireblanket$asyncPacketSending(ClientConnection subject, Packet<?> pkt, PacketCallbacks listener, boolean flush) {
+//		System.out.println("Sending: " + pkt.getClass().getName() + " " + fireblanket$fsc + " " + fireblanket$fscStarted);
+//		System.out.println("Sending: " + pkt.getClass().getName()
+//			+ (pkt instanceof CustomPayloadC2SPacket(CustomPayload payload) ? " as " + payload.getId() : ""));
+
+		// Server
 		if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
 			fireblanket$enableFSCNow();
 		}
 
-		if (this.packetListener != null && this.packetListener.getPhase() == NetworkPhase.PLAY) {
+		PacketListener pktListener = this.packetListener;
+		if (pktListener != null && pktListener.getPhase() == NetworkPhase.PLAY && Fireblanket.IS_FIREBLANKET_SERVER) {
 			fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
 		} else {
 			sendImmediately(pkt, listener, flush);
 		}
 
+		// Client
 		if (pkt instanceof ReadyC2SPacket && fireblanket$fsc && !fireblanket$fscStarted) {
 			fireblanket$enableFSCNow();
+		}
+	}
+
+	@Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/packet/Packet;)V",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/network/ClientConnection;handlePacket(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/listener/PacketListener;)V", shift = At.Shift.BEFORE))
+	public void fireblanket$receive(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo ci) {
+//		System.out.println("Receive: " + packet.getClass().getName() + " " + fireblanket$fsc + " " + fireblanket$fscStarted);
+//		System.out.println("Receive: " + packet.getClass().getName()
+//			+ (packet instanceof CustomPayloadS2CPacket(CustomPayload payload) ? " as " + payload.getId() : ""));
+
+		// idk man
+		if (packet instanceof DisconnectS2CPacket || packet instanceof LoginDisconnectS2CPacket) {
+			fireblanket$fscStarted = false;
+			fireblanket$fsc = false;
 		}
 	}
 
 	@Inject(at=@At("HEAD"), method="setCompressionThreshold", cancellable=true)
 	public void fireblanket$handleCompression(int threshold, boolean check, CallbackInfo ci) {
 		if (fireblanket$fscStarted) {
-			new Throwable("COMPRESSION ??").printStackTrace();
 			ci.cancel();
 		}
 	}
 
 	private void fireblanket$enableFSCNow() {
+//		Thread.dumpStack();
+
 		fireblanket$fscStarted = true;
 		ChannelPipeline pipeline = channel.pipeline();
 		ClientConnection self = (ClientConnection)(Object)this;

@@ -22,7 +22,7 @@ public class PlayerRolesCompat {
 	}
 
 	public static boolean isBuilder(PlayerEntity player) {
-		return is(player, "builder") || is(player, "fixer");
+		return is(player, "builder") || is(player, "fixer") || is(player, "participant");
 	}
 
 	private static boolean is(PlayerEntity player, String id) {

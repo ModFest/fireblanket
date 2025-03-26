@@ -166,8 +166,9 @@ public abstract class MixinChunkSection {
 		// Optimized divmod routine
 		int divRes = (rawIdx * 0xAAAB) >>> 17;             // rawIdx / 3;
 		int modRes = -((divRes + (divRes << 1)) - rawIdx);  // rawIdx % 3;
+		int shift = (20 * modRes);
 
-		long rawVal = (this.fireblanket$denseBlockStorage[divRes] >>> (20L * modRes)) & MASK_BITS;
+		long rawVal = (this.fireblanket$denseBlockStorage[divRes] >>> shift) & MASK_BITS;
 
 		return FlatBlockstateArray.FROM_ID[((int) rawVal)];
 	}

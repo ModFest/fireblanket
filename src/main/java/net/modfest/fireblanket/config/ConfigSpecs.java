@@ -46,8 +46,13 @@ public final class ConfigSpecs {
 
 	public static final ConfigSpec<Boolean> GAMEPLAY_CHANGES = new ConfigSpec<>("gameplay-changes", "Gameplay Changes",
 		"""
-			Allow altering features in a way that impacts gameplay.
+			Allow altering features in a way that impacts gameplay. This disables some entity AI and how certain sounds are played.
 			""", "no", ConfigParsers.BOOLEAN);
+
+	public static final ConfigSpec<Integer> ASYNC_PACKET_THREADS = new ConfigSpec<>("async-packet-threads", "Async Packet Threads",
+		"""
+			Configures how many threads are used to send packets on the dedicated server.
+			""", "4", ConfigParsers.INTEGER);
 
 
 	public static final List<ConfigSpec<?>> ALL_SPECS = new ArrayList<>();
