@@ -3,6 +3,7 @@
 plugins {
 	id "maven-publish"
 	alias libs.plugins.loom
+	id "me.champeau.jmh" version "0.7.2"
 }
 
 version = "$baseVersion+$branch"
@@ -117,4 +118,8 @@ publishing {
 			from components.java
 		}
 	}
+}
+
+jmh {
+	zip64 = true
 }
