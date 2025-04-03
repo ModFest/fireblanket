@@ -18,7 +18,7 @@ public class PlayerRolesCompat {
 	}
 
 	public static boolean isOrganizer(PlayerEntity player) {
-		return is(player, "organizer");
+		return is(player, "organizer") || is(player, "team");
 	}
 
 	public static boolean isBuilder(PlayerEntity player) {

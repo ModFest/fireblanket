@@ -35,6 +35,7 @@ import net.minecraft.world.GameRules;
 import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.RegionCommand;
+import net.modfest.fireblanket.command.StareCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.compat.roles.PlayerRolesCompat;
 import net.modfest.fireblanket.config.ConfigSpecs;
@@ -46,6 +47,7 @@ import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
 import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
+import net.modfest.fireblanket.util.LinkedBlocQueue;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
@@ -56,6 +58,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 public class Fireblanket implements ModInitializer {
@@ -79,7 +82,7 @@ public class Fireblanket implements ModInitializer {
 	private static final AtomicInteger nextQueue = new AtomicInteger();
 
 	@SuppressWarnings("unchecked")
-	public static LinkedBlockingQueue<QueuedPacket>[] PACKET_QUEUES;
+	public static LinkedBlocQueue<QueuedPacket>[] PACKET_QUEUES;
 
 	public static boolean CAN_USE_ZSTD = false;
 	public static boolean IS_FIREBLANKET_SERVER = false;
@@ -93,6 +96,7 @@ public class Fireblanket implements ModInitializer {
 			DumpCommand.init(base, access);
 			RegionCommand.init(base, access);
 			CmdFindReplaceCommand.init(base, access);
+			StareCommand.init(base, access);
 			dispatcher.register(CommandManager.literal("fb")
 				.redirect(dispatcher.register(base)));
 		});
@@ -112,46 +116,40 @@ public class Fireblanket implements ModInitializer {
 		IS_FIREBLANKET_SERVER = FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
 
 		if (IS_FIREBLANKET_SERVER) {
-			PACKET_QUEUES = new LinkedBlockingQueue[FireblanketConfig.get(ConfigSpecs.ASYNC_PACKET_THREADS)];
+			PACKET_QUEUES = new LinkedBlocQueue[FireblanketConfig.get(ConfigSpecs.ASYNC_PACKET_THREADS)];
 			for (int i = 0; i < PACKET_QUEUES.length; i++) {
-				LinkedBlockingQueue<QueuedPacket> q = new LinkedBlockingQueue<>();
+				LinkedBlocQueue<QueuedPacket> q = new LinkedBlocQueue<>();
 				PACKET_QUEUES[i] = q;
+
 				Thread thread = new Thread(() -> {
 					while (true) {
-						try {
-							QueuedPacket p = q.take();
-							((ClientConnectionAccessor) p.conn()).fireblanket$sendImmediately(p.packet(), p.listener(), true);
-						} catch (Throwable t) {
-							LOGGER.error("Exception in packet thread", t);
+						LinkedBlocQueue.Bloc<QueuedPacket> bloc = q.pull();
+						if (bloc == null) {
+							Thread.yield();
+							LockSupport.parkNanos("Waiting for packets", 100_000L);
+							continue;
 						}
+
+						if (bloc.size() > 100) {
+							System.out.println(">> " + bloc.size() + " " + Thread.currentThread().getName());
+						}
+
+						LinkedBlocQueue.Node<QueuedPacket> node = bloc.node();
+						do {
+							try {
+								QueuedPacket p = node.data;
+								((ClientConnectionAccessor) p.conn()).fireblanket$sendImmediately(p.packet(), p.listener(), true);
+								node = node.next;
+							} catch (Throwable t) {
+								LOGGER.error("Exception in packet thread", t);
+							}
+						} while(node != null);
 					}
 				}, "Fireblanket async packet send thread #" + (i + 1));
+
 				thread.setDaemon(true);
 				thread.start();
 			}
-
-			Thread thread = new Thread(() -> {
-				while (true) {
-					try {
-						StringBuilder sb = new StringBuilder();
-						sb.append("Packet queue lengths: [");
-						for (int i = 0; i < PACKET_QUEUES.length; i++) {
-							LinkedBlockingQueue<QueuedPacket> q = PACKET_QUEUES[i];
-							sb.append(q.size());
-							if (i != PACKET_QUEUES.length - 1) {
-								sb.append(", ");
-							}
-						}
-						sb.append("]");
-						System.out.println(sb);
-						Thread.sleep(15_000);
-					} catch (Throwable t) {
-						LOGGER.error("Exception in packet thread", t);
-					}
-				}
-			}, "Fireblanket packet thread sentinel");
-			thread.setDaemon(true);
-			thread.start();
 		}
 
 		try {
@@ -242,7 +240,7 @@ public class Fireblanket implements ModInitializer {
 		sender.accept(ServerPlayNetworking.createS2CPacket(req));
 	}
 
-	public static LinkedBlockingQueue<QueuedPacket> getNextQueue() {
+	public static LinkedBlocQueue<QueuedPacket> getNextQueue() {
 		if (!IS_FIREBLANKET_SERVER) {
 			return null;
 		}

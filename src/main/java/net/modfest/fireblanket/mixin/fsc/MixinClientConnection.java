@@ -4,22 +4,14 @@ import com.github.luben.zstd.ZstdOutputStream;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkPhase;
 import net.minecraft.network.NetworkSide;
-import net.minecraft.network.NetworkState;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.listener.PacketListener;
-import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.common.CustomPayloadC2SPacket;
 import net.minecraft.network.packet.c2s.config.ReadyC2SPacket;
-import net.minecraft.network.packet.s2c.common.CustomPayloadS2CPacket;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
-import net.minecraft.network.packet.s2c.config.ReadyS2CPacket;
-import net.minecraft.network.packet.s2c.login.LoginCompressionS2CPacket;
 import net.minecraft.network.packet.s2c.login.LoginDisconnectS2CPacket;
 import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.modfest.fireblanket.Fireblanket;
@@ -27,6 +19,7 @@ import net.modfest.fireblanket.Fireblanket.QueuedPacket;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.ZstdDecoder;
 import net.modfest.fireblanket.net.ZstdEncoder;
+import net.modfest.fireblanket.util.LinkedBlocQueue;
 import net.modfest.fireblanket.util.ReassignableOutputStream;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,7 +31,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 @Mixin(ClientConnection.class)
@@ -58,7 +50,7 @@ public abstract class MixinClientConnection implements FSCConnection {
 	@Shadow
 	public abstract void flush();
 
-	private final LinkedBlockingQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
+	private final LinkedBlocQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
 	private boolean fireblanket$fsc = false;
 	private boolean fireblanket$fscStarted = false;
 
@@ -83,7 +75,7 @@ public abstract class MixinClientConnection implements FSCConnection {
 
 		PacketListener pktListener = this.packetListener;
 		if (pktListener != null && pktListener.getPhase() == NetworkPhase.PLAY && Fireblanket.IS_FIREBLANKET_SERVER) {
-			fireblanket$queue.add(new QueuedPacket(subject, pkt, listener));
+			fireblanket$queue.put(new QueuedPacket(subject, pkt, listener));
 		} else {
 			sendImmediately(pkt, listener, flush);
 		}
