@@ -23,8 +23,7 @@ public abstract class MixinWorld {
 
 	@Redirect(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/BlockEntityTickInvoker;tick()V"))
 	private void fireblanket$measureBETick(BlockEntityTickInvoker instance) {
-		if (this.isClient() && ClientState.displayTickTimes) {
-			ObservableTicks observe = (ObservableTicks) this.getBlockEntity(instance.getPos());
+		if (this.isClient() && ClientState.displayTickTimes && this.getBlockEntity(instance.getPos()) instanceof ObservableTicks observe) {
 			long start = System.nanoTime();
 			instance.tick();
 			observe.fireblanket$setTickTime(System.nanoTime() - start);

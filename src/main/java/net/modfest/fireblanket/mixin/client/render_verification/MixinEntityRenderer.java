@@ -39,8 +39,8 @@ public class MixinEntityRenderer {
 			if (fireblanket$depth != size) {
 				throw new IllegalStateException("Entity " + entity.getClass() + " had different matrix depths before and after rendering: should be " + fireblanket$verify + " but was " + size);
 			}
-
-			fireblanket$verify = null;
 		}
+
+		fireblanket$verify = null;
 	}
 }
