@@ -10,6 +10,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.modfest.fireblanket.mixinsupport.CommandBE;
 import net.modfest.fireblanket.net.CommandBlockPacket;
 import net.modfest.fireblanket.world.RepeatingBlockState;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +31,11 @@ public abstract class MixinCommandBlock extends BlockWithEntity {
 			if (st.add(player.getUuid())) {
 				st.markDirty();
 				ServerPlayNetworking.send(player, CommandBlockPacket.INST);
+			}
+
+			if (world.getBlockEntity(pos) instanceof CommandBE cmd) {
+				cmd.fireblanket$setOwner(placer.getUuid());
+				cmd.fireblanket$setLastUpdate(placer.getUuid());
 			}
 		}
 	}

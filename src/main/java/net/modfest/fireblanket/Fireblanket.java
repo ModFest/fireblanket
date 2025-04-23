@@ -34,6 +34,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.GameRules;
 import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
+import net.modfest.fireblanket.command.ItemBanCommand;
 import net.modfest.fireblanket.command.RegionCommand;
 import net.modfest.fireblanket.command.StareCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
@@ -48,6 +49,7 @@ import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
 import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
 import net.modfest.fireblanket.util.LinkedBlocQueue;
+import net.modfest.fireblanket.world.ItemBan;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
@@ -97,6 +99,8 @@ public class Fireblanket implements ModInitializer {
 			RegionCommand.init(base, access);
 			CmdFindReplaceCommand.init(base, access);
 			StareCommand.init(base, access);
+			ItemBanCommand.init(base, access);
+
 			dispatcher.register(CommandManager.literal("fb")
 				.redirect(dispatcher.register(base)));
 		});
@@ -109,9 +113,8 @@ public class Fireblanket implements ModInitializer {
 			UpdateSignBlockEntityTypes.apply(block);
 		});
 
-
-
 		EntityFilters.init();
+		ItemBan.apply();
 
 		IS_FIREBLANKET_SERVER = FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
 

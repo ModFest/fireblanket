@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.command;
 
+import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -22,10 +23,13 @@ import net.minecraft.world.chunk.WorldChunk;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 import static net.minecraft.server.command.CommandManager.literal;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.modfest.fireblanket.compat.roles.Roles;
+import net.modfest.fireblanket.mixinsupport.CommandBE;
+import org.jetbrains.annotations.NotNull;
 
 public class DumpCommand {
 	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
@@ -64,8 +68,32 @@ public class DumpCommand {
 										type += "-AlwaysActive";
 									}
 
+									UUID owner = ((CommandBE)cbe).fireblanket$getOwner();
+									UUID lastUpdate = ((CommandBE)cbe).fireblanket$getLastUpdate();
+
+									String ownerName = "Unknown owner!!";
+									if (owner != null) {
+										ProfileResult res = server.getSource().getServer().getSessionService().fetchProfile(owner, true);
+										if (res != null) {
+											ownerName = res.profile().getName();
+										}
+									}
+
+									String lastUpdateName = "Unknown last update!!";
+									if (lastUpdate != null) {
+										ProfileResult res = server.getSource().getServer().getSessionService().fetchProfile(lastUpdate, true);
+										if (res != null) {
+											lastUpdateName = res.profile().getName();
+										}
+									}
+
 									String ft = type;
-									server.getSource().sendFeedback(() -> Text.literal("[" + e.getKey().toShortString() + "] [" + ft + "] : " + cbe.getCommandExecutor().getCommand()), false);
+									String finalOwnerName = ownerName;
+									String finalLastUpdateName = lastUpdateName;
+									server.getSource().sendFeedback(() -> Text.literal(
+										"[" + e.getKey().toShortString() + "] [" + ft + "] "
+											+ "[Owner: " + finalOwnerName + "] [Last updated: " + finalLastUpdateName + "]: "
+											+ cbe.getCommandExecutor().getCommand()), false);
 								}
 							}
 						}

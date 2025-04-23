@@ -54,6 +54,13 @@ public final class ConfigSpecs {
 			Configures how many threads are used to send packets on the dedicated server.
 			""", "4", ConfigParsers.INTEGER);
 
+	public static final ConfigSpec<List<String>> BANNED_ITEMS = new ConfigSpec<>("banned-items", "Banned Items",
+		"""
+			Removes all instances of the listed items from a player's inventory on tick. Useful for emergency moderation.
+			Example:
+			banned-items: minecraft:iron_sword,minecraft:diamond_sword
+			""", "", ConfigParsers.STRING_LIST);
+
 
 	public static final List<ConfigSpec<?>> ALL_SPECS = new ArrayList<>();
 
@@ -74,6 +81,7 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(AVOID_ZSTD);
 		ALL_SPECS.add(GAMEPLAY_CHANGES);
 		ALL_SPECS.add(ASYNC_PACKET_THREADS);
+		ALL_SPECS.add(BANNED_ITEMS);
 
 		// We have registries at home:
 		buildMap();

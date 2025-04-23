@@ -1,5 +1,7 @@
 package net.modfest.fireblanket;
 
+import com.bawnorton.mixinsquared.api.MixinCanceller;
+import com.bawnorton.mixinsquared.canceller.MixinCancellerRegistrar;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Bootstrap;
 import net.modfest.fireblanket.config.ConfigSpecs;
@@ -34,6 +36,18 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 		boolean ignoreRenderingMods = Boolean.getBoolean("fireblanket.iSolemnlySwearIWillNotReportRenderingCrashesAndAcceptResponsibilityForBreakage");
 		if (ignoreRenderingMods) {
 			LoggerFactory.getLogger("Fireblanket").error("Ignoring the presence of rendering mods. You are proceeding at your own mortal peril.");
+		}
+
+		MixinCancellerRegistrar.register(new Canceller());
+	}
+
+	private static class Canceller implements MixinCanceller {
+		@Override
+		public boolean shouldCancel(List<String> targetClassNames, String mixinClassName) {
+			if ("net.frozenblock.lib.spotting_icons.mixin.client.LevelRendererMixin".equals(mixinClassName)) {
+				return true;
+			}
+			return false;
 		}
 	}
 
