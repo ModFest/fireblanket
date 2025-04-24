@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 @Mixin(AlUtil.class)
 public class MixinAlUtil {
 	@Inject(method = "checkErrors", at = @At(value = "INVOKE_ASSIGN", target = "Lorg/lwjgl/openal/AL10;alGetError()I"), locals = LocalCapture.CAPTURE_FAILSOFT)
-	private static void fireblanket$restartSoundEngineOnError_itWorkedForMorrowindSoItWorksForUs(String sectionName, CallbackInfoReturnable<Boolean> cir, int error) {
+	private static void fireblanket$restartSoundEngineOnError(String sectionName, CallbackInfoReturnable<Boolean> cir, int error) {
 		if (error != 0) {
 			Fireblanket.LOGGER.warn("Restarting sound engine due to error!");
 			MinecraftClient.getInstance().getSoundManager().soundSystem.stop();
