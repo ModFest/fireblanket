@@ -32,35 +32,35 @@ public class MixinItemColors {
 	 *
 	 * @reason Use cached id for performance
 	 */
-	@Overwrite
-	public int getColor(ItemStack item, int tintIndex) {
-		int id = ((IdStack) (Object) item).fireblanket$getRawId();
-		ColorStack stack = (ColorStack) (Object) item;
-
-		Box<ItemColorProvider> box = stack.fireblanket$getProvider();
-		ItemColorProvider provider;
-		if (box != null) {
-			provider = box.value();
-		} else {
-			provider = this.fireblanket$map.get(id);
-			stack.fireblanket$setProvider(provider);
-		}
-		if (provider == null) {
-			return -1;
-		}
-
-		return provider.getColor(item, tintIndex);
-
-		// Slow?
-//		Int2IntOpenHashMap map = stack.fireblanket$getTintsMap();
-//		int v = map.get(tintIndex);
-//		if (v == 0) {
-//			v = provider.getColor(item, tintIndex);
-//			map.put(tintIndex, v);
+//	@Overwrite
+//	public int getColor(ItemStack item, int tintIndex) {
+//		int id = ((IdStack) (Object) item).fireblanket$getRawId();
+//		ColorStack stack = (ColorStack) (Object) item;
+//
+//		Box<ItemColorProvider> box = stack.fireblanket$getProvider();
+//		ItemColorProvider provider;
+//		if (box != null) {
+//			provider = box.value();
+//		} else {
+//			provider = this.fireblanket$map.get(id);
+//			stack.fireblanket$setProvider(provider);
 //		}
-//		return v;
-//		return provider == null ? -1 : provider.getColor(item, tintIndex);
-	}
+//		if (provider == null) {
+//			return -1;
+//		}
+//
+//		return provider.getColor(item, tintIndex);
+//
+//		// Slow?
+////		Int2IntOpenHashMap map = stack.fireblanket$getTintsMap();
+////		int v = map.get(tintIndex);
+////		if (v == 0) {
+////			v = provider.getColor(item, tintIndex);
+////			map.put(tintIndex, v);
+////		}
+////		return v;
+////		return provider == null ? -1 : provider.getColor(item, tintIndex);
+//	}
 
 	@Inject(method = "register", at = @At("TAIL"))
 	private void fireblanket$addToMap(ItemColorProvider provider, ItemConvertible[] items, CallbackInfo ci) {
