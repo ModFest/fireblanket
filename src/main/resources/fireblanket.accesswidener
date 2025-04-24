@@ -20,6 +20,3 @@ accessible field net/minecraft/entity/LivingEntity serverHeadYaw D
 accessible field net/minecraft/entity/LivingEntity serverPitch D
 
 accessible method net/minecraft/network/packet/s2c/play/BlockEntityUpdateS2CPacket <init> (Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/entity/BlockEntityType;Lnet/minecraft/nbt/NbtCompound;)V
-
-accessible method net/minecraft/client/sound/SoundSystem start ()V
-accessible field net/minecraft/client/sound/SoundManager soundSystem Lnet/minecraft/client/sound/SoundSystem;

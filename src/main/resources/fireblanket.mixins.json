@@ -108,7 +108,6 @@
 		"client.vbo_opto.MixinVertexBuffer",
 		"gamemode_selection.MixinKeyboard",
 		"gamemode_selection.MixinSelectionScreen",
-		"mods.masking.sodium.MixinChunkRenderRebuildTask",
-		"client.MixinAlUtil"
+		"mods.masking.sodium.MixinChunkRenderRebuildTask"
 	]
 }
