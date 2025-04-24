@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * setting. As many minecraft structures rely on the palette, when the palette is queried, for saving or networking,
  * it flushes the data from the flat array back into the palette.
  */
-@Mixin(ChunkSection.class)
+@Mixin(value = ChunkSection.class, priority = 900)
 public abstract class MixinChunkSection {
 	// Will be real due to mixin plugin
 

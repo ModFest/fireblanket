@@ -133,9 +133,9 @@ public class Fireblanket implements ModInitializer {
 							continue;
 						}
 
-						if (bloc.size() > 100) {
-							System.out.println(">> " + bloc.size() + " " + Thread.currentThread().getName());
-						}
+//						if (bloc.size() > 100) {
+//							System.out.println(">> " + bloc.size() + " " + Thread.currentThread().getName());
+//						}
 
 						LinkedBlocQueue.Node<QueuedPacket> node = bloc.node();
 						do {

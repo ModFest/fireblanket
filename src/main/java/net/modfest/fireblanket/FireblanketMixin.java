@@ -47,6 +47,9 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			if ("net.frozenblock.lib.spotting_icons.mixin.client.LevelRendererMixin".equals(mixinClassName)) {
 				return true;
 			}
+			if ("io.wispforest.affinity.mixin.MapStateMixin".equals(mixinClassName)) {
+				return true;
+			}
 			return false;
 		}
 	}
@@ -63,7 +66,8 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 		}
 
 		if (mixinClassName.contains("region_chunk_cache")) {
-			return FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS) > 0;
+			return false;
+//			return FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS) > 0;
 		}
 
 		if (mixinClassName.contains("block_format")) {
