@@ -6,6 +6,7 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.modfest.fireblanket.FireblanketClient;
+import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,7 +18,7 @@ public class MixinBlockEntityRenderDispatcher {
 	@Inject(at = @At("HEAD"), method = "render(Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V", cancellable = true)
 	private static void render(BlockEntityRenderer<?> renderer, BlockEntity be, float delta, MatrixStack matrices, VertexConsumerProvider vcp,
 	                           CallbackInfo ci) {
-		if (!FireblanketClient.shouldRender(be)) {
+		if (RenderRegionRenderer.useRegionRenderer && !FireblanketClient.shouldRender(be)) {
 			ci.cancel();
 		}
 	}

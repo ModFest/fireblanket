@@ -16,10 +16,11 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class RenderRegionRenderer {
-	public static boolean shouldRender = false;
+	public static boolean shouldRenderBox = false;
+	public static boolean useRegionRenderer = true;
 
 	public static void render(MatrixStack matrices, float tickDelta) {
-		if (!shouldRender) {
+		if (!shouldRenderBox) {
 			return;
 		}
 

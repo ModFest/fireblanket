@@ -33,6 +33,4 @@ public class MixinRegionSubjects implements RegionSubject {
 		fireblanket$viewerPos = viewerPos;
 		fireblanket$shouldRender = shouldRender;
 	}
-
-
 }
