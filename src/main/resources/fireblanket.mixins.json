@@ -12,6 +12,7 @@
 		"accessor.ItemFrameAccessor",
 		"accessor.ServerChunkManagerAccessor",
 		"accessor.ServerLoginNetworkHandlerAccessor",
+		"adventure_fix.MixinBedBlock",
 		"adventure_fix.MixinFarmlandBlock",
 		"adventure_fix.MixinItemStack",
 		"adventure_fix.MixinPlayerInteractEntityC2SPacketHandler",
@@ -25,6 +26,7 @@
 		"block.MixinCommandBlockBlockEntity",
 		"block.MixinServerPlayNetworkHandler",
 		"block_format.MixinChunkSection",
+		"crash.MixinCraftingScreenHandler",
 		"criterion.MixinServerPlayerEntity",
 		"entity_immutability.MixinDecorationItem",
 		"entity_immutability.MixinEntityType",
@@ -49,6 +51,7 @@
 		"io_uring.MixinServerNetworkIo",
 		"itemban.MixinServerPlayerEntity",
 		"log.MixinServerPlayNetworkHandler",
+		"log.MixinTrialSpawnerData",
 		"mods.create.AccessorSmartBlockEntity",
 		"mods.create.MixinMechanicalBearingBlockEntity",
 		"mods.create.MixinSuperGlueEntity",
@@ -84,6 +87,7 @@
 		"client.MixinRenderSystem",
 		"client.MixinSignBlockEntityRenderer",
 		"client.MixinSpriteLoader",
+		"client.MixinWorldRenderer",
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
 		"client.be_masking.MixinBlockEntityRenderDispatcher",
 		"client.be_masking.MixinRebuildTask",
@@ -96,6 +100,7 @@
 		"client.entity_ticking.MixinLivingEntity",
 		"client.hooks.MixinWorldRenderer",
 		"client.render_regions.MixinBlockEntityRenderDispatcher",
+		"client.render_regions.MixinComposableEntityVisual",
 		"client.render_regions.MixinEntityRenderDispatcher",
 		"client.render_regions.MixinRegionSubjects",
 		"client.render_verification.MixinBlockEntityRenderDispatcher",
@@ -110,7 +115,6 @@
 		"gamemode_selection.MixinKeyboard",
 		"gamemode_selection.MixinSelectionScreen",
 		"mods.masking.sodium.MixinChunkRenderRebuildTask",
-		"mods.vivatech.MixinWireRenderer",
-		"client.render_regions.MixinComposableEntityVisual"
+		"mods.vivatech.MixinWireRenderer"
 	]
 }
