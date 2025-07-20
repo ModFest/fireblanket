@@ -7,7 +7,12 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(TrialSpawnerData.class)
 public class MixinTrialSpawnerData {
-	@Redirect(method = "getAdditionalPlayers", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Util;error(Ljava/lang/String;)V"))
+
+
+	@Redirect(
+		method = "getAdditionalPlayers",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Util;logErrorOrPause(Ljava/lang/String;)V")
+	)
 	private void fireblanket$noLog(String message) {
 
 	}
