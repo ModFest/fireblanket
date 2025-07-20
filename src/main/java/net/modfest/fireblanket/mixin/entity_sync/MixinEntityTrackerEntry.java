@@ -1,5 +1,7 @@
 package net.modfest.fireblanket.mixin.entity_sync;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
@@ -16,6 +18,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Slice;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -29,8 +32,19 @@ public class MixinEntityTrackerEntry implements TrackerEntityHolder {
 	@Unique
 	private Set<PlayerAssociatedNetworkHandler> heldListeners;
 
-	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 3))
-	public void fireblanket$velocity1(Consumer instance, Object o) {
+	/*
+		The indices of the packets get fiddly as mojang updates.
+		If you're here because of an IllegalStateException, you probably need to
+		figure out the new offsets.
+	 */
+
+	@WrapOperation(
+		method = "tick",
+		slice = @Slice( // comes after bundle
+			from = @At(value = "INVOKE", target = "Lnet/minecraft/network/packet/s2c/play/BundleS2CPacket;<init>(Ljava/lang/Iterable;)V")
+		),
+		at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 0)
+	) public void fireblanket$velocity1(Consumer instance, Object o, Operation<Void> original) {
 		if (o instanceof EntityVelocityUpdateS2CPacket packet) {
 			if (heldListeners == null) {
 				throw new IllegalStateException();

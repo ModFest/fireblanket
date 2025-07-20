@@ -1,10 +1,10 @@
 package net.modfest.fireblanket.mixin.client.bufferbuilder_opto;
 
-import net.minecraft.client.render.VertexFormat;
+//import net.minecraft.client.render.VertexFormat;
 import net.modfest.fireblanket.client.render.ExtendedVertexFormat;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(VertexFormat.class)
+//@Mixin(VertexFormat.class)
 public abstract class MixinVertexFormat implements ExtendedVertexFormat {
 
 //    @Shadow @Final

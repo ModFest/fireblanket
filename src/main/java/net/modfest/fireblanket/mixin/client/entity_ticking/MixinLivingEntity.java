@@ -14,7 +14,7 @@ public abstract class MixinLivingEntity extends Entity {
 		super(type, world);
 	}
 
-	@ModifyVariable(method = {"updateTrackedPositionAndAngles", "updateTrackedHeadRotation"}, at = @At(value = "HEAD"), ordinal = 0)
+	@ModifyVariable(method = {/*"updateTrackedPositionAndAngles",*/ "updateTrackedHeadRotation"}, at = @At(value = "HEAD"), ordinal = 0)
 	private int fireblanket$smoothOutClientMovement(int interpolationSteps) {
 		return Math.max(interpolationSteps, this.getType().getTrackTickInterval());
 	}

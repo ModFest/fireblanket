@@ -36,56 +36,56 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 		this.playerDataDir = session.getDirectory(WorldSavePath.PLAYERDATA).toFile();
 	}
 
-	@Override
-	public Optional<NbtCompound> loadPlayerData(PlayerEntity player) {
-		try {
-			InputStream in;
-			File zstd = new File(playerDataDir, player.getUuidAsString() + ".zat");
-			if (zstd.isFile()) {
-				in = new FastBufferedInputStream(new ZstdInputStream(new FileInputStream(zstd)));
-			} else {
-				File vanilla = new File(playerDataDir, player.getUuidAsString() + ".dat");
-				if (vanilla.isFile()) {
-					in = new FastBufferedInputStream(new GZIPInputStream(new FileInputStream(zstd)));
-				} else {
-					return Optional.empty();
-				}
-			}
-			try (in) {
-				NbtCompound nbt = NbtIo.readCompound(new DataInputStream(in));
-				int ver = NbtHelper.getDataVersion(nbt, -1);
-				player.readNbt(DataFixTypes.PLAYER.update(dataFixer, nbt, ver));
-				return Optional.of(nbt);
-			}
-		} catch (Exception e) {
-			LOGGER.warn("Failed to load player data for {}", player.getName().getString());
-			return Optional.empty();
-		}
-	}
+//	@Override
+//	public Optional<NbtCompound> loadPlayerData(PlayerEntity player) {
+//		try {
+//			InputStream in;
+//			File zstd = new File(playerDataDir, player.getUuidAsString() + ".zat");
+//			if (zstd.isFile()) {
+//				in = new FastBufferedInputStream(new ZstdInputStream(new FileInputStream(zstd)));
+//			} else {
+//				File vanilla = new File(playerDataDir, player.getUuidAsString() + ".dat");
+//				if (vanilla.isFile()) {
+//					in = new FastBufferedInputStream(new GZIPInputStream(new FileInputStream(zstd)));
+//				} else {
+//					return Optional.empty();
+//				}
+//			}
+//			try (in) {
+//				NbtCompound nbt = NbtIo.readCompound(new DataInputStream(in));
+//				int ver = NbtHelper.getDataVersion(nbt, -1);
+//				player.readNbt(DataFixTypes.PLAYER.update(dataFixer, nbt, ver));
+//				return Optional.of(nbt);
+//			}
+//		} catch (Exception e) {
+//			LOGGER.warn("Failed to load player data for {}", player.getName().getString());
+//			return Optional.empty();
+//		}
+//	}
 
 	@Override
 	public void savePlayerData(PlayerEntity player) {
-		if (AVOID_ZTSD) {
+//		if (AVOID_ZTSD) {
 			super.savePlayerData(player);
-			return;
-		}
-		try {
-			NbtCompound nbt = player.writeNbt(new NbtCompound());
-			File tmp = File.createTempFile(player.getUuidAsString() + "-", ".zat", playerDataDir);
-			try (ZstdOutputStream z = new ZstdOutputStream(new FileOutputStream(tmp))) {
-				z.setChecksum(true);
-				z.setLevel(6);
-				NbtIo.write(nbt, new DataOutputStream(z));
-			}
-			File tgt = new File(playerDataDir, player.getUuidAsString() + ".zat");
-			File backup = new File(playerDataDir, player.getUuidAsString() + ".zat_old");
-			Util.backupAndReplace(tgt.toPath(), tmp.toPath(), backup.toPath());
-			File oldTgt = new File(playerDataDir, player.getUuidAsString() + ".dat");
-			File oldBackup = new File(playerDataDir, player.getUuidAsString() + ".dat_old");
-			oldTgt.delete();
-			if (backup.exists()) oldBackup.delete();
-		} catch (Exception e) {
-			LOGGER.warn("Failed to save player data for {}", player.getName().getString());
-		}
+//			return;
+//		}
+//		try {
+//			NbtCompound nbt = player.writeNbt(new NbtCompound());
+//			File tmp = File.createTempFile(player.getUuidAsString() + "-", ".zat", playerDataDir);
+//			try (ZstdOutputStream z = new ZstdOutputStream(new FileOutputStream(tmp))) {
+//				z.setChecksum(true);
+//				z.setLevel(6);
+//				NbtIo.write(nbt, new DataOutputStream(z));
+//			}
+//			File tgt = new File(playerDataDir, player.getUuidAsString() + ".zat");
+//			File backup = new File(playerDataDir, player.getUuidAsString() + ".zat_old");
+//			Util.backupAndReplace(tgt.toPath(), tmp.toPath(), backup.toPath());
+//			File oldTgt = new File(playerDataDir, player.getUuidAsString() + ".dat");
+//			File oldBackup = new File(playerDataDir, player.getUuidAsString() + ".dat_old");
+//			oldTgt.delete();
+//			if (backup.exists()) oldBackup.delete();
+//		} catch (Exception e) {
+//			LOGGER.warn("Failed to save player data for {}", player.getName().getString());
+//		}
 	}
 }

@@ -6,6 +6,9 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
+import net.minecraft.util.Uuids;
 import net.minecraft.util.math.BlockPos;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,26 +30,21 @@ public abstract class MixinCommandBlockBlockEntity extends BlockEntity implement
 		super(type, pos, state);
 	}
 
-	@Inject(method = "writeNbt", at = @At("TAIL"))
-	private void fireblanket$writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup, CallbackInfo ci) {
+	@Inject(method = "writeData", at = @At("TAIL"))
+	private void fireblanket$writeNbt(WriteView nbt, CallbackInfo ci) {
 		if (fireblanket$owner != null) {
-			nbt.putUuid("FB:Owner", fireblanket$owner);
+			nbt.put("FB:Owner", Uuids.INT_STREAM_CODEC, fireblanket$owner);
 		}
 
 		if (fireblanket$lastUpdated != null) {
-			nbt.putUuid("FB:LastUpdated", fireblanket$lastUpdated);
+			nbt.put("FB:LastUpdated", Uuids.INT_STREAM_CODEC, fireblanket$lastUpdated);
 		}
 	}
 
-	@Inject(method = "readNbt", at = @At("TAIL"))
-	private void fireblanket$readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup, CallbackInfo ci) {
-		if (nbt.contains("FB:Owner")) {
-			fireblanket$owner = nbt.getUuid("FB:Owner");
-		}
-
-		if (nbt.contains("FB:LastUpdated")) {
-			fireblanket$lastUpdated = nbt.getUuid("FB:LastUpdated");
-		}
+	@Inject(method = "readData", at = @At("TAIL"))
+	private void fireblanket$readNbt(ReadView nbt, CallbackInfo ci) {
+		fireblanket$owner = nbt.read("FB:Owner", Uuids.INT_STREAM_CODEC).orElse(null);
+		fireblanket$lastUpdated = nbt.read("FB:LastUpdated", Uuids.INT_STREAM_CODEC).orElse(null);
 	}
 
 	@Override

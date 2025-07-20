@@ -452,27 +452,27 @@ public class RenderRegions {
 	}
 
 	public void readNbt(NbtCompound nbt) {
-		for (String name : nbt.getKeys()) {
-			NbtCompound cmp = nbt.getCompound(name);
-			Mode m = Mode.valueOf(cmp.getString("Mode"));
-			int[] box = cmp.getIntArray("Box");
-			RenderRegion r = new RenderRegion(box[0], box[1], box[2], box[3], box[4], box[5], m);
-			add(name, r);
-			int[] entities = cmp.getIntArray("EAtt");
-			for (int i = 0; i < entities.length; i += 4) {
-				attachEntity(r, Uuids.toUuid(Arrays.copyOfRange(entities, i, i + 4)));
-			}
-			long[] blockentities = cmp.getLongArray("BEAtt");
-			for (long l : blockentities) {
-				attachBlock(r, l);
-			}
-			for (NbtElement ele : cmp.getList("ETAtt", NbtElement.STRING_TYPE)) {
-				attachEntityType(r, Identifier.tryParse(ele.asString()));
-			}
-			for (NbtElement ele : cmp.getList("BETAtt", NbtElement.STRING_TYPE)) {
-				attachBlockEntityType(r, Identifier.tryParse(ele.asString()));
-			}
-		}
+//		for (String name : nbt.getKeys()) {
+//			NbtCompound cmp = nbt.getCompound(name);
+//			Mode m = Mode.valueOf(cmp.getString("Mode"));
+//			int[] box = cmp.getIntArray("Box");
+//			RenderRegion r = new RenderRegion(box[0], box[1], box[2], box[3], box[4], box[5], m);
+//			add(name, r);
+//			int[] entities = cmp.getIntArray("EAtt");
+//			for (int i = 0; i < entities.length; i += 4) {
+//				attachEntity(r, Uuids.toUuid(Arrays.copyOfRange(entities, i, i + 4)));
+//			}
+//			long[] blockentities = cmp.getLongArray("BEAtt");
+//			for (long l : blockentities) {
+//				attachBlock(r, l);
+//			}
+//			for (NbtElement ele : cmp.getList("ETAtt", NbtElement.STRING_TYPE)) {
+//				attachEntityType(r, Identifier.tryParse(ele.asString()));
+//			}
+//			for (NbtElement ele : cmp.getList("BETAtt", NbtElement.STRING_TYPE)) {
+//				attachBlockEntityType(r, Identifier.tryParse(ele.asString()));
+//			}
+//		}
 	}
 
 	public void writeNbt(NbtCompound nbt) {

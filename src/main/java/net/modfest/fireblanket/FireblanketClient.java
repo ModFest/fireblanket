@@ -14,10 +14,9 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.Vec3d;
-import net.modfest.fireblanket.client.command.BERMaskCommand;
-import net.modfest.fireblanket.client.command.ClientRegionCommand;
+//import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.CountParticleTypesCommand;
-import net.modfest.fireblanket.client.command.EntityMaskCommand;
+//import net.modfest.fireblanket.client.command.EntityMaskCommand;
 import net.modfest.fireblanket.client.command.TickTimeCommand;
 import net.modfest.fireblanket.client.command.WireframeCommand;
 import net.modfest.fireblanket.client.screen.PlaceCommandBlockScreen;
@@ -42,13 +41,13 @@ public class FireblanketClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, access) -> {
 			LiteralArgumentBuilder<FabricClientCommandSource> base = ClientCommandManager.literal("fireblanket:client");
-			if (FireblanketMixin.DO_MASKING) {
-				LiteralArgumentBuilder<FabricClientCommandSource> mask = ClientCommandManager.literal("mask");
-				BERMaskCommand.init(mask, access);
-				EntityMaskCommand.init(mask, access);
-				base.then(mask);
-			}
-			ClientRegionCommand.init(base, access);
+//			if (FireblanketMixin.DO_MASKING) {
+//				LiteralArgumentBuilder<FabricClientCommandSource> mask = ClientCommandManager.literal("mask");
+//				BERMaskCommand.init(mask, access);
+//				EntityMaskCommand.init(mask, access);
+//				base.then(mask);
+//			}
+//			ClientRegionCommand.init(base, access);
 			WireframeCommand.init(base, access);
 			TickTimeCommand.init(base, access);
 			CountParticleTypesCommand.init(base, access);

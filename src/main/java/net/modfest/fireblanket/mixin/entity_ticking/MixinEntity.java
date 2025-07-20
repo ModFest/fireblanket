@@ -45,9 +45,6 @@ public abstract class MixinEntity {
 	@Shadow
 	private BlockPos blockPos;
 
-	@Shadow
-	public abstract void readNbt(NbtCompound nbt);
-
 	/**
 	 * @author Jasmine
 	 * @reason Sure hope people aren't using pistons to move entities

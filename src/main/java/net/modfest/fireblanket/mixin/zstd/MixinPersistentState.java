@@ -19,21 +19,21 @@ import java.nio.file.Path;
 
 @Mixin(PersistentState.class)
 public class MixinPersistentState {
-	@WrapOperation(at = @At(value = "INVOKE", target = "net/minecraft/nbt/NbtIo.writeCompressed(Lnet/minecraft/nbt/NbtCompound;Ljava/nio/file/Path;)V"), method = "save")
-	public void fireblanket$writeZstd(NbtCompound nbt, Path vanilla, Operation<Void> original) throws IOException {
-		String path = vanilla.toAbsolutePath().toString();
-		if (path.endsWith(".dat")) {
-			File zstd = new File(path.substring(0, path.length() - 4) + ".zat");
-			try (ZstdOutputStream z = new ZstdOutputStream(new FileOutputStream(zstd))) {
-				z.setChecksum(true);
-				z.setLevel(4);
-				NbtIo.write(nbt, new DataOutputStream(z));
-			}
-
-			Files.deleteIfExists(vanilla);
-		} else {
-			// oookay, I dunno what you want. have fun.
-			original.call(nbt, vanilla);
-		}
-	}
+//	@WrapOperation(at = @At(value = "INVOKE", target = "net/minecraft/nbt/NbtIo.writeCompressed(Lnet/minecraft/nbt/NbtCompound;Ljava/nio/file/Path;)V"), method = "save")
+//	public void fireblanket$writeZstd(NbtCompound nbt, Path vanilla, Operation<Void> original) throws IOException {
+//		String path = vanilla.toAbsolutePath().toString();
+//		if (path.endsWith(".dat")) {
+//			File zstd = new File(path.substring(0, path.length() - 4) + ".zat");
+//			try (ZstdOutputStream z = new ZstdOutputStream(new FileOutputStream(zstd))) {
+//				z.setChecksum(true);
+//				z.setLevel(4);
+//				NbtIo.write(nbt, new DataOutputStream(z));
+//			}
+//
+//			Files.deleteIfExists(vanilla);
+//		} else {
+//			// oookay, I dunno what you want. have fun.
+//			original.call(nbt, vanilla);
+//		}
+//	}
 }

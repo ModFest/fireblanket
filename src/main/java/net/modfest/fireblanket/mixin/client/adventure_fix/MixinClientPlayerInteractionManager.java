@@ -9,11 +9,9 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.world.World;
-import net.modfest.fireblanket.FireblanketConstants;
 import net.modfest.fireblanket.mixinsupport.InteractionCheck;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -52,15 +50,15 @@ public class MixinClientPlayerInteractionManager {
 
 	@WrapOperation(
 		method = "interactBlockInternal",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;onUseWithItem(Lnet/minecraft/item/ItemStack;Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;Lnet/minecraft/util/hit/BlockHitResult;)Lnet/minecraft/util/ItemActionResult;")
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;onUseWithItem(Lnet/minecraft/item/ItemStack;Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;Lnet/minecraft/util/hit/BlockHitResult;)Lnet/minecraft/util/ActionResult;")
 	)
-	private ItemActionResult fireblanket$filterItemBlockInteractByTag(BlockState blockState, ItemStack stack, World world, PlayerEntity player, Hand hand, BlockHitResult hitResult, Operation<ItemActionResult> op) {
+	private ActionResult fireblanket$filterItemBlockInteractByTag(BlockState blockState, ItemStack stack, World world, PlayerEntity player, Hand hand, BlockHitResult hitResult, Operation<ActionResult> op) {
  		if (!player.getAbilities().allowModifyWorld) {
 			if (InteractionCheck.preventUseItem(player, stack)) {
-				return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+				return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
 			}
 			if (InteractionCheck.preventUseBlock(player, blockState)) {
-				return ItemActionResult.FAIL;
+				return ActionResult.FAIL;
 			}
 		}
 		return op.call(blockState, stack, world, player, hand, hitResult);

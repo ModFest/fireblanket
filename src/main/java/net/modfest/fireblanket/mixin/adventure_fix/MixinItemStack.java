@@ -7,7 +7,7 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
+//import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import net.modfest.fireblanket.FireblanketConstants;
 import net.modfest.fireblanket.mixinsupport.InteractionCheck;
@@ -35,9 +35,9 @@ public abstract class MixinItemStack {
 	}
 
 	@Inject(method = "use", at = @At("HEAD"), cancellable = true)
-	private void fireblanket$filterItemUseByTag(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> ci) {
+	private void fireblanket$filterItemUseByTag(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> ci) {
 		if (!user.getAbilities().allowModifyWorld && InteractionCheck.preventUseItem(user, (ItemStack)(Object)this)) {
-			ci.setReturnValue(TypedActionResult.fail(user.getStackInHand(hand)));
+			ci.setReturnValue(ActionResult.FAIL);
 			ci.cancel();
 		}
 	}

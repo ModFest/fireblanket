@@ -8,6 +8,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.structure.StructureTemplateManager;
 import net.minecraft.util.Util;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.util.profiler.Profilers;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -95,7 +96,7 @@ public abstract class MixinServerChunkManager {
 				Chunk c = CompletableFuture.supplyAsync(() -> this.getChunk(x, z, leastStatus, create), this.mainThreadExecutor).join();
 				cir.setReturnValue(c);
 			} else {
-				Profiler profiler = this.world.getProfiler();
+				Profiler profiler = Profilers.get();
 				profiler.visit("getChunk");
 
 				int min = this.fireblanket$min;
@@ -137,7 +138,7 @@ public abstract class MixinServerChunkManager {
 					OptionalChunk<Chunk> optionalChunk = completableFuture.join();
 					Chunk chunkx = optionalChunk.orElse(null);
 					if (chunkx == null) {
-						throw Util.throwOrPause(new IllegalStateException("Chunk not there when requested: " + optionalChunk.getError()));
+						throw Util.getFatalOrPause(new IllegalStateException("Chunk not there when requested: " + optionalChunk.getError()));
 					} else {
 						// Put in the cache for next time
 						cache[cacheIdx] = chunk;

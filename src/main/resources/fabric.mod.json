@@ -17,7 +17,7 @@
 	},
 	"license": "${license}",
 	"icon": "assets/${modId}/icon.png",
-	"accessWidener": "${modId}.accesswidener",
+	"accessWidener": "fireblanket.accesswidener",
 	"mixins": [
 		"${modId}.mixins.json"
 	],

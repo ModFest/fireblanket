@@ -2,6 +2,7 @@ package net.modfest.fireblanket.mixin.entity_ticking;
 
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -23,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 @Mixin(DebugStickItem.class)
 public class MixinDebugStickItem extends Item {
@@ -47,20 +49,20 @@ public class MixinDebugStickItem extends Item {
 		if (isCustomFireblanket(nbt)) {
 			// Only builder+ should be able to use debug hammers
 			if (!user.getWorld().isClient && Roles.isBuilder(user)) {
-				if (nbt.getBoolean(NOAI)) {
+				if (nbt.getBoolean(NOAI, false)) {
 					if (entity instanceof MobEntity mob) {
 						mob.setAiDisabled(true);
 					} else {
-						user.sendMessage(Text.literal("This entity isn't a mob, and can't have NoAI applied!"));
+						user.sendMessage(Text.literal("This entity isn't a mob, and can't have NoAI applied!"), true);
 						return ActionResult.PASS;
 					}
 				}
 
-				if (nbt.getBoolean(NOGRAV)) {
+				if (nbt.getBoolean(NOGRAV, false)) {
 					entity.setNoGravity(true);
 				}
 
-				if (nbt.getBoolean(NOMOV)) {
+				if (nbt.getBoolean(NOMOV, false)) {
 					((ImmmovableLivingEntity) entity).setNoMovement(true);
 				}
 
@@ -81,28 +83,28 @@ public class MixinDebugStickItem extends Item {
 	}
 
 	@Override
-	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+	public void appendTooltip(ItemStack stack, Item.TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> tooltip, TooltipType type) {
 		NbtCompound nbt = stack.getComponents().getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 
 		if (isCustomFireblanket(nbt)) {
-			tooltip.add(Text.literal(Formatting.RED + "This debug stick can't edit blocks!"));
-			tooltip.add(Text.literal(Formatting.LIGHT_PURPLE + "Instead, it:"));
+			tooltip.accept(Text.literal(Formatting.RED + "This debug stick can't edit blocks!"));
+			tooltip.accept(Text.literal(Formatting.LIGHT_PURPLE + "Instead, it:"));
 
-			if (nbt.getBoolean(NOAI)) {
-				tooltip.add(Text.literal(Formatting.LIGHT_PURPLE + "- Makes mob entities not have AI"));
+			if (nbt.getBoolean(NOAI, false)) {
+				tooltip.accept(Text.literal(Formatting.LIGHT_PURPLE + "- Makes mob entities not have AI"));
 			}
 
-			if (nbt.getBoolean(NOGRAV)) {
-				tooltip.add(Text.literal(Formatting.LIGHT_PURPLE + "- Makes living entities not have gravity"));
+			if (nbt.getBoolean(NOGRAV, false)) {
+				tooltip.accept(Text.literal(Formatting.LIGHT_PURPLE + "- Makes living entities not have gravity"));
 			}
 
-			if (nbt.getBoolean(NOMOV)) {
-				tooltip.add(Text.literal(Formatting.LIGHT_PURPLE + "- Makes living entities not attempt movement at all"));
+			if (nbt.getBoolean(NOMOV, false)) {
+				tooltip.accept(Text.literal(Formatting.LIGHT_PURPLE + "- Makes living entities not attempt movement at all"));
 			}
 		}
 	}
 
 	private static boolean isCustomFireblanket(NbtCompound nbt) {
-		return nbt.getBoolean(NOAI) || nbt.getBoolean(NOGRAV) || nbt.getBoolean(NOMOV);
+		return nbt.getBoolean(NOAI, false) || nbt.getBoolean(NOGRAV, false) || nbt.getBoolean(NOMOV, false);
 	}
 }

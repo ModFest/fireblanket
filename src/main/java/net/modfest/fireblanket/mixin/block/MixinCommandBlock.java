@@ -26,7 +26,7 @@ public abstract class MixinCommandBlock extends BlockWithEntity {
 	@Override
 	public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
 		if (!world.isClient() && placer instanceof ServerPlayerEntity player) {
-			RepeatingBlockState st = ((ServerWorld) world).getServer().getOverworld().getPersistentStateManager().getOrCreate(RepeatingBlockState.getType(), "commandplaced");
+			RepeatingBlockState st = ((ServerWorld) world).getServer().getOverworld().getPersistentStateManager().getOrCreate(RepeatingBlockState.getType());
 
 			if (st.add(player.getUuid())) {
 				st.markDirty();

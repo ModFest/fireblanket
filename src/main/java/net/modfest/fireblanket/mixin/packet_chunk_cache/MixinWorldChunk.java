@@ -29,7 +29,7 @@ public abstract class MixinWorldChunk extends Chunk implements CacheableChunk {
 	private CachedChunkPacketData fireblanket$cachedPacket;
 
 	@Inject(at = @At("RETURN"), method = "setBlockState")
-	public void fireblanket$invalidateOnSetBlockState(BlockPos bp, BlockState bs, boolean moved, CallbackInfoReturnable<BlockState> ci) {
+	public void fireblanket$invalidateOnSetBlockState(BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> cir) {
 		fireblanket$cachedPacket = null;
 	}
 
@@ -43,11 +43,9 @@ public abstract class MixinWorldChunk extends Chunk implements CacheableChunk {
 		fireblanket$cachedPacket = null;
 	}
 
-	@Override
-	public void setNeedsSaving(boolean needsSaving) {
-		// called by e.g. BlockEntity.markDirty, and also by any mods that need it
-		// unfortunately, some methods inside Chunk don't use this, so we need to do it ourselves above
-		super.setNeedsSaving(needsSaving);
+	@Inject(
+		method = "markNeedsSaving", at = @At("TAIL")
+	) private void markNeedsSaving(CallbackInfo ci) {
 		fireblanket$cachedPacket = null;
 	}
 

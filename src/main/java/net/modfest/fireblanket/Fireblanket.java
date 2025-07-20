@@ -3,6 +3,7 @@ package net.modfest.fireblanket;
 import com.github.luben.zstd.util.Native;
 import com.google.common.base.Stopwatch;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.netty.channel.ChannelFutureListener;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -21,11 +22,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.network.ClientConnection;
-import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.world.ChunkTicket;
 import net.minecraft.server.world.ChunkTicketManager;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
@@ -78,7 +80,7 @@ public class Fireblanket implements ModInitializer {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 
-	public record QueuedPacket(ClientConnection conn, Packet<?> packet, PacketCallbacks listener) {
+	public record QueuedPacket(ClientConnection conn, Packet<?> packet, ChannelFutureListener listener) {
 	}
 
 	private static final AtomicInteger nextQueue = new AtomicInteger();
@@ -89,14 +91,14 @@ public class Fireblanket implements ModInitializer {
 	public static boolean CAN_USE_ZSTD = false;
 	public static boolean IS_FIREBLANKET_SERVER = false;
 
-	public static final ChunkTicketType<ChunkPos> KEEP_LOADED = ChunkTicketType.create("fireblanket:keep_loaded", ChunkTicketType.FORCED.getArgumentComparator());
+	public static final ChunkTicketType KEEP_LOADED = Registry.register(Registries.TICKET_TYPE, "fireblanket:keep_loaded", new ChunkTicketType(0L, true, ChunkTicketType.Use.LOADING));
 
 	@Override
 	public void onInitialize() {
 		CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
 			LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal("fireblanket");
 			DumpCommand.init(base, access);
-			RegionCommand.init(base, access);
+//			RegionCommand.init(base, access);
 			CmdFindReplaceCommand.init(base, access);
 			StareCommand.init(base, access);
 			ItemBanCommand.init(base, access);
@@ -141,7 +143,7 @@ public class Fireblanket implements ModInitializer {
 						do {
 							try {
 								QueuedPacket p = node.data;
-								((ClientConnectionAccessor) p.conn()).fireblanket$sendImmediately(p.packet(), p.listener(), true);
+								((ClientConnectionAccessor) p.conn()).fireblanket$sendImmediately(p.packet(), p.listener, true);
 								node = node.next;
 							} catch (Throwable t) {
 								LOGGER.error("Exception in packet thread", t);
@@ -211,7 +213,7 @@ public class Fireblanket implements ModInitializer {
 						// poke the chunk so it loads; a ticket with a distance this high isn't enough to *cause* a load on its own
 						world.getChunk(x, z);
 						// one above FULL; out of range, but not so far to unload
-						mgr.addTicketWithLevel(KEEP_LOADED, pos, 34, pos);
+						mgr.addTicket(new ChunkTicket(Fireblanket.KEEP_LOADED, 34), pos);
 						done++;
 						if (System.nanoTime() - lastReport > 1_000_000_000) {
 							lastReport = System.nanoTime();
@@ -224,23 +226,23 @@ public class Fireblanket implements ModInitializer {
 		});
 
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-			fullRegionSync(handler.player.getServerWorld(), sender::sendPacket);
+			fullRegionSync(handler.player.getWorld(), sender::sendPacket);
 		});
 
 		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
-			fullRegionSync(player.getServerWorld(), player.networkHandler::sendPacket);
+			fullRegionSync(player.getWorld(), player.networkHandler::sendPacket);
 		});
 	}
 
 	public static void fullRegionSync(ServerWorld world, Consumer<Packet<?>> sender) {
-		RenderRegions regions = RenderRegionsState.get(world).getRegions();
-		RegionSyncRequest req;
-		if (regions.getRegionsByName().isEmpty()) {
-			req = new RegionSyncRequest.Reset(true);
-		} else {
-			req = regions.toPacket();
-		}
-		sender.accept(ServerPlayNetworking.createS2CPacket(req));
+//		RenderRegions regions = RenderRegionsState.get(world).getRegions();
+//		RegionSyncRequest req;
+//		if (regions.getRegionsByName().isEmpty()) {
+//			req = new RegionSyncRequest.Reset(true);
+//		} else {
+//			req = regions.toPacket();
+//		}
+//		sender.accept(ServerPlayNetworking.createS2CPacket(req));
 	}
 
 	public static LinkedBlocQueue<QueuedPacket> getNextQueue() {
