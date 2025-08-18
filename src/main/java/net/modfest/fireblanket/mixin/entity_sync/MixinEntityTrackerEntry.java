@@ -43,7 +43,7 @@ public class MixinEntityTrackerEntry implements TrackerEntityHolder {
 		slice = @Slice( // comes after bundle
 			from = @At(value = "INVOKE", target = "Lnet/minecraft/network/packet/s2c/play/BundleS2CPacket;<init>(Ljava/lang/Iterable;)V")
 		),
-		at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 0)
+		at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 1)
 	) public void fireblanket$velocity1(Consumer instance, Object o, Operation<Void> original) {
 		if (o instanceof EntityVelocityUpdateS2CPacket packet) {
 			if (heldListeners == null) {
