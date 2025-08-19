@@ -39,5 +39,13 @@ public class MixinItemGroups {
 			return NbtComponent.of(nbt);
 		});
 		entries.add(nomov);
+
+		ItemStack noVehicle = new ItemStack(Items.DEBUG_STICK);
+		noVehicle.apply(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT, n -> {
+			NbtCompound nbt = new NbtCompound();
+			nbt.putBoolean("NoVehicleEntering", true);
+			return NbtComponent.of(nbt);
+		});
+		entries.add(noVehicle);
 	}
 }
