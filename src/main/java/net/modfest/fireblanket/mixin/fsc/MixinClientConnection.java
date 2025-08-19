@@ -10,10 +10,8 @@ import net.minecraft.network.NetworkPhase;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.listener.PacketListener;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.config.ReadyC2SPacket;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
 import net.minecraft.network.packet.s2c.login.LoginDisconnectS2CPacket;
-import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.Fireblanket.QueuedPacket;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
@@ -69,21 +67,11 @@ public abstract class MixinClientConnection implements FSCConnection {
 //		System.out.println("Sending: " + pkt.getClass().getName()
 //			+ (pkt instanceof CustomPayloadC2SPacket(CustomPayload payload) ? " as " + payload.getId() : ""));
 
-		// Server
-		if (pkt instanceof GameJoinS2CPacket && fireblanket$fsc && !fireblanket$fscStarted) {
-			fireblanket$enableFSCNow();
-		}
-
 		PacketListener pktListener = this.packetListener;
 		if (pktListener != null && pktListener.getPhase() == NetworkPhase.PLAY && Fireblanket.IS_FIREBLANKET_SERVER) {
 			fireblanket$queue.put(new QueuedPacket(subject, pkt, listener));
 		} else {
 			sendImmediately(pkt, listener, flush);
-		}
-
-		// Client
-		if (pkt instanceof ReadyC2SPacket && fireblanket$fsc && !fireblanket$fscStarted) {
-			fireblanket$enableFSCNow();
 		}
 	}
 
@@ -101,10 +89,20 @@ public abstract class MixinClientConnection implements FSCConnection {
 		}
 	}
 
-	@Inject(at=@At("HEAD"), method="setCompressionThreshold", cancellable=true)
+	@Inject(at = @At("HEAD"), method = "setCompressionThreshold", cancellable = true)
 	public void fireblanket$handleCompression(int threshold, boolean check, CallbackInfo ci) {
 		if (fireblanket$fscStarted) {
 			ci.cancel();
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void fireblanket$startFullStreamCompression() {
+		if (this.fireblanket$fsc && !this.fireblanket$fscStarted) {
+			this.fireblanket$enableFSCNow();
 		}
 	}
 
@@ -113,7 +111,7 @@ public abstract class MixinClientConnection implements FSCConnection {
 
 		fireblanket$fscStarted = true;
 		ChannelPipeline pipeline = channel.pipeline();
-		ClientConnection self = (ClientConnection)(Object)this;
+		ClientConnection self = (ClientConnection) (Object) this;
 		try {
 			boolean client = self.getSide() == NetworkSide.CLIENTBOUND;
 			ReassignableOutputStream ros = new ReassignableOutputStream();
