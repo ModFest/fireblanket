@@ -18,6 +18,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
+import net.modfest.fireblanket.mixinsupport.NonVehicleEnteringLivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,6 +32,7 @@ public class MixinDebugStickItem extends Item {
 	private static final String NOAI = "NoAI";
 	private static final String NOGRAV = "NoGravity";
 	private static final String NOMOV = "NoMovement";
+	private static final String NOVEHICLE = "NoVehicleEntering";
 
 	public MixinDebugStickItem(Settings settings) {
 		super(settings);
@@ -54,6 +56,15 @@ public class MixinDebugStickItem extends Item {
 						mob.setAiDisabled(true);
 					} else {
 						user.sendMessage(Text.literal("This entity isn't a mob, and can't have NoAI applied!"), true);
+						return ActionResult.PASS;
+					}
+				}
+
+				if (nbt.getBoolean(NOVEHICLE, false)) {
+					if (!(entity instanceof PlayerEntity)) {
+						((NonVehicleEnteringLivingEntity)entity).setNoVehicleEntering(true);
+					} else {
+						user.sendMessage(Text.literal("This entity is a player, and can't have NoVehicleEntering applied!"), true);
 						return ActionResult.PASS;
 					}
 				}
@@ -101,10 +112,14 @@ public class MixinDebugStickItem extends Item {
 			if (nbt.getBoolean(NOMOV, false)) {
 				tooltip.accept(Text.literal(Formatting.LIGHT_PURPLE + "- Makes living entities not attempt movement at all"));
 			}
+
+			if (nbt.getBoolean(NOVEHICLE, false)) {
+				tooltip.accept(Text.literal(Formatting.LIGHT_PURPLE + "- Makes living entities not enter vehicles upon collision"));
+			}
 		}
 	}
 
 	private static boolean isCustomFireblanket(NbtCompound nbt) {
-		return nbt.getBoolean(NOAI, false) || nbt.getBoolean(NOGRAV, false) || nbt.getBoolean(NOMOV, false);
+		return nbt.getBoolean(NOAI, false) || nbt.getBoolean(NOGRAV, false) || nbt.getBoolean(NOMOV, false) || nbt.getBoolean(NOVEHICLE, false);
 	}
 }
