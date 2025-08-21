@@ -61,6 +61,21 @@ public final class ConfigSpecs {
 			banned-items: minecraft:iron_sword,minecraft:diamond_sword
 			""", "", ConfigParsers.STRING_LIST);
 
+	public static final ConfigSpec<Boolean> LOG_COMMAND_ERRORS = new ConfigSpec<>("log-command-errors", "Log command errors",
+		"""
+			Log unexpected command exceptions to the server logs.
+			""", "no", ConfigParsers.BOOLEAN);
+
+	public static final ConfigSpec<Boolean> LOG_PLAYER_COMMANDS = new ConfigSpec<>("log-player-commands", "Log player commands",
+		"""
+			Logs all player execute commands into a text file.
+			""", "yes", ConfigParsers.BOOLEAN);
+
+	public static final ConfigSpec<List<String>> IGNORED_COMMAND_LOGS = new ConfigSpec<>("ignored-command-logs", "Ignored command logs",
+		"""
+			A list of base level commands to ignore when logging player commands.
+			""", "msg,me,say,teammsg", ConfigParsers.STRING_LIST);
+
 
 	public static final List<ConfigSpec<?>> ALL_SPECS = new ArrayList<>();
 
