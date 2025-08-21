@@ -32,12 +32,11 @@ public abstract class MixinServerPlayNetworkHandler extends ServerCommonNetworkH
 		BlockEntity blockEntity = this.player.getWorld().getBlockEntity(blockPos);
 
 		this.server.sendMessage(
-			Text.literal(
-				"%s set the command at (%s) to: %s".formatted(
-					player.getName().getString(),
-					"%s, %s, %s".formatted(blockPos.getX(), blockPos.getY(), blockPos.getZ()),
-					packet.getCommand()
-				)
+			Text.translatable(
+				"commandsBlock.commandSetByPlayer",
+				player.getName(),
+				Text.translatable("chat.coordinates", blockPos.getX(), blockPos.getY(), blockPos.getZ()),
+				packet.getCommand()
 			)
 		);
 
