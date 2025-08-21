@@ -76,7 +76,7 @@ public final class ConfigSpecs {
 			A list of base level commands to ignore when logging player commands.
 			""", "msg,me,say,teammsg", ConfigParsers.STRING_LIST);
 
-	public static final ConfigSpec<List<String>> LOCKED_GAMERULES = new ConfigSpec<>("ignored-command-logs", "Ignored command logs",
+	public static final ConfigSpec<List<String>> LOCKED_GAMERULES = new ConfigSpec<>("locked-gamerules", "Ignored command logs",
 		"""
 			A list of gamerules that are not allowed to be changed by non team/organizers.
 			""", "sendCommandFeedback,reducedDebugInfo,logAdminCommands", ConfigParsers.STRING_LIST);
