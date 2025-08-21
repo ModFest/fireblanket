@@ -7,7 +7,6 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.GameRules;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixin.accessor.ServerCommandSourceAccessor;
 
