@@ -21,3 +21,5 @@ accessible class net/minecraft/world/storage/ChunkCompressionFormat$Wrapper
 #
 accessible method net/minecraft/network/packet/s2c/play/BlockEntityUpdateS2CPacket <init> (Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/entity/BlockEntityType;Lnet/minecraft/nbt/NbtCompound;)V
 accessible field net/minecraft/entity/PositionInterpolator lerpDuration I
+
+accessible method net/minecraft/server/command/ServerCommandSource sendToOps (Lnet/minecraft/text/Text;)V

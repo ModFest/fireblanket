@@ -65,7 +65,6 @@ public class FireblanketConfig {
 		}
 	}
 
-
 	public static void parse(List<String> text) {
 		Set<ConfigSpec<?>> specs = new HashSet<>(ConfigSpecs.ALL_SPECS);
 

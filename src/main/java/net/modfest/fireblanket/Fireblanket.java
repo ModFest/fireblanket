@@ -34,11 +34,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.GameRules;
-import net.modfest.fireblanket.command.CmdFindReplaceCommand;
-import net.modfest.fireblanket.command.DumpCommand;
-import net.modfest.fireblanket.command.ItemBanCommand;
-import net.modfest.fireblanket.command.RegionCommand;
-import net.modfest.fireblanket.command.StareCommand;
+import net.modfest.fireblanket.command.*;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.compat.roles.PlayerRolesCompat;
 import net.modfest.fireblanket.config.ConfigSpecs;
@@ -97,6 +93,7 @@ public class Fireblanket implements ModInitializer {
 	public void onInitialize() {
 		CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
 			LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal("fireblanket");
+
 			DumpCommand.init(base, access);
 //			RegionCommand.init(base, access);
 			CmdFindReplaceCommand.init(base, access);
