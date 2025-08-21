@@ -2,5 +2,6 @@
 	"argument.entity.selector.limit.unforced": "Targeting too many entities with no distance filter; add `force=true` to the selector to bypass",
 	"argument.entity.options.force.description": "Force-allow more than 50 entities targeted with no distance filter",
 	"gamerule.newEntitiesImmutable": "Whether newly spawned entities should be immutable. (Item frames will be fixed for example)",
-	"commands.gamerule.locked": "You do not have permission to modify this gamerule"
+	"commands.gamerule.locked": "You do not have permission to modify this gamerule",
+	"commandsBlock.commandSetByPlayer": "%s set the command at (%s) to: %s"
 }

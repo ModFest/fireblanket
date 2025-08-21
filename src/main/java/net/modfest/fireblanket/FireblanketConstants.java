@@ -32,6 +32,7 @@ public class FireblanketConstants {
 	public static final TagKey<Item> ITEM_SNEAK_INTERACTION_RESTRICTED = tag(RegistryKeys.ITEM, "item_sneak_interaction_restricted");
 	public static final TagKey<EntityType<?>> ENTITY_INTERACTION_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_interaction_restricted");
 	public static final TagKey<EntityType<?>> ENTITY_SNEAK_INTERACTION_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_sneak_interaction_restricted");
+	public static final TagKey<EntityType<?>> ENTITY_SUMMON_DISALLOWED = tag(RegistryKeys.ENTITY_TYPE, "entity_sneak_interaction_restricted");
 
 	public static final TagKey<EntityType<?>> ENTITY_ATTACK_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_attack_restricted");
 
