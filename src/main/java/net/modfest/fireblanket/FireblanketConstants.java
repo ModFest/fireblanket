@@ -36,7 +36,7 @@ public class FireblanketConstants {
 	public static final TagKey<EntityType<?>> ENTITY_ATTACK_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_attack_restricted");
 
 	public static final Path FIREBLANKET_DIR = FabricLoader.getInstance().getGameDir().resolve("fireblanket");;
-	public static final File COMMAND_LOGS_FILE = FIREBLANKET_DIR.resolve("player_commands.txt").toFile();
+	public static final File COMMAND_LOGS_FILE = FIREBLANKET_DIR.resolve("player_commands.log").toFile();
 
 	public static final DateTimeFormatter SIMPLE_TIME_FORMATTER =  new DateTimeFormatterBuilder()
 		.appendValue(HOUR_OF_DAY, 2)
