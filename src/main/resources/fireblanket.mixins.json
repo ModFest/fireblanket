@@ -51,6 +51,7 @@
 		"fsc.MixinServerConfigurationNetworkHandler",
 		"fsc.MixinSizePrepender",
 		"fsc.MixinSplitterHandler",
+		"gamerule.MixinGamerule",
 		"io_uring.MixinServerNetworkIo",
 		"itemban.MixinServerPlayerEntity",
 		"log.MixinServerPlayNetworkHandler",
