@@ -97,6 +97,9 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(GAMEPLAY_CHANGES);
 		ALL_SPECS.add(ASYNC_PACKET_THREADS);
 		ALL_SPECS.add(BANNED_ITEMS);
+		ALL_SPECS.add(LOG_COMMAND_ERRORS);
+		ALL_SPECS.add(LOG_PLAYER_COMMANDS);
+		ALL_SPECS.add(IGNORED_COMMAND_LOGS);
 
 		// We have registries at home:
 		buildMap();
