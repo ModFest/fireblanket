@@ -6,7 +6,6 @@ import com.mojang.brigadier.context.CommandContextBuilder;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.modfest.fireblanket.FireblanketConstants;
 import net.modfest.fireblanket.command.CommandUtils;
 import net.modfest.fireblanket.config.ConfigSpecs;
@@ -21,8 +20,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 
 
 @Mixin(CommandManager.class)
@@ -50,7 +47,9 @@ public class MixinCommandManager {
 			return;
 		}
 
-		CommandUtils.sendToTeam(source, Text.literal("/" + command));
+		Text message = Text.translatable("chat.type.admin", source.getDisplayName(), Text.literal("/" + command));
+
+		CommandUtils.sendToTeam(source, message);
 
 		OffthreadFileWriter.write(
 			// Strip all possible : from a name to make parsing the file easier if required at some point

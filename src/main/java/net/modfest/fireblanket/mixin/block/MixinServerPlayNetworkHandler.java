@@ -10,6 +10,7 @@ import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import net.modfest.fireblanket.command.CommandUtils;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,14 +32,16 @@ public abstract class MixinServerPlayNetworkHandler extends ServerCommonNetworkH
 		BlockPos blockPos = packet.getPos();
 		BlockEntity blockEntity = this.player.getWorld().getBlockEntity(blockPos);
 
-		this.server.sendMessage(
-			Text.translatable(
-				"commandsBlock.commandSetByPlayer",
-				player.getName(),
-				Text.translatable("chat.coordinates", blockPos.getX(), blockPos.getY(), blockPos.getZ()),
-				packet.getCommand()
-			)
+		final Text message = Text.translatableWithFallback(
+			"commandsBlock.commandSetByPlayer",
+			// In case someone has an outdated Fireblanket, or is lacking it outright.
+			"[%s @ %s: %s]",
+			player.getName(),
+			Text.translatable("chat.coordinates", blockPos.getX(), blockPos.getY(), blockPos.getZ()),
+			packet.getCommand()
 		);
+
+		CommandUtils.sendToTeam(this.server, this.player.getCommandOutput(), message);
 
 		if (blockEntity instanceof CommandBE cmd) {
 			cmd.fireblanket$setLastUpdate(this.player.getUuid());
