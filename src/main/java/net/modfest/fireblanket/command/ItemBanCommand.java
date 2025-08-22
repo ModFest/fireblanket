@@ -3,7 +3,9 @@ package net.modfest.fireblanket.command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.argument.RegistryKeyArgumentType;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.modfest.fireblanket.compat.roles.Roles;
@@ -18,11 +20,18 @@ public class ItemBanCommand {
 			.requires(source -> source.hasPermissionLevel(4) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("list").executes(s -> execList(s.getSource())))
 			.then(literal("add")
-				.then(argument("value", StringArgumentType.string())
+				.then(argument("value", StringArgumentType.greedyString())
+					// Delegate suggestions to the registry argument type
+					.suggests(RegistryKeyArgumentType.registryKey(RegistryKeys.ITEM)::listSuggestions)
 					.executes(s -> execAdd(s.getSource(), StringArgumentType.getString(s, "value")))))
 			.then(literal("remove")
-				.then(argument("value", StringArgumentType.string())
-					.executes(s -> execRemove(s.getSource(), StringArgumentType.getString(s, "value"))))));
+				.then(
+					argument("value", StringArgumentType.greedyString())
+						.suggests((ctx, builder) -> CommandSource.suggestMatching(ItemBan.BANNED_IDS, builder))
+						.executes(s -> execRemove(s.getSource(), StringArgumentType.getString(s, "value")))
+				)
+			)
+		);
 	}
 
 	private static int execList(ServerCommandSource src) {
