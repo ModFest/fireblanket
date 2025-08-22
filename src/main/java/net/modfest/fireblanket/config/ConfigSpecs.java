@@ -81,6 +81,22 @@ public final class ConfigSpecs {
 			A list of gamerules that are not allowed to be changed by non team/organizers.
 			""", "sendCommandFeedback,reducedDebugInfo,logAdminCommands", ConfigParsers.STRING_LIST);
 
+	public static final ConfigSpec<String> TRACE_LEVEL = new ConfigSpec<>("trace-level", "Stack Tracer Level",
+		"""
+			The level of stack tracing that is done to ensure consistency with push/pops.
+						
+			Note: This has a generally high impact on performance, and is left off by default.
+						
+			Valid modes:
+						
+			- none - Disables the tracer
+			- mod - Traces at a mod level (will miss root causes)
+			- package - Traces at a package level (may miss root causes)
+			- class - Traces at a class level (may miss in-class trampolines & mixins)
+			- function - Traces at a function level (the strictest available)
+			""", "none", ConfigParsers.STRING
+	);
+
 
 	public static final List<ConfigSpec<?>> ALL_SPECS = new ArrayList<>();
 
@@ -106,6 +122,7 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(LOG_PLAYER_COMMANDS);
 		ALL_SPECS.add(IGNORED_COMMAND_LOGS);
 		ALL_SPECS.add(LOCKED_GAMERULES);
+		ALL_SPECS.add(TRACE_LEVEL);
 
 		// We have registries at home:
 		buildMap();

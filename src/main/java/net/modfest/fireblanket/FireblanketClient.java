@@ -14,9 +14,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.Vec3d;
-//import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.CountParticleTypesCommand;
-//import net.modfest.fireblanket.client.command.EntityMaskCommand;
+import net.modfest.fireblanket.client.command.StackTracerCommand;
 import net.modfest.fireblanket.client.command.TickTimeCommand;
 import net.modfest.fireblanket.client.command.WireframeCommand;
 import net.modfest.fireblanket.client.screen.PlaceCommandBlockScreen;
@@ -51,6 +50,7 @@ public class FireblanketClient implements ClientModInitializer {
 			WireframeCommand.init(base, access);
 			TickTimeCommand.init(base, access);
 			CountParticleTypesCommand.init(base, access);
+			StackTracerCommand.init(base, access);
 
 			dispatcher.register(ClientCommandManager.literal("fbc")
 				.redirect(dispatcher.register(base)));

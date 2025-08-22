@@ -92,6 +92,8 @@
 		"accessor.ParticleManagerAccessor",
 		"client.MixinClientPlayNetworkHandler",
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
+		"client.pose_stack.AccessorMatrixStackEntry",
+		"client.pose_stack.MixinMatrixStack",
 		"client.timing.MixinClientWorld",
 		"client.timing.MixinObservables",
 		"client.timing.MixinWorld",
