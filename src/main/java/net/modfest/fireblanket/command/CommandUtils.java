@@ -74,6 +74,10 @@ public final class CommandUtils {
 			return false;
 		}
 
+		if (player.getPermissionLevel() >= 4) {
+			return true;
+		}
+
 		return Roles.isOrganizer(player);
 	}
 
