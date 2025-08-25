@@ -17,10 +17,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
 import java.util.Deque;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -36,7 +36,9 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 	private static final VarHandle exception;
 	private static final IOException closedSentinel = new IOException("closed");
 
-	private static final Set<AsyncWriter> knownWriters = Collections.synchronizedSet(new HashSet<>());
+	// FIXME: this should ideally be some form of WeakConcurrentHashSet,
+	//  or a WeakReference<AsyncWriter> -> Worker where Worker holds WeakReference
+	private static final Set<AsyncWriter> knownWriters = ConcurrentHashMap.newKeySet();
 
 	static {
 		closedSentinel.setStackTrace(new StackTraceElement[0]);
@@ -52,7 +54,7 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 			// logger may have been shut down by this point, manually use stderr
 			final PrintStream err = new PrintStream(new FileOutputStream(FileDescriptor.err));
 
-			for (final AsyncWriter writer : knownWriters) {
+			for (final AsyncWriter writer : List.copyOf(knownWriters)) {
 				try {
 					writer.stop(err);
 				} catch (Throwable e) {
@@ -326,11 +328,35 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 			return this.writer;
 		}
 
+		/**
+		 * @return whether the stream was closed
+		 */
 		private boolean processMessages() throws IOException {
+			Message message = messages.peek();
+
+			// Short circuit
+			if (message == null) {
+				return false;
+			}
+
+			Writer writer = this.writer;
+
+			if (message.buf == null && message.request == Request.CLOSE) {
+				if (writer != null) {
+					// allow cascading; we'll be returning immediately anyway
+					writer.close();
+				}
+				// We only peeked.
+				messages.poll();
+				return true;
+			}
+
+			if (writer == null) {
+				writer = writer();
+			}
+
 			IOException io = null;
 			int fault = 0;
-			Writer writer = writer();
-			Message message;
 
 			while ((message = messages.poll()) != null) {
 				try {
@@ -359,7 +385,19 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 						throw e;
 					}
 
+					// The intent was to close, rethrow.
+					if (message.request() == Request.CLOSE) {
+						throw e;
+					}
+
 					io = e;
+
+					// We cannot assume the stream prematurely closed; manually close it.
+					try {
+						writer.close();
+					} catch (IOException e2) {
+						e.addSuppressed(e2);
+					}
 
 					// Try a new writer
 					this.writer = supplier.get();
