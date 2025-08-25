@@ -16,20 +16,19 @@ public final class OffthreadFileWriter {
 
 	public static void write(Path path, String content) {
 		try {
-			// TODO: figure out a better locking strategy
-			AsyncWriter writer;
-			synchronized (FILE_MAP) {
-				writer = FILE_MAP.get(path);
-				if (writer == null) {
-					writer = AsyncWriter.bufferedWriter(path);
-					FILE_MAP.put(path, writer);
+			//noinspection resource
+			final AsyncWriter writer = FILE_MAP.computeIfAbsent(path, $ -> {
+				try {
+					return AsyncWriter.bufferedWriter(path);
+				} catch (IOException e) {
+					throw new RuntimeException("Failed to open " + path, e);
 				}
-			}
+			});
 
 			writer.write(content);
 		} catch (IOException io) {
 			// TODO: maybe swallow this depending on context
-			throw new RuntimeException("cannot write to " + path, io);
+			throw new RuntimeException("Failed to write to " + path, io);
 		}
 	}
 }
