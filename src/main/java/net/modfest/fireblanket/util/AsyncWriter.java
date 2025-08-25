@@ -31,7 +31,7 @@ import java.util.concurrent.locks.LockSupport;
  * @author Ampflower
  **/
 public final class AsyncWriter extends Writer implements Thread.UncaughtExceptionHandler {
-	private static final Logger logger = LogUtils.getLogger();
+	private static final Logger LOGGER = LogUtils.getLogger();
 
 	private static final VarHandle exception;
 	private static final IOException closedSentinel = new IOException("closed");
@@ -46,7 +46,7 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 			final MethodHandles.Lookup lookup = MethodHandles.lookup();
 			exception = lookup.findVarHandle(AsyncWriter.class, "$exception", IOException.class);
 		} catch (ReflectiveOperationException e) {
-			logger.error("Cannot load VarHandles", e);
+			LOGGER.error("Cannot load VarHandles", e);
 			throw new LinkageError("Cannot load VarHandles", e);
 		}
 
@@ -97,7 +97,7 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 		}
 
 		if (!Files.isWritable(path)) {
-			throw new IOException("unwritable: " + path);
+			throw new IOException("Unable to write to " + path);
 		}
 
 		return new AsyncWriter(() -> Files.newBufferedWriter(
@@ -252,7 +252,7 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 	@Override
 	public void uncaughtException(final Thread t, final Throwable e) {
 		if (this.thread != t) {
-			logger.warn("We don't own {}, but it threw an exception; please don't use {} for arbitrary threads", t, this, e);
+			LOGGER.warn("We don't own {}, but it threw an exception; please don't use {} for arbitrary threads", t, this, e);
 			return;
 		}
 
@@ -270,11 +270,11 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 			witness.addSuppressed(toSet);
 		}
 
-		logger.error("{} of {} threw an uncaught exception", t, this, e);
+		LOGGER.error("{} of {} threw an uncaught exception", t, this, e);
 
 		Message message;
 		while ((message = this.messages.poll()) != null) {
-			logger.error("Unfinished write: {}", message);
+			LOGGER.error("Unfinished write: {}", message);
 		}
 
 		knownWriters.remove(this);
@@ -313,11 +313,11 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 				// We frankly don't care if we get interrupted.
 				// This only exists to prevent loops from weird implementations.
 				if (Thread.interrupted()) {
-					logger.trace("Why did you wake me up?");
+					LOGGER.trace("Why did you wake me up?");
 				}
 			}
 
-			logger.info("Exited.");
+			LOGGER.trace("{} exited normally", this);
 			knownWriters.remove(AsyncWriter.this);
 		}
 
@@ -368,7 +368,7 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 
 					if (message.request() == Request.CLOSE) {
 						if (!messages.isEmpty()) {
-							logger.warn("Unwritten messages: {}", message);
+							LOGGER.warn("Unwritten messages: {}", message);
 						}
 						return true;
 					}
@@ -422,7 +422,7 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 			}
 
 			if (io != null) {
-				logger.warn("{} from {} threw an exception", writer, this, io);
+				LOGGER.warn("{} from {} threw an exception", writer, this, io);
 			}
 
 			return false;
@@ -434,14 +434,12 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 			@Override
 			void action(final Writer writer) throws IOException {
 				// no-op
-				logger.info("WRITE {}", writer);
 			}
 		},
 		FLUSH {
 			@Override
 			void action(final Writer writer) throws IOException {
 				writer.flush();
-				logger.info("FLUSH {}", writer);
 			}
 		},
 		CLOSE {
@@ -451,7 +449,6 @@ public final class AsyncWriter extends Writer implements Thread.UncaughtExceptio
 				try (writer) {
 					writer.flush();
 				}
-				logger.info("CLOSE {}", writer);
 			}
 		},
 		;
