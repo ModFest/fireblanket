@@ -1,10 +1,6 @@
 package net.modfest.fireblanket.mixin.block;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
 import net.minecraft.world.CommandBlockExecutor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.spongepowered.asm.mixin.Final;
@@ -13,15 +9,14 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.UUID;
 
-@Mixin(CommandBlockBlockEntity.class)
-public abstract class MixinCommandBlockBlockEntity extends BlockEntity implements CommandBE {
+/**
+ * @author Ampflower
+ */
+@Mixin(CommandBlockMinecartEntity.class)
+public class MixinCommandBlockMinecartEntity implements CommandBE {
 	@Shadow
 	@Final
 	private CommandBlockExecutor commandExecutor;
-
-	public MixinCommandBlockBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-		super(type, pos, state);
-	}
 
 	@Override
 	public CommandBlockExecutor fireblanket$getCommandExecutor() {
@@ -31,13 +26,11 @@ public abstract class MixinCommandBlockBlockEntity extends BlockEntity implement
 	@Override
 	public void fireblanket$setOwner(UUID uuid) {
 		((CommandBE) commandExecutor).fireblanket$setOwner(uuid);
-		markDirty();
 	}
 
 	@Override
 	public void fireblanket$setLastUpdate(UUID uuid) {
 		((CommandBE) commandExecutor).fireblanket$setLastUpdate(uuid);
-		markDirty();
 	}
 
 	@Override
