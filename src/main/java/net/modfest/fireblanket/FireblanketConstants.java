@@ -16,12 +16,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
 
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.YEAR;
 
 public class FireblanketConstants {
 	public static final String MOD_ID = "fireblanket";
@@ -36,10 +37,16 @@ public class FireblanketConstants {
 
 	public static final TagKey<EntityType<?>> ENTITY_ATTACK_RESTRICTED = tag(RegistryKeys.ENTITY_TYPE, "entity_attack_restricted");
 
-	public static final Path FIREBLANKET_DIR = FabricLoader.getInstance().getGameDir().resolve("fireblanket");;
+	public static final Path FIREBLANKET_DIR = FabricLoader.getInstance().getGameDir().resolve("fireblanket");
 	public static final File COMMAND_LOGS_FILE = FIREBLANKET_DIR.resolve("player_commands.log").toFile();
 
-	public static final DateTimeFormatter SIMPLE_TIME_FORMATTER =  new DateTimeFormatterBuilder()
+	public static final DateTimeFormatter SIMPLE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+		.appendValue(YEAR, 4)
+		.appendLiteral('-')
+		.appendValue(MONTH_OF_YEAR, 2)
+		.appendLiteral('-')
+		.appendValue(DAY_OF_MONTH, 2)
+		.appendLiteral(' ')
 		.appendValue(HOUR_OF_DAY, 2)
 		.appendLiteral(':')
 		.appendValue(MINUTE_OF_HOUR, 2)
@@ -47,7 +54,9 @@ public class FireblanketConstants {
 		.appendValue(SECOND_OF_MINUTE, 2)
 		.toFormatter();
 
-	public static Identifier id(String id) { return Identifier.of(MOD_ID, id); }
+	public static Identifier id(String id) {
+		return Identifier.of(MOD_ID, id);
+	}
 
 	private static <T> TagKey<T> tag(RegistryKey<? extends Registry<T>> reg, String id) {
 		return TagKey.of(reg, id(id));

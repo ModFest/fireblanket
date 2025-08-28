@@ -8,5 +8,10 @@
 	"fireblanket.commands.command.grep.result": "Found %s matches.",
 	"fireblanket.commands.command.sed.result.0": "Replaced %s occurrence across %s block",
 	"fireblanket.commands.command.sed.result.1": "Replaced %s occurrences across %s block",
-	"fireblanket.commands.command.sed.result.2": "Replaced %s occurrences across %s blocks"
+	"fireblanket.commands.command.sed.result.2": "Replaced %s occurrences across %s blocks",
+	"fireblanket.command.blame": "%s\nCreated by %s\n%s\nUpdated by %s\n%s\nLocated at %s\n%s",
+	"fireblanket.spoofed": "%s \"%s\"",
+	"fireblanket.spoofed.tooltip": "Spoofed command source found.\nAnyone blamed here may not have set up the command. Check the surrounding logs first.",
+	"fireblanket.unknown": "Unknown",
+	"fireblanket.warning.tooltip": "Unknown command source found.\nAnyone blamed here may not have set up the command. Check the surrounding logs first."
 }
