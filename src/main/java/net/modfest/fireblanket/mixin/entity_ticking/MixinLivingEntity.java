@@ -43,4 +43,11 @@ public abstract class MixinLivingEntity extends Entity implements ImmmovableLivi
 	public void setNoMovement(boolean noMovement) {
 		this.fireblanket$movementless = noMovement;
 	}
+
+	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/border/WorldBorder;getDamagePerBlock()D"), method = "baseTick")
+	private void doNotLeaveTheWorldBorderPlease(CallbackInfo ci, @Local ServerWorld serverWorld) {
+		this.kill(serverWorld);
+		this.setVelocity(Vec3d.ZERO);
+		this.scheduleVelocityUpdate();
+	}
 }
