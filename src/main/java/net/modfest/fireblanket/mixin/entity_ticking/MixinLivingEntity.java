@@ -66,7 +66,7 @@ public abstract class MixinLivingEntity extends Entity implements ImmmovableLivi
 
 		int topY = getWorld().getHeight() - getWorld().getBottomY();
 		double x = MathHelper.clamp(this.getX(), border.getBoundWest() - maxOutOfBoundsDistance, border.getBoundEast() + maxOutOfBoundsDistance);
-		double y = MathHelper.clamp(this.getY(), getWorld().getBottomY() - maxOutOfBoundsDistance, topY + maxOutOfBoundsDistance * 2);
+		double y = MathHelper.clamp(this.getY(), getWorld().getBottomY() - maxOutOfBoundsDistance, topY + maxOutOfBoundsDistance * 100);
 		double z = MathHelper.clamp(this.getZ(), border.getBoundNorth() - maxOutOfBoundsDistance, border.getBoundSouth() + maxOutOfBoundsDistance);
 		if (x != this.getX() || y != this.getY() || z != this.getZ()) {
 			this.setPosition(x, y, z);
