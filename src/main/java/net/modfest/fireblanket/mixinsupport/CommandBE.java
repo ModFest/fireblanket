@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.mixinsupport;
 
+import net.minecraft.text.HoverEvent;
 import net.minecraft.world.CommandBlockExecutor;
 
 import java.util.UUID;
@@ -14,4 +15,6 @@ public interface CommandBE {
 	UUID fireblanket$getOwner();
 
 	UUID fireblanket$getLastUpdate();
+
+	HoverEvent fireblanket$getBlame();
 }

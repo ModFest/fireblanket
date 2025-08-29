@@ -60,13 +60,17 @@ public final class TextUtil {
 		return entity.getName();
 	}
 
+	public static ClickEvent toClickToTeleport(final Entity entity) {
+		return new ClickEvent.SuggestCommand("/tp " + entity.getUuidAsString());
+	}
+
 	public static MutableText ofEntityWithTeleport(final Entity entity) {
-		final ClickEvent clickEvent = new ClickEvent.SuggestCommand("/tp " + entity.getUuidAsString());
+		final ClickEvent clickEvent = toClickToTeleport(entity);
 
 		return getEntityName(entity).copy().styled(style -> style.withClickEvent(clickEvent));
 	}
 
-	public static Text ofLocationWithTeleport(final World world, final Vec3i pos) {
+	public static MutableText ofLocationWithTeleport(final World world, final Vec3i pos) {
 		final MutableText text = ofLocation(pos);
 
 		if (world == null) {
@@ -86,7 +90,7 @@ public final class TextUtil {
 		);
 	}
 
-	public static Text ofTextWithTeleport(final MutableText text, final World world, final Vec3i pos) {
+	public static MutableText ofTextWithTeleport(final MutableText text, final World world, final Vec3i pos) {
 		return text.styled(style -> style.withClickEvent(toClickToTeleport(world, pos)));
 	}
 

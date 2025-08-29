@@ -110,7 +110,7 @@ public final class CmdFindReplaceCommand {
 		);
 	}
 
-	private static Counter iterate(final MinecraftServer server, final ToIntBiFunction<Text, CommandBE> function) {
+	static Counter iterate(final MinecraftServer server, final ToIntBiFunction<Text, CommandBE> function) {
 		int blocks = 0;
 		int matches = 0;
 
@@ -123,7 +123,7 @@ public final class CmdFindReplaceCommand {
 
 				for (Map.Entry<BlockPos, BlockEntity> e : chunk.getBlockEntities().entrySet()) {
 					if (e.getValue() instanceof CommandBE cbe) {
-						final int count = function.applyAsInt(TextUtil.ofLocationWithTeleport(world, e.getKey()), cbe);
+						final int count = function.applyAsInt(ExecutorUtils.toBlame(e.getValue()), cbe);
 						if (count > 0) {
 							blocks++;
 							matches += count;
@@ -135,7 +135,7 @@ public final class CmdFindReplaceCommand {
 
 			for (Entity entity : world.iterateEntities()) {
 				if (entity instanceof CommandBE cbe) {
-					final int count = function.applyAsInt(TextUtil.ofEntityWithTeleport(entity), cbe);
+					final int count = function.applyAsInt(ExecutorUtils.toBlame(entity), cbe);
 					if (count > 0) {
 						blocks++;
 						matches += count;
@@ -180,6 +180,15 @@ public final class CmdFindReplaceCommand {
 
 		String newCmd = m.replaceAll(result -> Formatting.GOLD + result.group() + Formatting.RESET);
 
+		return toText(server, name, cbe, newCmd);
+	}
+
+	static Optional<Text> toText(
+		final MinecraftServer server,
+		final Text name,
+		final CommandBE cbe,
+		final String command
+	) {
 		UUID owner = cbe.fireblanket$getOwner();
 		UUID lastUpdate = cbe.fireblanket$getLastUpdate();
 
@@ -192,10 +201,10 @@ public final class CmdFindReplaceCommand {
 			name,
 			ownerName,
 			lastUpdateName,
-			newCmd
+			command
 		));
 	}
 
-	private record Counter(int blocks, int matches) {
+	record Counter(int blocks, int matches) {
 	}
 }

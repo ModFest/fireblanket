@@ -106,8 +106,8 @@ public class MixinCommandBlockExecutor implements CommandBE {
 		this.fireblanket$name = null;
 	}
 
-	@Unique
-	protected final HoverEvent fireblanket$getBlame() {
+	@Override
+	public final HoverEvent fireblanket$getBlame() {
 		if (this.fireblanket$blame != null) {
 			return this.fireblanket$blame;
 		}

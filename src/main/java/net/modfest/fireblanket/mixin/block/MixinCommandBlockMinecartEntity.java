@@ -1,6 +1,7 @@
 package net.modfest.fireblanket.mixin.block;
 
 import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.world.CommandBlockExecutor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.spongepowered.asm.mixin.Final;
@@ -41,5 +42,10 @@ public class MixinCommandBlockMinecartEntity implements CommandBE {
 	@Override
 	public UUID fireblanket$getLastUpdate() {
 		return ((CommandBE) commandExecutor).fireblanket$getLastUpdate();
+	}
+
+	@Override
+	public HoverEvent fireblanket$getBlame() {
+		return ((CommandBE) commandExecutor).fireblanket$getBlame();
 	}
 }
