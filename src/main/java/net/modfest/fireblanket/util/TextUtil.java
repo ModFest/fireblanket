@@ -1,6 +1,5 @@
 package net.modfest.fireblanket.util;
 
-import com.mojang.authlib.yggdrasil.ProfileResult;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -156,10 +155,10 @@ public final class TextUtil {
 			return player.getDisplayName();
 		}
 
-		final ProfileResult result = server.getSessionService().fetchProfile(uuid, true);
+		final String result = UserCacheWrapper.getProfileName(server, uuid);
 
 		if (result != null) {
-			name = result.profile().getName();
+			name = result;
 		}
 
 		final HoverEvent.EntityContent content = new HoverEvent.EntityContent(EntityType.PLAYER, uuid, Text.of(name));
@@ -184,21 +183,14 @@ public final class TextUtil {
 			return fallback;
 		}
 
-		final ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
-
-		if (player != null) {
-			// Get the game profile to avoid nickname mods interfering.
-			return player.getGameProfile().getName();
-		}
-
-		final ProfileResult result = server.getSessionService().fetchProfile(uuid, true);
+		final String result = UserCacheWrapper.getProfileName(server, uuid);
 
 		if (result == null) {
 			// better suited to return the UUID than the fallback.
 			return uuid.toString();
 		}
 
-		return result.profile().getName();
+		return result;
 	}
 
 	/**
