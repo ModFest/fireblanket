@@ -22,3 +22,9 @@ ij_groovy_method_brace_style = end_of_line
 
 [{*.har,*.json,*.png.mcmeta,mcmod.info,pack.mcmeta}]
 ij_json_array_wrapping = split_into_lines
+
+# Lang files get excessively long lines, and IntelliJ insists on using broken formatting.
+ij_json_wrap_long_lines = false
+
+# This is invalid to JSON spec, must be false.
+ij_json_keep_trailing_comma = false

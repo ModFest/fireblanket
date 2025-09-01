@@ -76,6 +76,18 @@ public final class ConfigSpecs {
 			A list of base level commands to ignore when logging player commands.
 			""", "msg,me,say,teammsg", ConfigParsers.STRING_LIST);
 
+	public static final ConfigSpec<Boolean> TATTLETALE_COMMANDS = new ConfigSpec<>(
+		"tattletale-commands",
+		"Reveals the true command runner",
+		"""
+			Reveals the true command runner when `/execute as`, area-tools and more are involved.
+						
+			Toggling this on...
+			- Tags all `/execute as @s run` executions with the true command runner if differing and found.
+			- Tags all command blocks with its current information, including its type, location, creator and updater.
+			- May increase bandwidth, each message has to contain more metadata
+			""", "yes", ConfigParsers.BOOLEAN);
+
 	public static final ConfigSpec<List<String>> LOCKED_GAMERULES = new ConfigSpec<>("locked-gamerules", "Ignored command logs",
 		"""
 			A list of gamerules that are not allowed to be changed by non team/organizers.
@@ -121,6 +133,7 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(LOG_COMMAND_ERRORS);
 		ALL_SPECS.add(LOG_PLAYER_COMMANDS);
 		ALL_SPECS.add(IGNORED_COMMAND_LOGS);
+		ALL_SPECS.add(TATTLETALE_COMMANDS);
 		ALL_SPECS.add(LOCKED_GAMERULES);
 		ALL_SPECS.add(TRACE_LEVEL);
 

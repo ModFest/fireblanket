@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FireblanketConfig {
-	private static Map<ConfigSpec<?>, Object> map = new HashMap<>();
+	private static final Map<ConfigSpec<?>, Object> map = new HashMap<>();
 
 	public static <T> T get(ConfigSpec<T> spec) {
 		return (T) map.computeIfAbsent(spec, k -> spec.parser().parse(spec.defaultValue()));
@@ -84,11 +84,13 @@ public class FireblanketConfig {
 				String value = matcher.group(2);
 				ConfigSpec<?> spec = ConfigSpecs.BY_NAME.get(name);
 				if (spec == null) {
-					throw new RuntimeException("Unknown config option " + name);
+					System.err.println("Unknown config option " + name);
+					continue;
 				}
 
 				if (!specs.remove(spec)) {
-					throw new RuntimeException("Duplicate config option " + name);
+					System.err.println("Duplicate config option " + name);
+					continue;
 				}
 
 				put(spec, spec.parser().parse(value));

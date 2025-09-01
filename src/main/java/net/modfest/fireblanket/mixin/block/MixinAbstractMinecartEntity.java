@@ -5,7 +5,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.world.World;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,7 +17,6 @@ import java.util.UUID;
  * @author Ampflower
  **/
 @Mixin(AbstractMinecartEntity.class)
-@Debug(export = true)
 public class MixinAbstractMinecartEntity {
 
 	@Inject(

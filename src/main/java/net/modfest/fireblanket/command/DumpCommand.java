@@ -1,105 +1,49 @@
 package net.modfest.fireblanket.command;
 
-import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.CommandBlockExecutor;
+import net.modfest.fireblanket.compat.roles.Roles;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Optional;
 
 import static net.minecraft.server.command.CommandManager.literal;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.modfest.fireblanket.compat.roles.Roles;
-import net.modfest.fireblanket.mixinsupport.CommandBE;
-import org.jetbrains.annotations.NotNull;
 
 public class DumpCommand {
 	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
 		base.then(literal("dump")
 			.requires(source -> source.hasPermissionLevel(4) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("command-blocks")
-				.executes(server -> {
-					server.getSource().getServer().submit(() -> {
-						ServerWorld world = server.getSource().getWorld();
-						for (ChunkHolder holder : world.getChunkManager().chunkLoadingManager.entryIterator()) {
-							WorldChunk chunk = holder.getWorldChunk();
-							if (chunk == null) {
-								continue;
+				.executes(ctx -> {
+					final MinecraftServer server = ctx.getSource().getServer();
+
+					final CmdFindReplaceCommand.Counter counter = CmdFindReplaceCommand.iterate(server, (text, cbe) -> {
+							final CommandBlockExecutor executor = cbe.fireblanket$getCommandExecutor();
+
+							final Optional<Text> result = CmdFindReplaceCommand.toText(server, text, cbe, executor.getCommand());
+
+							if (result.isEmpty()) {
+								return 0;
 							}
-
-							for (Map.Entry<BlockPos, BlockEntity> e : chunk.getBlockEntities().entrySet()) {
-								if (e.getValue() instanceof CommandBlockBlockEntity cbe) {
-									BlockState state = cbe.getCachedState();
-
-									String type;
-									if (state.isOf(Blocks.COMMAND_BLOCK)) {
-										type = "Regular";
-									} else if (state.isOf(Blocks.CHAIN_COMMAND_BLOCK)) {
-										type = "Chain";
-									} else if (state.isOf(Blocks.REPEATING_COMMAND_BLOCK)) {
-										type = "Repeat";
-									} else {
-										type = "???";
-									}
-
-									if (cbe.isPowered()) {
-										type += "-Powered";
-									}
-
-									if (cbe.isAuto()) {
-										type += "-AlwaysActive";
-									}
-
-									UUID owner = ((CommandBE)cbe).fireblanket$getOwner();
-									UUID lastUpdate = ((CommandBE)cbe).fireblanket$getLastUpdate();
-
-									String ownerName = "Unknown owner!!";
-									if (owner != null) {
-										ProfileResult res = server.getSource().getServer().getSessionService().fetchProfile(owner, true);
-										if (res != null) {
-											ownerName = res.profile().getName();
-										}
-									}
-
-									String lastUpdateName = "Unknown last update!!";
-									if (lastUpdate != null) {
-										ProfileResult res = server.getSource().getServer().getSessionService().fetchProfile(lastUpdate, true);
-										if (res != null) {
-											lastUpdateName = res.profile().getName();
-										}
-									}
-
-									String ft = type;
-									String finalOwnerName = ownerName;
-									String finalLastUpdateName = lastUpdateName;
-									server.getSource().sendFeedback(() -> Text.literal(
-										"[" + e.getKey().toShortString() + "] [" + ft + "] "
-											+ "[Owner: " + finalOwnerName + "] [Last updated: " + finalLastUpdateName + "]: "
-											+ cbe.getCommandExecutor().getCommand()), false);
-								}
-							}
+							ctx.getSource().sendFeedback(result::get, false);
+							return 1;
 						}
-					});
+					);
 
-					return 0;
+
+					return counter.blocks();
 				})
 			)
 			.then(literal("entity-types")

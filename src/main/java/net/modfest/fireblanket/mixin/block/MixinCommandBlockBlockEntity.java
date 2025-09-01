@@ -4,6 +4,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.CommandBlockExecutor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
@@ -48,5 +49,10 @@ public abstract class MixinCommandBlockBlockEntity extends BlockEntity implement
 	@Override
 	public UUID fireblanket$getLastUpdate() {
 		return ((CommandBE) commandExecutor).fireblanket$getLastUpdate();
+	}
+
+	@Override
+	public HoverEvent fireblanket$getBlame() {
+		return ((CommandBE) commandExecutor).fireblanket$getBlame();
 	}
 }

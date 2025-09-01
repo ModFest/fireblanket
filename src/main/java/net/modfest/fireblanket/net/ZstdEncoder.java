@@ -1,6 +1,7 @@
 package net.modfest.fireblanket.net;
 
 import com.github.luben.zstd.ZstdOutputStream;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
@@ -20,14 +21,16 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
 
-	private static final ScheduledExecutorService sched = Executors.newSingleThreadScheduledExecutor();
+	private static final ScheduledExecutorService sched = Executors.newSingleThreadScheduledExecutor(
+		new ThreadFactoryBuilder().setDaemon(true).build()
+	);
 
 	private static final LongAdder inBytes = new LongAdder();
 	private static final LongAdder outBytes = new LongAdder();
 
 	static {
 		sched.scheduleAtFixedRate(() -> {
-			Fireblanket.LOGGER.info("Zstd ratio past 5m: " + ((double) inBytes.sumThenReset() / outBytes.sumThenReset()));
+			Fireblanket.LOGGER.info("Zstd ratio past 5m: {}", (double) inBytes.sumThenReset() / outBytes.sumThenReset());
 		}, 5, 5, TimeUnit.MINUTES);
 	}
 

@@ -9,16 +9,19 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.CommandBlockExecutor;
 import net.minecraft.world.chunk.WorldChunk;
 import net.modfest.fireblanket.compat.roles.Roles;
+import net.modfest.fireblanket.mixin.accessor.CommandBlockExecutorAccessor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import net.modfest.fireblanket.util.TextUtil;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.ToIntBiFunction;
@@ -110,7 +113,7 @@ public final class CmdFindReplaceCommand {
 		);
 	}
 
-	private static Counter iterate(final MinecraftServer server, final ToIntBiFunction<Text, CommandBE> function) {
+	static Counter iterate(final MinecraftServer server, final ToIntBiFunction<Text, CommandBE> function) {
 		int blocks = 0;
 		int matches = 0;
 
@@ -123,7 +126,7 @@ public final class CmdFindReplaceCommand {
 
 				for (Map.Entry<BlockPos, BlockEntity> e : chunk.getBlockEntities().entrySet()) {
 					if (e.getValue() instanceof CommandBE cbe) {
-						final int count = function.applyAsInt(TextUtil.ofLocationWithTeleport(world, e.getKey()), cbe);
+						final int count = function.applyAsInt(ExecutorUtils.toBlame(e.getValue()), cbe);
 						if (count > 0) {
 							blocks++;
 							matches += count;
@@ -135,7 +138,7 @@ public final class CmdFindReplaceCommand {
 
 			for (Entity entity : world.iterateEntities()) {
 				if (entity instanceof CommandBE cbe) {
-					final int count = function.applyAsInt(TextUtil.ofEntityWithTeleport(entity), cbe);
+					final int count = function.applyAsInt(ExecutorUtils.toBlame(entity), cbe);
 					if (count > 0) {
 						blocks++;
 						matches += count;
@@ -180,22 +183,74 @@ public final class CmdFindReplaceCommand {
 
 		String newCmd = m.replaceAll(result -> Formatting.GOLD + result.group() + Formatting.RESET);
 
+		return toText(server, name, cbe, newCmd);
+	}
+
+	static Optional<Text> toText(
+		final MinecraftServer server,
+		final Text name,
+		final CommandBE cbe,
+		final String command
+	) {
 		UUID owner = cbe.fireblanket$getOwner();
 		UUID lastUpdate = cbe.fireblanket$getLastUpdate();
 
-		Text ownerName = TextUtil.getPlayerName(server, owner, "Unknown owner!!");
-		Text lastUpdateName = TextUtil.getPlayerName(server, lastUpdate, "Unknown last update!!");
+		final CommandBlockExecutor executor = cbe.fireblanket$getCommandExecutor();
+
+		Text ownerName = TextUtil.getPlayerName(server, owner, "Unknown")
+			.copy().formatted(Formatting.YELLOW);
+		Text commandText = Text.literal(command).formatted(Formatting.GRAY)
+			.styled(style -> style.withHoverEvent(new HoverEvent.ShowText(executor.getLastOutput())));
+
+		final Text lastExecuted;
+
+		final long lastExecution = ((CommandBlockExecutorAccessor) executor).getLastExecution();
+
+		if (lastExecution == -1) {
+			lastExecuted = TextUtil.unknown.copy().formatted(Formatting.GRAY);
+		} else {
+			final long ticks = executor.getWorld().getTime() - lastExecution;
+
+			final Formatting formatting;
+			if (ticks == 0) {
+				formatting = Formatting.RED;
+			} else if (ticks <= 20) {
+				formatting = Formatting.GOLD;
+			} else if (ticks <= 200) {
+				formatting = Formatting.YELLOW;
+			} else {
+				formatting = Formatting.GREEN;
+			}
+
+			lastExecuted = ExecutorUtils.buildDuration(ticks)
+				.formatted(formatting);
+		}
+
+		if (Objects.equals(owner, lastUpdate)) {
+			return Optional.of(Text.translatableWithFallback(
+				"fireblanket.commands.command.grep.entry.same",
+				"[%s] [%s] [%s]: %s",
+				name,
+				ownerName,
+				lastExecuted,
+				commandText
+			));
+		}
+
+		Text lastUpdateName = TextUtil.getPlayerName(server, lastUpdate, "Unknown")
+			.copy().formatted(Formatting.YELLOW);
 
 		return Optional.of(Text.translatableWithFallback(
 			"fireblanket.commands.command.grep.entry",
-			"[%s] [Owner: %s] [Last updated: %s]: %s",
+			"[%s] [%s / %s] [%s]: %s",
 			name,
 			ownerName,
 			lastUpdateName,
-			newCmd
+			lastExecuted,
+			commandText
 		));
 	}
 
-	private record Counter(int blocks, int matches) {
+	record Counter(int blocks, int matches) {
 	}
 }
