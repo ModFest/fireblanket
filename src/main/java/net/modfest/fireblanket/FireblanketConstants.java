@@ -54,6 +54,19 @@ public class FireblanketConstants {
 		.appendValue(SECOND_OF_MINUTE, 2)
 		.toFormatter();
 
+	/**
+	 * @see net.modfest.fireblanket.mixin.opto.MixinCommandBlockExecutor
+	 */
+	public static final DateTimeFormatter COMMAND_EXECUTOR_FORMATTER = new DateTimeFormatterBuilder()
+		.appendLiteral('[')
+		.appendValue(HOUR_OF_DAY, 2)
+		.appendLiteral(':')
+		.appendValue(MINUTE_OF_HOUR, 2)
+		.appendLiteral(':')
+		.appendValue(SECOND_OF_MINUTE, 2)
+		.appendLiteral("] ")
+		.toFormatter();
+
 	public static Identifier id(String id) {
 		return Identifier.of(MOD_ID, id);
 	}
