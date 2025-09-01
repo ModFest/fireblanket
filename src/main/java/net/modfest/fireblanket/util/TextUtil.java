@@ -48,7 +48,7 @@ public final class TextUtil {
 			.withHoverEvent(new HoverEvent.ShowText(Text.translatable("fireblanket.spoofed.tooltip")))
 	);
 
-	private static final Text unknown = Text.translatableWithFallback("fireblanket.unknown", "???")
+	public static final Text unknown = Text.translatableWithFallback("fireblanket.unknown", "???")
 		.formatted(Formatting.GRAY, Formatting.ITALIC);
 
 

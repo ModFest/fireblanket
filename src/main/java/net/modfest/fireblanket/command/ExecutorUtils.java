@@ -142,7 +142,7 @@ final class ExecutorUtils {
 		final MutableText location = TextUtil.ofLocationWithTeleport(
 			blockEntity.getWorld(),
 			blockEntity.getPos()
-		);
+		).formatted(Formatting.YELLOW);
 
 		if (blockEntity instanceof CommandBE cbe) {
 			location.styled(style -> style.withHoverEvent(cbe.fireblanket$getBlame()));
@@ -183,7 +183,8 @@ final class ExecutorUtils {
 
 	static Text toBlame(final Entity entity) {
 		final MutableText location = TextUtil.ofLocation(entity.getBlockPos())
-			.styled(style -> style.withClickEvent(TextUtil.toClickToTeleport(entity)));
+			.styled(style -> style.withFormatting(Formatting.YELLOW)
+				.withClickEvent(TextUtil.toClickToTeleport(entity)));
 
 		if (entity instanceof CommandBE cbe) {
 			location.styled(style -> style.withHoverEvent(cbe.fireblanket$getBlame()));
@@ -192,5 +193,35 @@ final class ExecutorUtils {
 		return ExecutorUtils.toEmojiSpeak(entity)
 			.append(" @ ")
 			.append(location);
+	}
+
+	// Admittedly this could be better (i.e. off the shelf tooling?)
+	// But not really sure how you'd do that.
+	static MutableText buildDuration(long ticks) {
+		if (ticks == 0) {
+			return Text.literal("Now");
+		}
+
+		long seconds = ticks / 20;
+		ticks %= 20;
+
+		if (seconds == 0) {
+			return Text.literal(ticks + " ticks");
+		}
+
+		long minutes = seconds / 60;
+		seconds %= 60;
+
+		long hours = minutes / 60;
+		minutes %= 60;
+
+		long days = hours / 24;
+		hours %= 24;
+
+		if (days == 0) {
+			return Text.literal(String.format("%02d:%02d:%02d.%02d", hours, minutes, seconds, ticks));
+		}
+
+		return Text.literal(String.format("%d %02d:%02d:%02d.%02d", days, hours, minutes, seconds, ticks));
 	}
 }
