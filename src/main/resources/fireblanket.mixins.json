@@ -103,6 +103,8 @@
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
 		"client.hooks.MixinDebugRenderer",
 		"client.pose_stack.AccessorMatrixStackEntry",
+		"client.pose_stack.MixinMatrix4dStack",
+		"client.pose_stack.MixinMatrix4fStack",
 		"client.pose_stack.MixinMatrixStack",
 		"client.render_regions.MixinBlockEntityRenderDispatcher",
 		"client.render_regions.MixinEntityRenderDispatcher",
