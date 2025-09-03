@@ -1,17 +1,35 @@
 package net.modfest.fireblanket.world.render_regions;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.AbstractLongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterable;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.AbstractObjectIterator;
+import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkSectionPos;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, Mode mode) {
+	// Save data: need to flatten the map down for compatibility.
+	public static final MapCodec<RenderRegion> CODEC = RecordCodecBuilder.mapCodec(
+		instance -> instance.group(
+			Codec.INT.listOf(6, 6)
+				.fieldOf("Box")
+				.forGetter(RenderRegion::toArrayBox),
+			StringIdentifiable.createCodec(RenderRegion.Mode::values)
+				.orElse(Mode.UNKNOWN)
+				.fieldOf("Mode")
+				.forGetter(RenderRegion::mode)
+		).apply(instance, RenderRegion::new)
+	);
 
 	public RenderRegion {
 		int x1 = minX;
@@ -28,10 +46,24 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 		maxZ = Math.max(z1, z2);
 	}
 
-	public enum Mode {
+	private RenderRegion(int[] box, Mode mode) {
+		this(box[0], box[1], box[2], box[3], box[4], box[5], mode);
+	}
+
+	// To be called by trusted code only.
+	private RenderRegion(List<Integer> box, Mode mode) {
+		this(box.get(0), box.get(1), box.get(2), box.get(3), box.get(4), box.get(5), mode);
+	}
+
+	public enum Mode implements StringIdentifiable {
 		UNKNOWN, ALLOW, DENY, EXCLUSIVE,
 		;
 		public static final ImmutableList<Mode> VALUES = ImmutableList.copyOf(values());
+
+		@Override
+		public String asString() {
+			return this.name();
+		}
 	}
 
 	public Iterable<ChunkSectionPos> affectedChunks() {
@@ -106,6 +138,10 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 
 	public Box toBox() {
 		return new Box(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
+	}
+
+	private IntList toArrayBox() {
+		return IntList.of(minX, minY, minZ, maxX, maxY, maxZ);
 	}
 
 	// reference semantics for performance

@@ -12,12 +12,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityRenderDispatcher.class)
 public class MixinEntityRenderDispatcher {
-//
-//	@Inject(at = @At("RETURN"), method = "shouldRender", cancellable = true)
-//	public void shouldRender(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> ci) {
-//		if (ci.getReturnValueZ() && RenderRegionRenderer.useRegionRenderer && !FireblanketClient.shouldRender(entity)) {
-//			ci.setReturnValue(false);
-//		}
-//	}
+
+	@Inject(at = @At("RETURN"), method = "shouldRender", cancellable = true)
+	public void shouldRender(Entity entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> ci) {
+		if (ci.getReturnValueZ() && RenderRegionRenderer.useRegionRenderer && !FireblanketClient.shouldRender(entity)) {
+			ci.setReturnValue(false);
+		}
+	}
 
 }

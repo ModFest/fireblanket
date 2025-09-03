@@ -34,10 +34,15 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.GameRules;
-import net.modfest.fireblanket.command.*;
+import net.modfest.fireblanket.command.CmdFindReplaceCommand;
+import net.modfest.fireblanket.command.DumpCommand;
+import net.modfest.fireblanket.command.ItemBanCommand;
+import net.modfest.fireblanket.command.RegionCommand;
+import net.modfest.fireblanket.command.StareCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.compat.roles.PlayerRolesCompat;
 import net.modfest.fireblanket.config.ConfigSpecs;
+import net.modfest.fireblanket.config.EntityFilters;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import net.modfest.fireblanket.mixin.accessor.ClientConnectionAccessor;
 import net.modfest.fireblanket.mixin.accessor.ServerChunkManagerAccessor;
@@ -52,11 +57,9 @@ import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
 import net.modfest.fireblanket.world.render_regions.RenderRegionsState;
-import net.modfest.fireblanket.config.EntityFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -95,7 +98,7 @@ public class Fireblanket implements ModInitializer {
 			LiteralArgumentBuilder<ServerCommandSource> base = CommandManager.literal("fireblanket");
 
 			DumpCommand.init(base, access);
-//			RegionCommand.init(base, access);
+			RegionCommand.init(base, access);
 			CmdFindReplaceCommand.init(base, access);
 			StareCommand.init(base, access);
 			ItemBanCommand.init(base, access);
@@ -200,7 +203,7 @@ public class Fireblanket implements ModInitializer {
 				int max = (int) Math.ceil(radius / 16);
 				int count = (max - min) * (max - min);
 				ChunkTicketManager mgr = ((ServerChunkManagerAccessor) world.getChunkManager()).fireblanket$getTicketManager();
-				LOGGER.info("Forcing " + count + " chunks to stay loaded (but not ticking)...");
+				LOGGER.info("Forcing {} chunks to stay loaded (but not ticking)...", count);
 				int done = 0;
 				long lastReport = System.nanoTime();
 				Stopwatch sw = Stopwatch.createStarted();
@@ -214,11 +217,11 @@ public class Fireblanket implements ModInitializer {
 						done++;
 						if (System.nanoTime() - lastReport > 1_000_000_000) {
 							lastReport = System.nanoTime();
-							LOGGER.info(done + "/" + count + " loaded (" + ((done * 100) / count) + "%)...");
+							LOGGER.info("{}/{} loaded ({}%)...", done, count, (done * 100) / count);
 						}
 					}
 				}
-				LOGGER.info("Done after " + sw);
+				LOGGER.info("Done after {}", sw);
 			}
 		});
 
@@ -232,14 +235,14 @@ public class Fireblanket implements ModInitializer {
 	}
 
 	public static void fullRegionSync(ServerWorld world, Consumer<Packet<?>> sender) {
-//		RenderRegions regions = RenderRegionsState.get(world).getRegions();
-//		RegionSyncRequest req;
-//		if (regions.getRegionsByName().isEmpty()) {
-//			req = new RegionSyncRequest.Reset(true);
-//		} else {
-//			req = regions.toPacket();
-//		}
-//		sender.accept(ServerPlayNetworking.createS2CPacket(req));
+		RenderRegions regions = RenderRegionsState.get(world).getRegions();
+		RegionSyncRequest req;
+		if (regions.getRegionsByName().isEmpty()) {
+			req = new RegionSyncRequest.Reset(true);
+		} else {
+			req = regions.toPacket();
+		}
+		sender.accept(ServerPlayNetworking.createS2CPacket(req));
 	}
 
 	public static LinkedBlocQueue<QueuedPacket> getNextQueue() {

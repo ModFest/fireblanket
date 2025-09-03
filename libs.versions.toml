@@ -12,8 +12,8 @@ zstd = "1.5.5-5"
 sodium = "mc1.21-0.5.9"
 flywheel = "1.0.4-27"
 vanillin = "1.1.3-27"
-worldeditCore = "7.3.3"
-worldeditFabric = "7.4.0-SNAPSHOT"
+worldeditCore = "7.3.16"
+worldeditFabric = "7.3.16"
 
 [plugins]
 loom = { id = "fabric-loom", version.ref = "loom" }
@@ -32,4 +32,4 @@ sodium = { group = "maven.modrinth", name = "sodium", version.ref = "sodium" }
 flywheel = { group = "dev.engine-room.flywheel", name = "flywheel-fabric-1.21.1", version.ref = "flywheel" }
 vanillin = { group = "dev.engine-room.vanillin", name = "vanillin-fabric-1.21.1", version.ref = "vanillin" }
 worldeditCore = { group = "com.sk89q.worldedit", name = "worldedit-core", version.ref = "worldeditCore" }
-worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc1.21", version.ref = "worldeditFabric" }
+worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc1.21.7", version.ref = "worldeditFabric" }

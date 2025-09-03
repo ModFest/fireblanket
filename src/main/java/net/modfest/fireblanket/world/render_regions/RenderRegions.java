@@ -7,10 +7,14 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
@@ -22,10 +26,6 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Uuids;
@@ -36,14 +36,21 @@ import net.modfest.fireblanket.world.render_regions.RenderRegion.Mode;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 public class RenderRegions {
+
+	public static final Codec<Map<String, RegionData>> CODEC = Codec.unboundedMap(Codec.STRING, RegionData.CODEC.codec());
 
 	private final BiMap<String, ExplainedRenderRegion> regionsByName = HashBiMap.create();
 	private final Reference2ReferenceMap<RenderRegion, ExplainedRenderRegion> explaineds = new Reference2ReferenceOpenHashMap<>();
@@ -451,53 +458,101 @@ public class RenderRegions {
 		return !blanketDeny;
 	}
 
-	public void readNbt(NbtCompound nbt) {
-//		for (String name : nbt.getKeys()) {
-//			NbtCompound cmp = nbt.getCompound(name);
-//			Mode m = Mode.valueOf(cmp.getString("Mode"));
-//			int[] box = cmp.getIntArray("Box");
-//			RenderRegion r = new RenderRegion(box[0], box[1], box[2], box[3], box[4], box[5], m);
-//			add(name, r);
-//			int[] entities = cmp.getIntArray("EAtt");
-//			for (int i = 0; i < entities.length; i += 4) {
-//				attachEntity(r, Uuids.toUuid(Arrays.copyOfRange(entities, i, i + 4)));
-//			}
-//			long[] blockentities = cmp.getLongArray("BEAtt");
-//			for (long l : blockentities) {
-//				attachBlock(r, l);
-//			}
-//			for (NbtElement ele : cmp.getList("ETAtt", NbtElement.STRING_TYPE)) {
-//				attachEntityType(r, Identifier.tryParse(ele.asString()));
-//			}
-//			for (NbtElement ele : cmp.getList("BETAtt", NbtElement.STRING_TYPE)) {
-//				attachBlockEntityType(r, Identifier.tryParse(ele.asString()));
-//			}
-//		}
+	public RenderRegions fromData(final Map<String, RegionData> data) {
+		data.forEach((name, d) -> {
+			RenderRegion r = d.region;
+			add(name, r);
+
+			for (UUID entity : d.entities) {
+				attachEntity(r, entity);
+			}
+
+			for (long block : d.blocks) {
+				attachBlock(r, block);
+			}
+
+			for (Identifier id : d.entityTypes) {
+				attachEntityType(r, id);
+			}
+
+			for (Identifier id : d.blockTypes) {
+				attachBlockEntityType(r, id);
+			}
+		});
+
+		return this;
 	}
 
-	public void writeNbt(NbtCompound nbt) {
+	public Map<String, RegionData> toData() {
+		final Map<String, RegionData> map = new HashMap<>();
+
 		for (var ex : explaineds.values()) {
-			RenderRegion r = ex.reg;
-			NbtCompound cmp = new NbtCompound();
-			cmp.putString("Mode", r.mode().name());
-			cmp.putIntArray("Box", new int[]{r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()});
-			IntList entities = new IntArrayList();
-			for (var entityId : ex.entityAttachments) {
-				entities.addAll(IntList.of(Uuids.toIntArray(entityId)));
+			map.put(ex.name, new RegionData(
+				ex.reg,
+				ex.entityAttachments,
+				ex.blockAttachments,
+				ex.entityTypeAttachments,
+				ex.beTypeAttachments
+			));
+		}
+
+		return map;
+	}
+
+	public record RegionData(
+		RenderRegion region,
+		Set<UUID> entities,
+		LongSet blocks,
+		Set<Identifier> entityTypes,
+		Set<Identifier> blockTypes
+	) {
+		private static final Codec<Set<Identifier>> ID_SET_CODEC = Identifier.CODEC
+			.listOf()
+			.xmap(HashSet::new, List::copyOf);
+
+		public static final MapCodec<RegionData> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+			RenderRegion.CODEC.forGetter(RegionData::region),
+			Codec.INT_STREAM
+				.xmap(RegionData::deser, RegionData::ser)
+				.orElseGet(HashSet::new)
+				.fieldOf("EAtt")
+				.forGetter(RegionData::entities),
+			Codec.LONG_STREAM
+				.xmap(RegionData::toSet, LongSet::longStream)
+				.orElseGet(LongOpenHashSet::new)
+				.fieldOf("BEAtt")
+				.forGetter(RegionData::blocks),
+			ID_SET_CODEC
+				.fieldOf("ETAtt")
+				.forGetter(RegionData::entityTypes),
+			ID_SET_CODEC
+				.fieldOf("BETAtt")
+				.forGetter(RegionData::blockTypes)
+		).apply(instance, RegionData::new));
+
+		private static Set<UUID> deser(final IntStream stream) {
+			final int[] array = stream.toArray();
+			final HashSet<UUID> set = new HashSet<>();
+
+			for (int i = 0; i < array.length; i += 4) {
+				set.add(Uuids.toUuid(Arrays.copyOfRange(array, i, i + 4)));
 			}
-			cmp.putIntArray("EAtt", entities.toIntArray());
-			cmp.putLongArray("BEAtt", ex.blockAttachments.toLongArray());
-			NbtList entityTypes = new NbtList();
-			for (Identifier id : ex.entityTypeAttachments) {
-				entityTypes.add(NbtString.of(id.toString()));
+
+			return set;
+		}
+
+		private static IntStream ser(final Set<UUID> set) {
+			final IntList list = new IntArrayList();
+
+			for (var uuid : set) {
+				list.addAll(IntList.of(Uuids.toIntArray(uuid)));
 			}
-			cmp.put("ETAtt", entityTypes);
-			NbtList beTypes = new NbtList();
-			for (Identifier id : ex.beTypeAttachments) {
-				beTypes.add(NbtString.of(id.toString()));
-			}
-			cmp.put("BETAtt", beTypes);
-			nbt.put(ex.name, cmp);
+
+			return list.intStream();
+		}
+
+		private static LongSet toSet(final LongStream stream) {
+			return stream.collect(LongOpenHashSet::new, LongOpenHashSet::add, LongOpenHashSet::addAll);
 		}
 	}
 
