@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -21,6 +22,7 @@ import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.Entity;
@@ -62,6 +64,10 @@ public class RenderRegions {
 	private final ListMultimap<UUID, ExplainedRenderRegion> entityRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
 	private final ListMultimap<Identifier, ExplainedRenderRegion> exclusiveEntityTypeRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
 	private final ListMultimap<Identifier, ExplainedRenderRegion> exclusiveBeTypeRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
+
+	// These are likely to be so rare to not be worthwhile to try to shove it into the regular exclusive map.
+	private final Set<ExplainedRenderRegion> unboundedInvertedExclusiveEntityTypeRegions = new ReferenceOpenHashSet<>();
+	private final Set<ExplainedRenderRegion> unboundedInvertedExclusiveBeTypeRegions = new ReferenceOpenHashSet<>();
 
 	private final Runnable dirtyListener;
 	private final Consumer<RegionSyncRequest> syncer;
@@ -202,7 +208,7 @@ public class RenderRegions {
 		if (region == null || id == null) return;
 		ExplainedRenderRegion ex = explaineds.get(region);
 		ex.entityTypeAttachments.add(id);
-		if (region.mode() == Mode.EXCLUSIVE) {
+		if (region.mode() == Mode.EXCLUSIVE && !ex.entityTypeBoxBounded && !ex.entityTypeAttachmentsInverted) {
 			exclusiveEntityTypeRegions.put(id, ex);
 		}
 		ex.blanketDeny = false;
@@ -232,7 +238,7 @@ public class RenderRegions {
 		if (region == null || id == null) return;
 		ExplainedRenderRegion ex = explaineds.get(region);
 		ex.beTypeAttachments.add(id);
-		if (region.mode() == Mode.EXCLUSIVE) {
+		if (region.mode() == Mode.EXCLUSIVE && !ex.beTypeBoxBounded && !ex.beTypeAttachmentsInverted) {
 			exclusiveBeTypeRegions.put(id, ex);
 		}
 		ex.blanketDeny = false;
@@ -342,7 +348,29 @@ public class RenderRegions {
 
 	void applyMeta(ExplainedRenderRegion ex) {
 		final RenderRegion r = this.getByName(ex.name);
-		this.explaineds.get(r).copyMeta(ex);
+		final ExplainedRenderRegion nex = this.explaineds.get(r);
+
+		onUpdateMeta(nex,
+			nex.entityTypeBoxBounded,
+			ex.entityTypeBoxBounded,
+			nex.entityTypeAttachmentsInverted,
+			ex.entityTypeAttachmentsInverted,
+			nex.entityTypeAttachments,
+			unboundedInvertedExclusiveEntityTypeRegions,
+			exclusiveEntityTypeRegions
+		);
+
+		onUpdateMeta(nex,
+			nex.beTypeBoxBounded,
+			ex.beTypeBoxBounded,
+			nex.beTypeAttachmentsInverted,
+			ex.beTypeAttachmentsInverted,
+			nex.beTypeAttachments,
+			unboundedInvertedExclusiveBeTypeRegions,
+			exclusiveBeTypeRegions
+		);
+
+		nex.copyMeta(ex);
 	}
 
 	private void metaCommon(ExplainedRenderRegion ex) {
@@ -355,6 +383,13 @@ public class RenderRegions {
 			return;
 		}
 		ExplainedRenderRegion ex = explaineds.get(region);
+		onInvertExclusion(ex,
+			ex.entityTypeAttachmentsInverted,
+			bool,
+			unboundedInvertedExclusiveEntityTypeRegions,
+			ex.entityTypeBoxBounded ? Set.of() : ex.entityTypeAttachments,
+			exclusiveEntityTypeRegions
+		);
 		ex.entityTypeAttachmentsInverted = bool;
 		this.metaCommon(ex);
 	}
@@ -372,6 +407,9 @@ public class RenderRegions {
 			return;
 		}
 		ExplainedRenderRegion ex = explaineds.get(region);
+		if (!ex.entityTypeAttachmentsInverted) {
+			onUnboundExclusion(ex, ex.entityTypeBoxBounded, bool, ex.entityTypeAttachments, exclusiveEntityTypeRegions);
+		}
 		ex.entityTypeBoxBounded = bool;
 		this.metaCommon(ex);
 	}
@@ -389,6 +427,13 @@ public class RenderRegions {
 			return;
 		}
 		ExplainedRenderRegion ex = explaineds.get(region);
+		onInvertExclusion(ex,
+			ex.beTypeAttachmentsInverted,
+			bool,
+			unboundedInvertedExclusiveBeTypeRegions,
+			ex.beTypeBoxBounded ? Set.of() : ex.beTypeAttachments,
+			exclusiveBeTypeRegions
+		);
 		ex.beTypeAttachmentsInverted = bool;
 		this.metaCommon(ex);
 	}
@@ -406,6 +451,9 @@ public class RenderRegions {
 			return;
 		}
 		ExplainedRenderRegion ex = explaineds.get(region);
+		if (!ex.beTypeAttachmentsInverted) {
+			onUnboundExclusion(ex, ex.beTypeBoxBounded, bool, ex.beTypeAttachments, exclusiveBeTypeRegions);
+		}
 		ex.beTypeBoxBounded = bool;
 		this.metaCommon(ex);
 	}
@@ -416,6 +464,94 @@ public class RenderRegions {
 		}
 		ExplainedRenderRegion ex = explaineds.get(region);
 		return ex.beTypeBoxBounded;
+	}
+
+	private static void onUpdateMeta(
+		final ExplainedRenderRegion ex,
+		final boolean oldBounded,
+		final boolean newBounded,
+		final boolean oldInverted,
+		final boolean newInverted,
+		final Set<Identifier> ids,
+		final Set<ExplainedRenderRegion> unboundedInversions,
+		final Multimap<Identifier, ExplainedRenderRegion> exclusives
+	) {
+		// Non-exclusive regions don't need this.
+		if (ex.reg.mode() != Mode.EXCLUSIVE) {
+			return;
+		}
+
+		if (oldInverted != newInverted) {
+			if (newInverted) {
+				for (var id : ids) {
+					exclusives.remove(id, ex);
+				}
+				if (!newBounded) {
+					unboundedInversions.add(ex);
+				}
+			} else {
+				unboundedInversions.remove(ex);
+				if (newBounded) {
+					for (var id : ids) {
+						exclusives.put(id, ex);
+					}
+				}
+			}
+			return;
+		}
+
+		if (newInverted) {
+			return;
+		}
+
+		onUnboundExclusion(ex, oldBounded, newBounded, ids, exclusives);
+	}
+
+	private static void onInvertExclusion(
+		final ExplainedRenderRegion ex,
+		final boolean oldBool,
+		final boolean newBool,
+		final Set<ExplainedRenderRegion> regions,
+		final Set<Identifier> ids,
+		final Multimap<Identifier, ExplainedRenderRegion> exclusives
+	) {
+		if ((oldBool == newBool) || ex.reg.mode() != Mode.EXCLUSIVE) {
+			return;
+		}
+
+		if (newBool) {
+			regions.add(ex);
+			for (var id : ids) {
+				exclusives.remove(id, ex);
+			}
+		} else {
+			regions.remove(ex);
+			for (var id : ids) {
+				exclusives.put(id, ex);
+			}
+		}
+	}
+
+	private static void onUnboundExclusion(
+		final ExplainedRenderRegion ex,
+		final boolean oldBool,
+		final boolean newBool,
+		Set<Identifier> ids,
+		final Multimap<Identifier, ExplainedRenderRegion> exclusives
+	) {
+		if ((oldBool == newBool) || ex.reg.mode() != Mode.EXCLUSIVE) {
+			return;
+		}
+
+		if (newBool) {
+			for (var id : ids) {
+				exclusives.remove(id, ex);
+			}
+		} else {
+			for (var id : ids) {
+				exclusives.put(id, ex);
+			}
+		}
 	}
 
 	public RenderRegion getByName(String name) {
@@ -453,42 +589,46 @@ public class RenderRegions {
 	}
 
 	public boolean shouldRender(double viewerX, double viewerY, double viewerZ, BlockEntity be) {
+		long targetPos = be.getPos().asLong();
 		long viewerPos = BlockPos.asLong((int) viewerX, (int) viewerY, (int) viewerZ);
 		if (be instanceof RegionSubject rs) {
-			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos);
+			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos, targetPos);
 			if (cached != null) return cached;
 		}
 		boolean res = shouldRender(
 			ExplainedRenderRegion::isBlockEntityTypeTargeted,
 			BlockEntityType.getId(be.getType()),
 			exclusiveBeTypeRegions,
+			unboundedInvertedExclusiveBeTypeRegions,
 			blockRegions.get(be.getPos().asLong()),
-			be,
+			be, ChunkSectionPos.toLong(be.getPos()),
 			viewerX, viewerY, viewerZ
 		);
 		if (be instanceof RegionSubject rs) {
-			rs.fireblanket$setCachedState(era, viewerPos, res);
+			rs.fireblanket$setCachedState(era, viewerPos, targetPos, res);
 		}
 		return res;
 	}
 
 	public boolean shouldRender(double viewerX, double viewerY, double viewerZ, Entity e) {
 		if (e instanceof PlayerEntity && e.shouldRenderName()) return true;
+		long targetPos = e.getBlockPos().asLong();
 		long viewerPos = BlockPos.asLong((int) viewerX, (int) viewerY, (int) viewerZ);
 		if (e instanceof RegionSubject rs) {
-			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos);
+			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos, targetPos);
 			if (cached != null) return cached;
 		}
 		boolean res = shouldRender(
 			ExplainedRenderRegion::isEntityTypeTargeted,
 			EntityType.getId(e.getType()),
 			exclusiveEntityTypeRegions,
+			unboundedInvertedExclusiveEntityTypeRegions,
 			entityRegions.get(e.getUuid()),
-			e,
+			e, ChunkSectionPos.toLong(e.getBlockPos()),
 			viewerX, viewerY, viewerZ
 		);
 		if (e instanceof RegionSubject rs) {
-			rs.fireblanket$setCachedState(era, viewerPos, res);
+			rs.fireblanket$setCachedState(era, viewerPos, targetPos, res);
 		}
 		return res;
 	}
@@ -496,7 +636,9 @@ public class RenderRegions {
 	private <T> boolean shouldRender(
 		BiPredicate<ExplainedRenderRegion, T> targets, Identifier type,
 		ListMultimap<Identifier, ExplainedRenderRegion> exclusiveTypeRegions,
+		Iterable<ExplainedRenderRegion> unboundedInvertedExclusives,
 		Iterable<ExplainedRenderRegion> assignedRegions, T target,
+		long targetChunkSect,
 		double viewerX, double viewerY, double viewerZ
 	) {
 		boolean anyExclusive = false;
@@ -541,9 +683,28 @@ public class RenderRegions {
 		}
 		if (permitted) return true;
 
+		// Lightly more efficient bounded exclusive regions
+		// This check should be infallible.
+		// It is safe to assume that any fails here is allowed.
+		for (var rr : regionsByChunkSection.get(targetChunkSect)) {
+			if (rr.reg.mode() != Mode.EXCLUSIVE) {
+				continue;
+			}
+			if (targets.test(rr, target)) {
+				return false;
+			}
+		}
+
+		// This is going to be pretty rare and usually accidental.
+		for (var rr : unboundedInvertedExclusives) {
+			if (targets.test(rr, target) && !rr.reg.contains(viewerX, viewerY, viewerZ)) {
+				return false;
+			}
+		}
+
 		// exclusive regions not matched above must mean reject
 		for (var rr : exclusiveTypeRegions.get(type)) {
-			if (targets.test(rr, target) && !rr.reg.contains(viewerX, viewerY, viewerZ)) {
+			if (!rr.reg.contains(viewerX, viewerY, viewerZ)) {
 				return false;
 			}
 		}
