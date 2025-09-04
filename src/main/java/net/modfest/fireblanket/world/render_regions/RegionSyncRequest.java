@@ -3,6 +3,7 @@ package net.modfest.fireblanket.world.render_regions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.EntityType;
@@ -27,14 +28,18 @@ import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.InvalidCom
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.RedefineRegion;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.RegistryRegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.Reset;
+import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.UpdateRegionMetadata;
 import net.modfest.fireblanket.world.render_regions.RenderRegion.Mode;
 
+import java.util.BitSet;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public sealed interface RegionSyncRequest extends CustomPayload permits InvalidCommand, FullState, Reset, AddRegion,
 	DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock, RedefineRegion, FullStateLegacy,
-	RegistryRegionSyncRequest {
+	RegistryRegionSyncRequest, UpdateRegionMetadata {
 
 	CustomPayload.Id<RegionSyncRequest> ID = new CustomPayload.Id<>(Fireblanket.REGIONS_UPDATE);
 
@@ -59,6 +64,7 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 		ATTACH_BLOCK_ENTITY_TYPE(AttachBlockEntityType::read, "attach_block_entity_type"),
 		DETACH_BLOCK_ENTITY_TYPE(DetachBlockEntityType::read, "detach_block_entity_type"),
 		FULL_STATE(FullState::read, "full_state"),
+		UPDATE_REGION_METADATA(UpdateRegionMetadata::read, "update_region"),
 		;
 		public static final ImmutableList<RequestType> VALUES = ImmutableList.copyOf(values());
 		public final Function<PacketByteBuf, ? extends RegionSyncRequest> reader;
@@ -120,7 +126,7 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	private static RenderRegion readRegion(PacketByteBuf buf) {
 		int modeId = buf.readUnsignedByte();
 		if (modeId >= Mode.VALUES.size()) {
-			Fireblanket.LOGGER.warn("Unknown region mode id " + modeId);
+			Fireblanket.LOGGER.warn("Unknown region mode id {}", modeId);
 			modeId = 0;
 		}
 		Mode mode = Mode.VALUES.get(modeId);
@@ -137,10 +143,41 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 		buf.writeVarInt(registry.getRawId(registry.get(id)));
 	}
 
+	private static <T> void readTo(PacketByteBuf buf, Collection<T> collection, Function<PacketByteBuf, T> function) {
+		final int len = buf.readVarInt();
+		for (int i = 0; i < len; i++) {
+			collection.add(function.apply(buf));
+		}
+	}
+
+	private static void readTo(PacketByteBuf buf, LongCollection collection) {
+		final int len = buf.readVarInt();
+		for (int i = 0; i < len; i++) {
+			collection.add(buf.readLong());
+		}
+	}
+
+	private static <T> void writeTo(PacketByteBuf buf, Collection<T> collection, BiConsumer<PacketByteBuf, T> consumer) {
+		buf.writeVarInt(collection.size());
+		for (final T t : collection) {
+			consumer.accept(buf, t);
+		}
+	}
+
+	private static void writeTo(PacketByteBuf buf, LongCollection collection) {
+		buf.writeVarInt(collection.size());
+		LongIterator itr = collection.iterator();
+		while (itr.hasNext()) {
+			buf.writeLong(itr.nextLong());
+		}
+	}
+
 	static RegionSyncRequest read(RegistryByteBuf buf) {
 		int tid = buf.readUnsignedByte();
 		if (tid >= RequestType.VALUES.size()) {
-			Fireblanket.LOGGER.warn("Unknown region sync command id " + tid);
+			int len = buf.readableBytes();
+			buf.skipBytes(len);
+			Fireblanket.LOGGER.warn("Unknown region sync command id {}, had {} bytes", tid, len);
 			return new InvalidCommand();
 		}
 		RequestType t = RequestType.VALUES.get(tid);
@@ -584,27 +621,14 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 				int start = buf.writerIndex();
 				RenderRegion r = ex.reg;
 				writeRegion(buf, r);
-				var ea = ex.entityAttachments;
-				buf.writeVarInt(ea.size());
-				for (UUID id : ea) {
-					buf.writeUuid(id);
-				}
-				var ba = ex.blockAttachments;
-				buf.writeVarInt(ba.size());
-				LongIterator iter = ba.longIterator();
-				while (iter.hasNext()) {
-					buf.writeLong(iter.nextLong());
-				}
-				var et = ex.entityTypeAttachments;
-				buf.writeVarInt(et.size());
-				for (Identifier id : et) {
-					writeId(buf, Registries.ENTITY_TYPE, id);
-				}
-				var bet = ex.beTypeAttachments;
-				buf.writeVarInt(bet.size());
-				for (Identifier id : bet) {
-					writeId(buf, Registries.BLOCK_ENTITY_TYPE, id);
-				}
+
+				writeTo(buf, ex.entityAttachments, (b, uuid) -> b.writeUuid(uuid));
+				writeTo(buf, ex.blockAttachments);
+				writeTo(buf, ex.entityTypeAttachments, (b, id) -> writeId(b, Registries.ENTITY_TYPE, id));
+				writeTo(buf, ex.beTypeAttachments, (b, id) -> writeId(b, Registries.BLOCK_ENTITY_TYPE, id));
+
+				buf.writeBitSet(ex.getMeta());
+
 				int len = buf.writerIndex() - start;
 				buf.markWriterIndex();
 				buf.writerIndex(sizePos);
@@ -622,22 +646,21 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 				int start = buf.readerIndex();
 				RenderRegion r = readRegion(buf);
 				ExplainedRenderRegion ex = new ExplainedRenderRegion(name, r);
-				int entityCount = buf.readVarInt();
-				for (int j = 0; j < entityCount; j++) {
-					ex.entityAttachments.add(buf.readUuid());
+
+				readTo(buf, ex.entityAttachments, b -> b.readUuid());
+				readTo(buf, ex.blockAttachments);
+				readTo(buf, ex.entityTypeAttachments, b -> readId(buf, Registries.ENTITY_TYPE));
+				readTo(buf, ex.beTypeAttachments, b -> readId(buf, Registries.BLOCK_ENTITY_TYPE));
+
+				extension:
+				{
+					if (buf.readerIndex() == len + start) {
+						break extension;
+					}
+
+					ex.applyMeta(buf.readBitSet());
 				}
-				int blockCount = buf.readVarInt();
-				for (int j = 0; j < blockCount; j++) {
-					ex.blockAttachments.add(buf.readLong());
-				}
-				int entityTypeCount = buf.readVarInt();
-				for (int j = 0; j < entityTypeCount; j++) {
-					ex.entityTypeAttachments.add(readId(buf, Registries.ENTITY_TYPE));
-				}
-				int beTypeCount = buf.readVarInt();
-				for (int j = 0; j < beTypeCount; j++) {
-					ex.beTypeAttachments.add(readId(buf, Registries.BLOCK_ENTITY_TYPE));
-				}
+
 				buf.readerIndex(start + len);
 				bldr.add(ex);
 			}
@@ -658,7 +681,41 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 				ex.blockAttachments.forEach(pos -> tgt.attachBlock(ex.reg, pos));
 				ex.entityTypeAttachments.forEach(id -> tgt.attachEntityType(ex.reg, id));
 				ex.beTypeAttachments.forEach(id -> tgt.attachBlockEntityType(ex.reg, id));
+				tgt.applyMeta(ex);
 			}
+		}
+	}
+
+	record UpdateRegionMetadata(String name, BitSet meta) implements RegionSyncRequest {
+
+		@Override
+		public RequestType type() {
+			return RequestType.UPDATE_REGION_METADATA;
+		}
+
+		@Override
+		public void write(final PacketByteBuf buf) {
+			buf.writeString(name);
+			buf.writeBitSet(meta);
+		}
+
+		public static UpdateRegionMetadata read(final PacketByteBuf buf) {
+			return new UpdateRegionMetadata(buf.readString(), buf.readBitSet());
+		}
+
+		@Override
+		public void apply(final RenderRegions tgt) {
+			final RenderRegion region = tgt.getByName(name());
+
+			tgt.setEntityTypeAttachmentsInverted(region, meta.get(0));
+			tgt.setEntityTypeBoxBounded(region, meta.get(1));
+			tgt.setBeTypeAttachmentsInverted(region, meta.get(2));
+			tgt.setBeTypeBoxBounded(region, meta.get(3));
+		}
+
+		@Override
+		public boolean valid() {
+			return name != null;
 		}
 	}
 

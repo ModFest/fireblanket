@@ -1,6 +1,8 @@
 package net.modfest.fireblanket.command;
 
 import com.google.common.collect.Iterables;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -41,6 +43,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static net.minecraft.server.command.CommandManager.argument;
@@ -94,6 +97,39 @@ public class RegionCommand {
 								ctx.getSource().sendFeedback(() -> Text.literal("Redefined region " + name), true);
 								return 1;
 							})
+						)
+					)
+				)
+			)
+			.then(literal("meta")
+				.then(argument("name", StringArgumentType.word())
+					.suggests(RegionCommand::suggestRegionNames)
+					.then(literal("entityType")
+						.then(literal("bounded")
+							.then(argument("value", BoolArgumentType.bool())
+								.executes(passThroughBoolean(RenderRegions::setEntityTypeBoxBounded))
+							)
+							.executes(printBoolean("EntityBounded", RenderRegions::getEntityTypeBoxBounded))
+						)
+						.then(literal("inverted")
+							.then(argument("value", BoolArgumentType.bool())
+								.executes(passThroughBoolean(RenderRegions::setEntityTypeAttachmentsInverted))
+							)
+							.executes(printBoolean("EntityInverted", RenderRegions::getEntityTypeAttachmentsInverted))
+						)
+					)
+					.then(literal("beType")
+						.then(literal("bounded")
+							.then(argument("value", BoolArgumentType.bool())
+								.executes(passThroughBoolean(RenderRegions::setBeTypeBoxBounded))
+							)
+							.executes(printBoolean("BeBounded", RenderRegions::getBeTypeBoxBounded))
+						)
+						.then(literal("inverted")
+							.then(argument("value", BoolArgumentType.bool())
+								.executes(passThroughBoolean(RenderRegions::setBeTypeAttachmentsInverted))
+							)
+							.executes(printBoolean("BeInverted", RenderRegions::getBeTypeAttachmentsInverted))
 						)
 					)
 				)
@@ -588,4 +624,37 @@ public class RegionCommand {
 		return 1;
 	}
 
+	// Why duplicate code?
+	private static Command<ServerCommandSource> passThroughBoolean(
+		ObjObjBoolTriConsumer<RenderRegions, RenderRegion> triConsumer
+	) {
+		return ctx -> {
+			RenderRegion r = getRegion(ctx);
+			RenderRegions regions = getRegions(ctx);
+			boolean value = BoolArgumentType.getBool(ctx, "value");
+
+			triConsumer.consume(regions, r, value);
+			return 1;
+		};
+	}
+
+	private static Command<ServerCommandSource> printBoolean(
+		String name,
+		BiPredicate<RenderRegions, RenderRegion> toValue
+	) {
+		return ctx -> {
+			RenderRegion r = getRegion(ctx);
+			RenderRegions regions = getRegions(ctx);
+			boolean value = toValue.test(regions, r);
+
+			ctx.getSource().sendFeedback(() -> Text.of(name + ": " + value), false);
+
+			return 1;
+		};
+	}
+
+	@FunctionalInterface
+	private interface ObjObjBoolTriConsumer<I1, I2> {
+		void consume(I1 i1, I2 i2, boolean i3);
+	}
 }

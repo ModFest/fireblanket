@@ -29,12 +29,14 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Uuids;
+import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.FullState;
 import net.modfest.fireblanket.world.render_regions.RenderRegion.Mode;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,8 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -338,6 +340,84 @@ public class RenderRegions {
 		return count;
 	}
 
+	void applyMeta(ExplainedRenderRegion ex) {
+		final RenderRegion r = this.getByName(ex.name);
+		this.explaineds.get(r).copyMeta(ex);
+	}
+
+	private void metaCommon(ExplainedRenderRegion ex) {
+		this.markDirty();
+		this.sync(() -> new RegionSyncRequest.UpdateRegionMetadata(ex.name, ex.getMeta()));
+	}
+
+	public void setEntityTypeAttachmentsInverted(RenderRegion region, boolean bool) {
+		if (region == null) {
+			return;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		ex.entityTypeAttachmentsInverted = bool;
+		this.metaCommon(ex);
+	}
+
+	public boolean getEntityTypeAttachmentsInverted(RenderRegion region) {
+		if (region == null) {
+			return false;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		return ex.entityTypeAttachmentsInverted;
+	}
+
+	public void setEntityTypeBoxBounded(RenderRegion region, boolean bool) {
+		if (region == null) {
+			return;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		ex.entityTypeBoxBounded = bool;
+		this.metaCommon(ex);
+	}
+
+	public boolean getEntityTypeBoxBounded(RenderRegion region) {
+		if (region == null) {
+			return false;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		return ex.entityTypeBoxBounded;
+	}
+
+	public void setBeTypeAttachmentsInverted(RenderRegion region, boolean bool) {
+		if (region == null) {
+			return;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		ex.beTypeAttachmentsInverted = bool;
+		this.metaCommon(ex);
+	}
+
+	public boolean getBeTypeAttachmentsInverted(RenderRegion region) {
+		if (region == null) {
+			return false;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		return ex.beTypeAttachmentsInverted;
+	}
+
+	public void setBeTypeBoxBounded(RenderRegion region, boolean bool) {
+		if (region == null) {
+			return;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		ex.beTypeBoxBounded = bool;
+		this.metaCommon(ex);
+	}
+
+	public boolean getBeTypeBoxBounded(RenderRegion region) {
+		if (region == null) {
+			return false;
+		}
+		ExplainedRenderRegion ex = explaineds.get(region);
+		return ex.beTypeBoxBounded;
+	}
+
 	public RenderRegion getByName(String name) {
 		ExplainedRenderRegion ex = regionsByName.get(name);
 		if (ex == null) return null;
@@ -378,9 +458,14 @@ public class RenderRegions {
 			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos);
 			if (cached != null) return cached;
 		}
-		boolean res = shouldRender(ex -> ex.beTypeAttachments, BlockEntityType.getId(be.getType()),
+		boolean res = shouldRender(
+			ExplainedRenderRegion::isBlockEntityTypeTargeted,
+			BlockEntityType.getId(be.getType()),
 			exclusiveBeTypeRegions,
-			blockRegions.get(be.getPos().asLong()), viewerX, viewerY, viewerZ);
+			blockRegions.get(be.getPos().asLong()),
+			be,
+			viewerX, viewerY, viewerZ
+		);
 		if (be instanceof RegionSubject rs) {
 			rs.fireblanket$setCachedState(era, viewerPos, res);
 		}
@@ -394,18 +479,26 @@ public class RenderRegions {
 			Boolean cached = rs.fireblanket$cachedShouldRender(era, viewerPos);
 			if (cached != null) return cached;
 		}
-		boolean res = shouldRender(ex -> ex.entityTypeAttachments, EntityType.getId(e.getType()),
+		boolean res = shouldRender(
+			ExplainedRenderRegion::isEntityTypeTargeted,
+			EntityType.getId(e.getType()),
 			exclusiveEntityTypeRegions,
-			entityRegions.get(e.getUuid()), viewerX, viewerY, viewerZ);
+			entityRegions.get(e.getUuid()),
+			e,
+			viewerX, viewerY, viewerZ
+		);
 		if (e instanceof RegionSubject rs) {
 			rs.fireblanket$setCachedState(era, viewerPos, res);
 		}
 		return res;
 	}
 
-	private boolean shouldRender(Function<ExplainedRenderRegion, Set<Identifier>> typeAttachments, Identifier type,
-	                             ListMultimap<Identifier, ExplainedRenderRegion> exclusiveTypeRegions,
-	                             Iterable<ExplainedRenderRegion> assignedRegions, double viewerX, double viewerY, double viewerZ) {
+	private <T> boolean shouldRender(
+		BiPredicate<ExplainedRenderRegion, T> targets, Identifier type,
+		ListMultimap<Identifier, ExplainedRenderRegion> exclusiveTypeRegions,
+		Iterable<ExplainedRenderRegion> assignedRegions, T target,
+		double viewerX, double viewerY, double viewerZ
+	) {
 		boolean anyExclusive = false;
 		int vX = (int) viewerX;
 		int vY = (int) viewerY;
@@ -431,11 +524,11 @@ public class RenderRegions {
 		boolean permitted = false;
 		for (var rr : regionsByChunkSection.get(chunkSect)) {
 			Boolean containsCache = null;
-			if (rr.reg.mode() == Mode.EXCLUSIVE && (containsCache = typeAttachments.apply(rr).contains(type))) {
+			if (rr.reg.mode() == Mode.EXCLUSIVE && (containsCache = targets.test(rr, target))) {
 				anyExclusive = true;
 			}
 			if (rr.reg.contains(viewerX, viewerY, viewerZ)) {
-				if (containsCache == null ? typeAttachments.apply(rr).contains(type) : containsCache) {
+				if (containsCache == null ? targets.test(rr, target) : containsCache) {
 					if (rr.reg.mode() == Mode.DENY) {
 						return false;
 					} else {
@@ -450,7 +543,7 @@ public class RenderRegions {
 
 		// exclusive regions not matched above must mean reject
 		for (var rr : exclusiveTypeRegions.get(type)) {
-			if (!rr.reg.contains(viewerX, viewerY, viewerZ)) {
+			if (targets.test(rr, target) && !rr.reg.contains(viewerX, viewerY, viewerZ)) {
 				return false;
 			}
 		}
@@ -478,6 +571,10 @@ public class RenderRegions {
 			for (Identifier id : d.blockTypes) {
 				attachBlockEntityType(r, id);
 			}
+
+			var ex = explaineds.get(r);
+
+			ex.applyMeta(d.meta);
 		});
 
 		return this;
@@ -492,7 +589,8 @@ public class RenderRegions {
 				ex.entityAttachments,
 				ex.blockAttachments,
 				ex.entityTypeAttachments,
-				ex.beTypeAttachments
+				ex.beTypeAttachments,
+				ex.getMeta()
 			));
 		}
 
@@ -504,7 +602,8 @@ public class RenderRegions {
 		Set<UUID> entities,
 		LongSet blocks,
 		Set<Identifier> entityTypes,
-		Set<Identifier> blockTypes
+		Set<Identifier> blockTypes,
+		BitSet meta
 	) {
 		private static final Codec<Set<Identifier>> ID_SET_CODEC = Identifier.CODEC
 			.listOf()
@@ -514,20 +613,26 @@ public class RenderRegions {
 			RenderRegion.CODEC.forGetter(RegionData::region),
 			Codec.INT_STREAM
 				.xmap(RegionData::deser, RegionData::ser)
-				.orElseGet(HashSet::new)
 				.fieldOf("EAtt")
+				.orElseGet(HashSet::new)
 				.forGetter(RegionData::entities),
 			Codec.LONG_STREAM
 				.xmap(RegionData::toSet, LongSet::longStream)
-				.orElseGet(LongOpenHashSet::new)
 				.fieldOf("BEAtt")
+				.orElseGet(LongOpenHashSet::new)
 				.forGetter(RegionData::blocks),
 			ID_SET_CODEC
 				.fieldOf("ETAtt")
+				.orElseGet(HashSet::new)
 				.forGetter(RegionData::entityTypes),
 			ID_SET_CODEC
 				.fieldOf("BETAtt")
-				.forGetter(RegionData::blockTypes)
+				.orElseGet(HashSet::new)
+				.forGetter(RegionData::blockTypes),
+			Codecs.BIT_SET
+				.fieldOf("Meta")
+				.orElseGet(BitSet::new)
+				.forGetter(RegionData::meta)
 		).apply(instance, RegionData::new));
 
 		private static Set<UUID> deser(final IntStream stream) {

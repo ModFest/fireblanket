@@ -13,6 +13,7 @@ import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -122,6 +123,10 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 
 	public boolean contains(BlockPos bp) {
 		return contains(bp.getX(), bp.getY(), bp.getZ());
+	}
+
+	public boolean contains(Vec3d v3d) {
+		return contains(v3d.getX(), v3d.getY(), v3d.getZ());
 	}
 
 	public boolean contains(int x, int y, int z) {
