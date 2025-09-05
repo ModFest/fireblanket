@@ -144,10 +144,21 @@ public class RenderRegions {
 			regionsByName.put(name, exnw);
 			addToGlobal(exnw);
 			if (nw.mode() == Mode.DENY) exnw.blanketDeny = true;
+			exnw.copyMeta(exol);
 			exol.blockAttachments.forEach(pos -> attachBlock(nw, pos));
 			exol.entityAttachments.forEach(id -> attachEntity(nw, id));
 			exol.beTypeAttachments.forEach(id -> attachBlockEntityType(nw, id));
 			exol.entityTypeAttachments.forEach(id -> attachEntityType(nw, id));
+
+			if (nw.mode() == Mode.EXCLUSIVE) {
+				if (exnw.entityTypeBoxBounded && exnw.entityTypeAttachmentsInverted) {
+					unboundedInvertedExclusiveEntityTypeRegions.add(exnw);
+				}
+				if (exnw.beTypeBoxBounded && exnw.beTypeAttachmentsInverted) {
+					unboundedInvertedExclusiveBeTypeRegions.add(exnw);
+				}
+			}
+
 			dontSync = false;
 			sync(() -> new RegionSyncRequest.RedefineRegion(name, nw));
 		} finally {
@@ -182,6 +193,8 @@ public class RenderRegions {
 		entityRegions.clear();
 		exclusiveEntityTypeRegions.clear();
 		exclusiveBeTypeRegions.clear();
+		unboundedInvertedExclusiveEntityTypeRegions.clear();
+		unboundedInvertedExclusiveBeTypeRegions.clear();
 		explaineds.clear();
 		markDirty();
 		sync(() -> new RegionSyncRequest.Reset(true));
@@ -341,6 +354,13 @@ public class RenderRegions {
 		}
 		if (clear) ex.beTypeAttachments.clear();
 		if (clear) ex.entityTypeAttachments.clear();
+
+		this.unboundedInvertedExclusiveBeTypeRegions.remove(ex);
+		this.unboundedInvertedExclusiveEntityTypeRegions.remove(ex);
+		if (clear) {
+			ex.resetMeta();
+		}
+
 		if (clear && region.mode() == Mode.DENY) ex.blanketDeny = true;
 		sync(() -> new RegionSyncRequest.DetachAll(ex.name));
 		return count;

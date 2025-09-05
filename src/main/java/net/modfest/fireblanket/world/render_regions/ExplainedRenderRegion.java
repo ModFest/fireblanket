@@ -91,4 +91,11 @@ public class ExplainedRenderRegion {
 		this.beTypeAttachmentsInverted = other.beTypeAttachmentsInverted;
 		this.beTypeBoxBounded = other.beTypeBoxBounded;
 	}
+
+	public void resetMeta() {
+		this.entityTypeAttachmentsInverted = false;
+		this.entityTypeBoxBounded = false;
+		this.beTypeAttachmentsInverted = false;
+		this.beTypeBoxBounded = false;
+	}
 }
