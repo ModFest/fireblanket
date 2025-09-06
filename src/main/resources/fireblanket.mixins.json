@@ -40,6 +40,7 @@
 		"command.MixinServerCommandSource",
 		"crash.MixinCraftingScreenHandler",
 		"criterion.MixinServerPlayerEntity",
+		"datafixerupper.MixinCodec",
 		"entity_block.MixinEntityType",
 		"entity_immutability.MixinDecorationItem",
 		"entity_immutability.MixinEntityType",
