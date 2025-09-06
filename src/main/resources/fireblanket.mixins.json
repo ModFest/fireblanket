@@ -73,7 +73,6 @@
 		"mods.pehkui.MixinScaleUtils",
 		"mods.pswg.MixinComplexCollisionManager",
 		"mods.terracotta_knights.MixinItemPickupGoal",
-		"mods.worldcomment.MixinClientConfig",
 		"opto.MixinCommandBlockExecutor",
 		"opto.MixinEntitySelector",
 		"opto.MixinMapState",
