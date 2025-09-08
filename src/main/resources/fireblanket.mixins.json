@@ -20,6 +20,7 @@
 		"adventure_fix.MixinItemStack",
 		"adventure_fix.MixinPlayerInteractEntityC2SPacketHandler",
 		"adventure_fix.MixinServerPlayerInteractionManager",
+		"adventure_fix.MixinSmallFireballEntity",
 		"ai.MixinTemptGoal",
 		"annoyances.MixinServerPlayNetworkHandler",
 		"annoyances.MixinUtil",
