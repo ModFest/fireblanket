@@ -1,6 +1,8 @@
 package net.modfest.fireblanket.mixin.client.annoyances.adventure;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.component.type.BlockPredicatesComponent;
@@ -9,7 +11,6 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.modfest.fireblanket.Fireblanket;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -36,7 +37,7 @@ public class MixinBlockPredicatesComponent {
 	@Unique
 	private static final int PAGE_SIZE = 5;
 	@Unique
-	private static boolean trap;
+	private static final boolean trap = FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT;
 
 	@Unique
 	private List<Text> friendlierTooltip;
@@ -47,14 +48,7 @@ public class MixinBlockPredicatesComponent {
 	private List<Text> fireblanket$maybeReplaceTooltipText(final List<Text> original) {
 		if (!trap && count > 0) {
 			// Warning: client-only. Do not call on the server.
-			try {
-				return fireblanket$clientOnly$replaceAndPageTooltipText(original);
-			} catch (LinkageError error) {
-				// The linkage error here is okay.
-				// Log, set the trap, and move along.
-				trap = true;
-				Fireblanket.LOGGER.error("Bad port? Appears we're running on a dedicated server.", error);
-			}
+			return fireblanket$clientOnly$replaceAndPageTooltipText(original);
 		}
 		// Intentionally passing through as a fail-state.
 		return original;
