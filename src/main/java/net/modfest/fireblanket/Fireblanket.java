@@ -72,10 +72,17 @@ public class Fireblanket implements ModInitializer {
 
 	/**
 	 * Whether new entities will be fixed.
+	 *
 	 * @see net.modfest.fireblanket.mixin.entity_immutability
 	 */
 	public static final GameRules.Key<GameRules.BooleanRule> NEW_ENTITIES_IMMUTABLE =
 		GameRuleRegistry.register("newEntitiesImmutable", GameRules.Category.MOBS, GameRuleFactory.createBooleanRule(true));
+
+	/**
+	 * How far lightning may be observed. Setting this to 0 disables lightning outright.
+	 */
+	public static final GameRules.Key<GameRules.IntRule> LIGHTNING_BROADCAST_RADIUS =
+		GameRuleRegistry.register("fireblanket:lightningBroadcastRadius", GameRules.Category.UPDATES, GameRuleFactory.createIntRule(-1, -1));
 
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 

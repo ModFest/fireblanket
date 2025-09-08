@@ -23,6 +23,7 @@
 		"ai.MixinTemptGoal",
 		"annoyances.MixinServerPlayNetworkHandler",
 		"annoyances.MixinUtil",
+		"annoyances.lightning.MixinServerChunkLoadingManager",
 		"be_sync.MixinBlockEntity",
 		"be_sync.MixinChunkHolder",
 		"block.AccessorUpdateCommandBlockMinecartC2SPacket",
