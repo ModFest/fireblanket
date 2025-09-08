@@ -1,7 +1,8 @@
 {
 	"argument.entity.selector.limit.unforced": "Targeting too many entities with no distance filter; add `force=true` to the selector to bypass",
 	"argument.entity.options.force.description": "Force-allow more than 50 entities targeted with no distance filter",
-	"gamerule.newEntitiesImmutable": "Whether newly spawned entities should be immutable. (Item frames will be fixed for example)",
+	"gamerule.newEntitiesImmutable": "Immutable creative-spawned entities",
+	"gamerule.newEntitiesImmutable.description": "Whether newly spawned entities from creative players should be invulnerable and immutable. Item frames and armor stands won't be modifiable in adventure, for example.",
 	"gamerule.fireblanket:lightningBroadcastRadius": "Lightning broadcast radius",
 	"gamerule.fireblanket:lightningBroadcastRadius.description": "How far in blocks players will receive lightning strikes from in-game. Set to 0 to effectively disable broadcasting.",
 	"commands.gamerule.locked": "You do not have permission to modify this gamerule",
