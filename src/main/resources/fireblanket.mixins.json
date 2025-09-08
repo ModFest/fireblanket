@@ -102,6 +102,7 @@
 		"accessor.ParticleManagerAccessor",
 		"client.MixinClientPlayNetworkHandler",
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
+		"client.annoyances.adventure.MixinBlockPredicatesComponent",
 		"client.hooks.MixinDebugRenderer",
 		"client.pose_stack.AccessorMatrixStackEntry",
 		"client.pose_stack.MixinMatrix4dStack",

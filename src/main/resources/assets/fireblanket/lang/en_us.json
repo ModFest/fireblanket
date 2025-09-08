@@ -18,5 +18,6 @@
 	"fireblanket.spoofed.tooltip": "Spoofed command source found.\nAnyone blamed here may not have set up the command. Check the surrounding logs first.",
 	"fireblanket.unknown": "Unknown",
 	"fireblanket.warning.tooltip": "Unknown command source found.\nAnyone blamed here may not have set up the command. Check the surrounding logs first.",
-	"fireblanket.advMode.powered": "Powered"
+	"fireblanket.advMode.powered": "Powered",
+	"fireblanket.item.canUse.count": "%s different blocks!"
 }
