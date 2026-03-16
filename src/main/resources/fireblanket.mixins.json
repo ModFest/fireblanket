@@ -92,7 +92,6 @@
 		"vehicle.MixinLivingEntity",
 		"zstd.MixinChunkCompressionFormat",
 		"zstd.MixinLevelStorageSession",
-		"zstd.MixinPersistentState",
 		"zstd.MixinPersistentStateManager",
 		"zstd.MixinRegionFile"
 	],
