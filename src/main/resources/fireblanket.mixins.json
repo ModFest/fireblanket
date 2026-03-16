@@ -82,7 +82,6 @@
 		"packet_chunk_cache.MixinChunkDataS2CPacket",
 		"packet_chunk_cache.MixinWorldChunk",
 		"region_chunk_cache.MixinServerChunkManager",
-		"serde.MixinNbtCompound",
 		"serde.MixinServerPlayerEntity",
 		"sounds.MixinSpyglassItem",
 		"vehicle.MixinAbstractBoatEntity",
