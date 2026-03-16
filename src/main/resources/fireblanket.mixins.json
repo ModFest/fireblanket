@@ -85,7 +85,6 @@
 		"serde.MixinNbtCompound",
 		"serde.MixinServerPlayerEntity",
 		"sounds.MixinSpyglassItem",
-		"stack.MixinItemStack",
 		"vehicle.MixinAbstractBoatEntity",
 		"vehicle.MixinDefaultMinecartController",
 		"vehicle.MixinExperimentalMinecartController",
