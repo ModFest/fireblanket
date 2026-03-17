@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixin.client.bufferbuilder_opto;
 
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.VertexConsumer;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(BufferBuilder.class)

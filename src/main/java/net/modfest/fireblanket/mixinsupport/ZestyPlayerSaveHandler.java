@@ -5,20 +5,20 @@ import com.github.luben.zstd.ZstdOutputStream;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.io.FastBufferedInputStream;
-import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
+import net.minecraft.Util;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.storage.NbtReadView;
-import net.minecraft.storage.NbtWriteView;
-import net.minecraft.storage.ReadView;
-import net.minecraft.util.DateTimeFormatters;
-import net.minecraft.util.ErrorReporter;
-import net.minecraft.util.Util;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.world.PlayerSaveHandler;
-import net.minecraft.world.level.storage.LevelStorage.Session;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.storage.FileNameDateFormatter;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess;
+import net.minecraft.world.level.storage.PlayerDataStorage;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.modfest.fireblanket.util.IOUnaryOperation;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -34,22 +34,22 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 
-public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
+public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	public static final boolean AVOID_ZTSD = Boolean.getBoolean("fireblanket.saveAsDat");
 
 	// I don't know why this isn't just a constant there.
-	private static final DateTimeFormatter FORMATTER = DateTimeFormatters.create();
+	private static final DateTimeFormatter FORMATTER = FileNameDateFormatter.create();
 
 	private final Path playerDataDir;
 
-	public ZestyPlayerSaveHandler(Session session, DataFixer dataFixer) {
+	public ZestyPlayerSaveHandler(LevelStorageAccess session, DataFixer dataFixer) {
 		super(session, dataFixer);
-		this.playerDataDir = session.getDirectory(WorldSavePath.PLAYERDATA);
+		this.playerDataDir = session.getLevelPath(LevelResource.PLAYER_DATA_DIR);
 	}
 
 	private void backupPlayerData(
-		final PlayerEntity player,
+		final Player player,
 		final Path failed,
 		final String extension
 	) {
@@ -57,7 +57,7 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 			return;
 		}
 
-		Path backup = this.playerDataDir.resolve(player.getUuidAsString() + "_corrupted_" + LocalDateTime.now().format(
+		Path backup = this.playerDataDir.resolve(player.getStringUUID() + "_corrupted_" + LocalDateTime.now().format(
 			FORMATTER) + "." + extension);
 
 		try {
@@ -67,15 +67,15 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 		}
 	}
 
-	private @Nullable NbtCompound loadPlayerData(
-		final PlayerEntity player,
+	private @Nullable CompoundTag loadPlayerData(
+		final Player player,
 		final String extension,
 		final IOUnaryOperation<InputStream> decoder
 	) {
-		Path path = this.playerDataDir.resolve(player.getUuidAsString() + "." + extension);
+		Path path = this.playerDataDir.resolve(player.getStringUUID() + "." + extension);
 		if (Files.isRegularFile(path)) {
 			try (InputStream in = new FastBufferedInputStream(decoder.apply(Files.newInputStream(path)))) {
-				return NbtIo.readCompound(new DataInputStream(in));
+				return NbtIo.read(new DataInputStream(in));
 			} catch (Exception e) {
 				LOGGER.warn("Failed to load player data for {} at {}", player.getName().getString(), path, e);
 				backupPlayerData(player, path, extension);
@@ -85,8 +85,8 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 		return null;
 	}
 
-	private @Nullable NbtCompound tryLoadPlayerData(PlayerEntity player) {
-		NbtCompound nbt = loadPlayerData(player, "zat", ZstdInputStream::new);
+	private @Nullable CompoundTag tryLoadPlayerData(Player player) {
+		CompoundTag nbt = loadPlayerData(player, "zat", ZstdInputStream::new);
 		if (nbt != null) {
 			return nbt;
 		}
@@ -105,18 +105,18 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 	}
 
 	@Override
-	public Optional<ReadView> loadPlayerData(PlayerEntity player, ErrorReporter errorReporter) {
-		NbtCompound nbt = tryLoadPlayerData(player);
+	public Optional<ValueInput> load(Player player, ProblemReporter errorReporter) {
+		CompoundTag nbt = tryLoadPlayerData(player);
 
 		if (nbt == null) {
 			return Optional.empty();
 		}
 
 		try {
-			int ver = NbtHelper.getDataVersion(nbt, -1);
-			nbt = DataFixTypes.PLAYER.update(dataFixer, nbt, ver);
-			ReadView readView = NbtReadView.create(errorReporter, player.getRegistryManager(), nbt);
-			player.readData(readView);
+			int ver = NbtUtils.getDataVersion(nbt, -1);
+			nbt = DataFixTypes.PLAYER.updateToCurrentVersion(fixerUpper, nbt, ver);
+			ValueInput readView = TagValueInput.create(errorReporter, player.registryAccess(), nbt);
+			player.load(readView);
 			return Optional.of(readView);
 		} catch (Exception e) {
 			LOGGER.warn("Failed to load player data for {}", player.getName().getString());
@@ -125,26 +125,26 @@ public class ZestyPlayerSaveHandler extends PlayerSaveHandler {
 	}
 
 	@Override
-	public void savePlayerData(PlayerEntity player) {
+	public void save(Player player) {
 		if (AVOID_ZTSD) {
-			super.savePlayerData(player);
+			super.save(player);
 			return;
 		}
-		try (ErrorReporter.Logging logging = new ErrorReporter.Logging(player.getErrorReporterContext(), LOGGER)) {
-			NbtWriteView nbtWriteView = NbtWriteView.create(logging, player.getRegistryManager());
-			player.writeData(nbtWriteView);
-			Path tmp = Files.createTempFile(this.playerDataDir, player.getUuidAsString() + "-", ".zat");
+		try (ProblemReporter.ScopedCollector logging = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
+			TagValueOutput nbtWriteView = TagValueOutput.createWithContext(logging, player.registryAccess());
+			player.saveWithoutId(nbtWriteView);
+			Path tmp = Files.createTempFile(this.playerDataDir, player.getStringUUID() + "-", ".zat");
 			try (ZstdOutputStream z = new ZstdOutputStream(Files.newOutputStream(tmp))) {
 				z.setChecksum(true);
 				z.setLevel(6);
-				NbtIo.write(nbtWriteView.getNbt(), new DataOutputStream(z));
+				NbtIo.writeUnnamedTagWithFallback(nbtWriteView.buildResult(), new DataOutputStream(z));
 			}
-			Path tgt = this.playerDataDir.resolve(player.getUuidAsString() + ".zat");
-			Path backup = this.playerDataDir.resolve(player.getUuidAsString() + ".zat_old");
-			Util.backupAndReplace(tgt, tmp, backup);
+			Path tgt = this.playerDataDir.resolve(player.getStringUUID() + ".zat");
+			Path backup = this.playerDataDir.resolve(player.getStringUUID() + ".zat_old");
+			Util.safeReplaceFile(tgt, tmp, backup);
 
-			Path oldTgt = this.playerDataDir.resolve(player.getUuidAsString() + ".dat");
-			Path oldBackup = this.playerDataDir.resolve(player.getUuidAsString() + ".dat_old");
+			Path oldTgt = this.playerDataDir.resolve(player.getStringUUID() + ".dat");
+			Path oldBackup = this.playerDataDir.resolve(player.getStringUUID() + ".dat_old");
 			Files.deleteIfExists(oldTgt);
 			Files.deleteIfExists(oldBackup);
 		} catch (Exception e) {

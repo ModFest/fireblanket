@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixin.client.render_regions;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.modfest.fireblanket.world.render_regions.RegionSubject;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;

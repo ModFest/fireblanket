@@ -9,11 +9,11 @@ import it.unimi.dsi.fastutil.longs.AbstractLongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterable;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.AbstractObjectIterator;
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -25,7 +25,7 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 			Codec.INT.listOf(6, 6)
 				.fieldOf("Box")
 				.forGetter(RenderRegion::toArrayBox),
-			StringIdentifiable.createCodec(RenderRegion.Mode::values)
+			StringRepresentable.fromEnum(RenderRegion.Mode::values)
 				.orElse(Mode.UNKNOWN)
 				.fieldOf("Mode")
 				.forGetter(RenderRegion::mode)
@@ -56,20 +56,20 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 		this(box.get(0), box.get(1), box.get(2), box.get(3), box.get(4), box.get(5), mode);
 	}
 
-	public enum Mode implements StringIdentifiable {
+	public enum Mode implements StringRepresentable {
 		UNKNOWN, ALLOW, DENY, EXCLUSIVE,
 		;
 		public static final ImmutableList<Mode> VALUES = ImmutableList.copyOf(values());
 
 		@Override
-		public String asString() {
+		public String getSerializedName() {
 			return this.name();
 		}
 	}
 
-	public Iterable<ChunkSectionPos> affectedChunks() {
+	public Iterable<SectionPos> affectedChunks() {
 		LongIterable li = affectedChunkLongs();
-		return () -> new AbstractObjectIterator<ChunkSectionPos>() {
+		return () -> new AbstractObjectIterator<SectionPos>() {
 			private final LongIterator iter = li.iterator();
 
 			@Override
@@ -78,8 +78,8 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 			}
 
 			@Override
-			public ChunkSectionPos next() {
-				return ChunkSectionPos.from(iter.nextLong());
+			public SectionPos next() {
+				return SectionPos.of(iter.nextLong());
 			}
 
 		};
@@ -110,7 +110,7 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 					int y = next % height;
 					int z = next / height;
 					index++;
-					return ChunkSectionPos.asLong(minX + x, minY + y, minZ + z);
+					return SectionPos.asLong(minX + x, minY + y, minZ + z);
 				}
 			}
 
@@ -125,8 +125,8 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 		return contains(bp.getX(), bp.getY(), bp.getZ());
 	}
 
-	public boolean contains(Vec3d v3d) {
-		return contains(v3d.getX(), v3d.getY(), v3d.getZ());
+	public boolean contains(Vec3 v3d) {
+		return contains(v3d.x(), v3d.y(), v3d.z());
 	}
 
 	public boolean contains(int x, int y, int z) {
@@ -141,8 +141,8 @@ public record RenderRegion(int minX, int minY, int minZ, int maxX, int maxY, int
 			&& z >= minZ && z < maxZ + 1;
 	}
 
-	public Box toBox() {
-		return new Box(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
+	public AABB toBox() {
+		return new AABB(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
 	}
 
 	private IntList toArrayBox() {

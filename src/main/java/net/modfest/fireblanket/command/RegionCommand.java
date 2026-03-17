@@ -14,23 +14,23 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.pattern.CachedBlockPosition;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.command.argument.BlockPredicateArgumentType;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.argument.RegistryKeyArgumentType;
-import net.minecraft.entity.Entity;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceKeyArgument;
+import net.minecraft.commands.arguments.blocks.BlockPredicateArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.pattern.BlockInWorld;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.compat.WorldEditCompat;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
@@ -46,15 +46,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public class RegionCommand {
-	private static final Predicate<ServerCommandSource> WORLDEDIT = ctx -> FabricLoader.getInstance().isModLoaded("worldedit");
+	private static final Predicate<CommandSourceStack> WORLDEDIT = ctx -> FabricLoader.getInstance().isModLoaded("worldedit");
 
-	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
+	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("region")
-			.requires(ctx -> ctx.hasPermissionLevel(4))
+			.requires(ctx -> ctx.hasPermission(4))
 			.then(literal("add")
 				.then(argument("name", StringArgumentType.string())
 					.then(addBranch("deny", Mode.DENY))
@@ -70,31 +70,31 @@ public class RegionCommand {
 							.requires(WORLDEDIT)
 							.executes(ctx -> {
 								String name = StringArgumentType.getString(ctx, "name");
-								BlockBox box = WorldEditCompat.getSelection(ctx);
+								BoundingBox box = WorldEditCompat.getSelection(ctx);
 								RenderRegion ol = getRegion(ctx);
 								RenderRegions regions = getRegions(ctx);
-								RenderRegion nw = new RenderRegion(box.getMinX(), box.getMinY(), box.getMinZ(),
-									box.getMaxX(), box.getMaxY(), box.getMaxZ(),
+								RenderRegion nw = new RenderRegion(box.minX(), box.minY(), box.minZ(),
+									box.maxX(), box.maxY(), box.maxZ(),
 									ol.mode());
 								regions.redefine(name, nw);
-								ctx.getSource().sendFeedback(() -> Text.literal("Redefined region " + name), true);
+								ctx.getSource().sendSuccess(() -> Component.literal("Redefined region " + name), true);
 								return 1;
 							})
 						)
 					)
-					.then(argument("corner1", BlockPosArgumentType.blockPos())
-						.then(argument("corner2", BlockPosArgumentType.blockPos())
+					.then(argument("corner1", BlockPosArgument.blockPos())
+						.then(argument("corner2", BlockPosArgument.blockPos())
 							.executes(ctx -> {
 								String name = StringArgumentType.getString(ctx, "name");
-								BlockPos min = BlockPosArgumentType.getBlockPos(ctx, "corner1");
-								BlockPos max = BlockPosArgumentType.getBlockPos(ctx, "corner2");
+								BlockPos min = BlockPosArgument.getBlockPos(ctx, "corner1");
+								BlockPos max = BlockPosArgument.getBlockPos(ctx, "corner2");
 								RenderRegion ol = getRegion(ctx);
 								RenderRegions regions = getRegions(ctx);
 								RenderRegion nw = new RenderRegion(min.getX(), min.getY(), min.getZ(),
 									max.getX(), max.getY(), max.getZ(),
 									ol.mode());
 								regions.redefine(name, nw);
-								ctx.getSource().sendFeedback(() -> Text.literal("Redefined region " + name), true);
+								ctx.getSource().sendSuccess(() -> Component.literal("Redefined region " + name), true);
 								return 1;
 							})
 						)
@@ -142,7 +142,7 @@ public class RegionCommand {
 					.suggests(RegionCommand::suggestRegionNames)
 					.executes(ctx -> {
 						RenderRegion r = getRegion(ctx);
-						WorldEditCompat.setSelection(ctx, new BlockBox(r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()));
+						WorldEditCompat.setSelection(ctx, new BoundingBox(r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()));
 						return 1;
 					})
 				)
@@ -151,12 +151,12 @@ public class RegionCommand {
 				.then(literal("everything")
 					.executes(ctx -> {
 						if (!FabricLoader.getInstance().isDevelopmentEnvironment()) {
-							throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("Cowardly refusing to destroy everything outside of a dev env"));
+							throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("Cowardly refusing to destroy everything outside of a dev env"));
 						}
 						RenderRegions regions = getRegions(ctx);
 						int count = regions.getRegionsByName().size();
 						regions.clear();
-						ctx.getSource().sendFeedback(() -> Text.literal("Destroyed " + count + " region" + (count == 1 ? "" : "s")), true);
+						ctx.getSource().sendSuccess(() -> Component.literal("Destroyed " + count + " region" + (count == 1 ? "" : "s")), true);
 						return count;
 					})
 				)
@@ -166,7 +166,7 @@ public class RegionCommand {
 						RenderRegion r = getRegion(ctx);
 						RenderRegions regions = getRegions(ctx);
 						regions.remove(r);
-						ctx.getSource().sendFeedback(() -> Text.literal("Destroyed region " + StringArgumentType.getString(ctx, "name")), true);
+						ctx.getSource().sendSuccess(() -> Component.literal("Destroyed region " + StringArgumentType.getString(ctx, "name")), true);
 						return 1;
 					})
 				)
@@ -176,9 +176,9 @@ public class RegionCommand {
 					RenderRegions regions = getRegions(ctx);
 					int size = regions.getRegionsByName().size();
 					if (size == 1) {
-						ctx.getSource().sendMessage(Text.literal("§lThere is 1 region defined"));
+						ctx.getSource().sendSystemMessage(Component.literal("§lThere is 1 region defined"));
 					} else {
-						ctx.getSource().sendMessage(Text.literal("§lThere are " + size + " regions defined"));
+						ctx.getSource().sendSystemMessage(Component.literal("§lThere are " + size + " regions defined"));
 					}
 					for (var en : regions.getRegionsByName().entrySet()) {
 						RenderRegion r = en.getValue();
@@ -192,8 +192,8 @@ public class RegionCommand {
 							case EXCLUSIVE -> "§bexclusive";
 							case UNKNOWN -> "§dunknown";
 						};
-						ctx.getSource().sendMessage(Text.literal("- §d§o" + en.getKey() + "§r " + mode + "§r (" + ea + "E, " + ba + "B, " + eta + "Et, " + beta + "BEt)"));
-						ctx.getSource().sendMessage(Text.literal("  " + r.minX() + ", " + r.minY() + ", " + r.minZ() + " → " + r.maxX() + ", " + r.maxY() + ", " + r.maxZ()));
+						ctx.getSource().sendSystemMessage(Component.literal("- §d§o" + en.getKey() + "§r " + mode + "§r (" + ea + "E, " + ba + "B, " + eta + "Et, " + beta + "BEt)"));
+						ctx.getSource().sendSystemMessage(Component.literal("  " + r.minX() + ", " + r.minY() + ", " + r.minZ() + " → " + r.maxX() + ", " + r.maxY() + ", " + r.maxZ()));
 					}
 					return 1;
 				})
@@ -205,53 +205,53 @@ public class RegionCommand {
 						RenderRegion r = getRegion(ctx);
 						RenderRegions regions = getRegions(ctx);
 						String mn = r.mode().name();
-						ctx.getSource().sendMessage(Text.literal(mn.charAt(0) + mn.toLowerCase(Locale.ROOT).substring(1) + " region " + StringArgumentType.getString(ctx, "name")));
-						ctx.getSource().sendMessage(Text.literal(r.minX() + ", " + r.minY() + ", " + r.minZ() + " → " + r.maxX() + ", " + r.maxY() + ", " + r.maxZ()));
+						ctx.getSource().sendSystemMessage(Component.literal(mn.charAt(0) + mn.toLowerCase(Locale.ROOT).substring(1) + " region " + StringArgumentType.getString(ctx, "name")));
+						ctx.getSource().sendSystemMessage(Component.literal(r.minX() + ", " + r.minY() + ", " + r.minZ() + " → " + r.maxX() + ", " + r.maxY() + ", " + r.maxZ()));
 						var ea = regions.getEntityAttachments(r);
 						if (!ea.isEmpty()) {
-							ctx.getSource().sendMessage(Text.literal(ea.size() + " entity attachment" + (ea.size() == 1 ? "" : "s") + ":"));
+							ctx.getSource().sendSystemMessage(Component.literal(ea.size() + " entity attachment" + (ea.size() == 1 ? "" : "s") + ":"));
 							for (UUID id : ea) {
-								Entity e = ctx.getSource().getWorld().getEntity(id);
+								Entity e = ctx.getSource().getLevel().getEntity(id);
 								if (e == null) {
-									ctx.getSource().sendMessage(Text.literal("  - " + id + " (unknown)"));
+									ctx.getSource().sendSystemMessage(Component.literal("  - " + id + " (unknown)"));
 								} else {
-									ctx.getSource().sendMessage(Text.literal("  - " + id + " (" + Registries.ENTITY_TYPE.getId(e.getType()) + " @ " + e.getPos() + ")"));
+									ctx.getSource().sendSystemMessage(Component.literal("  - " + id + " (" + BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()) + " @ " + e.position() + ")"));
 								}
 							}
 						}
 						var ba = regions.getBlockAttachments(r);
 						if (!ba.isEmpty()) {
-							BlockPos.Mutable mut = new BlockPos.Mutable();
-							ctx.getSource().sendMessage(Text.literal(ba.size() + " block attachment" + (ba.size() == 1 ? "" : "s") + ":"));
+							BlockPos.MutableBlockPos mut = new BlockPos.MutableBlockPos();
+							ctx.getSource().sendSystemMessage(Component.literal(ba.size() + " block attachment" + (ba.size() == 1 ? "" : "s") + ":"));
 							for (long posl : ba) {
 								mut.set(posl);
-								BlockEntity be = ctx.getSource().getWorld().getBlockEntity(mut);
+								BlockEntity be = ctx.getSource().getLevel().getBlockEntity(mut);
 								if (be == null) {
-									ctx.getSource().sendMessage(Text.literal("  - " + mut.toShortString() + " (unknown)"));
+									ctx.getSource().sendSystemMessage(Component.literal("  - " + mut.toShortString() + " (unknown)"));
 								} else {
-									ctx.getSource().sendMessage(Text.literal("  - " + mut.toShortString() + " (" + Registries.BLOCK_ENTITY_TYPE.getId(be.getType()) + ")"));
+									ctx.getSource().sendSystemMessage(Component.literal("  - " + mut.toShortString() + " (" + BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()) + ")"));
 								}
 							}
 						}
 						var eta = regions.getEntityTypeAttachments(r);
 						if (!eta.isEmpty()) {
-							ctx.getSource().sendMessage(Text.literal(eta.size() + " entity type attachment" + (eta.size() == 1 ? "" : "s") + ":"));
-							for (Identifier id : eta) {
-								ctx.getSource().sendMessage(Text.literal("  - " + id));
+							ctx.getSource().sendSystemMessage(Component.literal(eta.size() + " entity type attachment" + (eta.size() == 1 ? "" : "s") + ":"));
+							for (ResourceLocation id : eta) {
+								ctx.getSource().sendSystemMessage(Component.literal("  - " + id));
 							}
 						}
 						var beta = regions.getBlockEntityTypeAttachments(r);
 						if (!beta.isEmpty()) {
-							ctx.getSource().sendMessage(Text.literal(beta.size() + " block entity type attachment" + (beta.size() == 1 ? "" : "s") + ":"));
-							for (Identifier id : beta) {
-								ctx.getSource().sendMessage(Text.literal("  - " + id));
+							ctx.getSource().sendSystemMessage(Component.literal(beta.size() + " block entity type attachment" + (beta.size() == 1 ? "" : "s") + ":"));
+							for (ResourceLocation id : beta) {
+								ctx.getSource().sendSystemMessage(Component.literal("  - " + id));
 							}
 						}
 						if (ea.isEmpty() && ba.isEmpty() && eta.isEmpty() && beta.isEmpty()) {
 							if (r.mode() == Mode.DENY) {
-								ctx.getSource().sendMessage(Text.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow/exclusive region"));
+								ctx.getSource().sendSystemMessage(Component.literal("No attachments, will cause all entities and block entities to not render unless added to an overlapping allow/exclusive region"));
 							} else {
-								ctx.getSource().sendMessage(Text.literal("No attachments, won't do anything"));
+								ctx.getSource().sendSystemMessage(Component.literal("No attachments, won't do anything"));
 							}
 						}
 						return 1;
@@ -259,14 +259,14 @@ public class RegionCommand {
 				)
 			)
 			.then(literal("resync")
-				.requires(ServerCommandSource::isExecutedByPlayer)
+				.requires(CommandSourceStack::isPlayer)
 				.executes(ctx -> {
-					Fireblanket.fullRegionSync(ctx.getSource().getWorld(), ctx.getSource().getPlayerOrThrow().networkHandler::sendPacket);
+					Fireblanket.fullRegionSync(ctx.getSource().getLevel(), ctx.getSource().getPlayerOrException().connection::send);
 					return 1;
 				})
 			)
 			.then(literal("ignore")
-				.requires(ServerCommandSource::isExecutedByPlayer)
+				.requires(CommandSourceStack::isPlayer)
 				.then(argument("name", StringArgumentType.string())
 					.suggests(RegionCommand::suggestRegionNames)
 					.executes(ctx -> {
@@ -284,14 +284,14 @@ public class RegionCommand {
 		);
 	}
 
-	private static ArgumentBuilder<ServerCommandSource, ?> addBranch(String arg, RenderRegion.Mode mode) {
+	private static ArgumentBuilder<CommandSourceStack, ?> addBranch(String arg, RenderRegion.Mode mode) {
 		return literal(arg)
 			.then(literal("from")
 				.then(literal("worldedit")
 					.requires(WORLDEDIT)
 					.executes(ctx -> {
-						BlockBox box = WorldEditCompat.getSelection(ctx);
-						RenderRegion rr = new RenderRegion(box.getMinX(), box.getMinY(), box.getMinZ(), box.getMaxX(), box.getMaxY(), box.getMaxZ(), mode);
+						BoundingBox box = WorldEditCompat.getSelection(ctx);
+						RenderRegion rr = new RenderRegion(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ(), mode);
 						return addRegion(ctx, rr);
 					})
 				)
@@ -306,11 +306,11 @@ public class RegionCommand {
 					)
 				)
 			)
-			.then(argument("corner1", BlockPosArgumentType.blockPos())
-				.then(argument("corner2", BlockPosArgumentType.blockPos())
+			.then(argument("corner1", BlockPosArgument.blockPos())
+				.then(argument("corner2", BlockPosArgument.blockPos())
 					.executes(ctx -> {
-						BlockPos min = BlockPosArgumentType.getBlockPos(ctx, "corner1");
-						BlockPos max = BlockPosArgumentType.getBlockPos(ctx, "corner2");
+						BlockPos min = BlockPosArgument.getBlockPos(ctx, "corner1");
+						BlockPos max = BlockPosArgument.getBlockPos(ctx, "corner2");
 						RenderRegion rr = new RenderRegion(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ(), mode);
 						return addRegion(ctx, rr);
 					})
@@ -318,7 +318,7 @@ public class RegionCommand {
 			);
 	}
 
-	private static ArgumentBuilder<ServerCommandSource, ?> applyBranch(CommandRegistryAccess cra, boolean attach) {
+	private static ArgumentBuilder<CommandSourceStack, ?> applyBranch(CommandBuildContext cra, boolean attach) {
 		return literal(attach ? "attach" : "detach")
 			.then(argument("name", StringArgumentType.string())
 				.suggests(RegionCommand::suggestRegionNames)
@@ -333,10 +333,10 @@ public class RegionCommand {
 									RenderRegion r1 = getRegion(ctx);
 									RenderRegion r2 = getRegion(ctx, "src-name");
 									if (r1 == r2 && attach)
-										throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("All of the objects in " + name + " are already attached to " + name + "… wait…"));
+										throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("All of the objects in " + name + " are already attached to " + name + "… wait…"));
 									applyEntitiesByIdToRegion(ctx, r -> rr.getEntityAttachments(r2), attach);
 									applyBlocksToRegion(ctx, () -> {
-										BlockPos.Mutable mut = new BlockPos.Mutable();
+										BlockPos.MutableBlockPos mut = new BlockPos.MutableBlockPos();
 										LongIterator li = LongIterators.asLongIterator(rr.getBlockAttachments(r2).iterator());
 										return new Iterator<>() {
 											@Override
@@ -361,12 +361,12 @@ public class RegionCommand {
 					)
 					.executes(ctx -> {
 						if (attach) {
-							throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("Cowardly refusing to attach every single block and entity to this region"));
+							throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("Cowardly refusing to attach every single block and entity to this region"));
 						}
 						RenderRegion r = getRegion(ctx);
 						RenderRegions regions = getRegions(ctx);
 						int count = regions.detachAll(r);
-						ctx.getSource().sendFeedback(() -> Text.literal("Detached " + count + " object" + (count == 1 ? "" : "s") + " from region " + StringArgumentType.getString(ctx, "name")), true);
+						ctx.getSource().sendSuccess(() -> Component.literal("Detached " + count + " object" + (count == 1 ? "" : "s") + " from region " + StringArgumentType.getString(ctx, "name")), true);
 						return count;
 					})
 				)
@@ -376,17 +376,17 @@ public class RegionCommand {
 							.then(argument("src-name", StringArgumentType.string())
 								.suggests(RegionCommand::suggestRegionNames)
 								.executes(ctx -> {
-									return applyEntitiesToRegion(ctx, r -> ctx.getSource().getWorld().getOtherEntities(null, getRegion(ctx, "src-name").toBox()), attach);
+									return applyEntitiesToRegion(ctx, r -> ctx.getSource().getLevel().getEntities(null, getRegion(ctx, "src-name").toBox()), attach);
 								})
 							)
 							.executes(ctx -> {
-								return applyEntitiesToRegion(ctx, r -> ctx.getSource().getWorld().getOtherEntities(null, r.toBox()), attach);
+								return applyEntitiesToRegion(ctx, r -> ctx.getSource().getLevel().getEntities(null, r.toBox()), attach);
 							})
 						)
 						.then(literal("worldedit")
 							.requires(WORLDEDIT)
 							.executes(ctx -> {
-								return applyEntitiesToRegion(ctx, r -> ctx.getSource().getWorld().getOtherEntities(null, toBox(WorldEditCompat.getSelection(ctx))), attach);
+								return applyEntitiesToRegion(ctx, r -> ctx.getSource().getLevel().getEntities(null, toBox(WorldEditCompat.getSelection(ctx))), attach);
 							})
 						)
 					)
@@ -395,29 +395,29 @@ public class RegionCommand {
 							.then(argument("src-name", StringArgumentType.string())
 								.suggests(RegionCommand::suggestRegionNames)
 								.executes(ctx -> {
-									return applyEntitiesToRegion(ctx, r -> ctx.getSource().getWorld().getOtherEntities(null, getRegion(ctx, "src-name").toBox()), attach);
+									return applyEntitiesToRegion(ctx, r -> ctx.getSource().getLevel().getEntities(null, getRegion(ctx, "src-name").toBox()), attach);
 								})
 							)
 						)
 					)
-					.then(argument("entities", EntityArgumentType.entities())
+					.then(argument("entities", EntityArgument.entities())
 						.executes(ctx -> {
-							return applyEntitiesToRegion(ctx, r -> EntityArgumentType.getEntities(ctx, "entities"), attach);
+							return applyEntitiesToRegion(ctx, r -> EntityArgument.getEntities(ctx, "entities"), attach);
 						})
 					)
 				)
 				.then(literal("block")
-					.then(argument("position", BlockPosArgumentType.blockPos())
+					.then(argument("position", BlockPosArgument.blockPos())
 						.executes(ctx -> {
 							RenderRegion r = getRegion(ctx);
 							RenderRegions regions = getRegions(ctx);
-							BlockPos pos = BlockPosArgumentType.getBlockPos(ctx, "position");
+							BlockPos pos = BlockPosArgument.getBlockPos(ctx, "position");
 							if (attach) {
 								regions.attachBlock(r, pos.asLong());
 							} else {
 								regions.detachBlock(r, pos.asLong());
 							}
-							ctx.getSource().sendFeedback(() -> Text.literal("Attached block at " + pos.toShortString() + " to region " + StringArgumentType.getString(ctx, "name")), true);
+							ctx.getSource().sendSuccess(() -> Component.literal("Attached block at " + pos.toShortString() + " to region " + StringArgumentType.getString(ctx, "name")), true);
 							return 1;
 						})
 					)
@@ -426,14 +426,14 @@ public class RegionCommand {
 					.then(literal("in")
 						.then(literal("worldedit")
 							.requires(WORLDEDIT)
-							.then(argument("filter", BlockPredicateArgumentType.blockPredicate(cra))
+							.then(argument("filter", BlockPredicateArgument.blockPredicate(cra))
 								.executes(ctx -> {
-									return applyBlocksToRegion(ctx, WorldEditCompat.getSelection(ctx), BlockPredicateArgumentType.getBlockPredicate(ctx, "filter"), attach);
+									return applyBlocksToRegion(ctx, WorldEditCompat.getSelection(ctx), BlockPredicateArgument.getBlockPredicate(ctx, "filter"), attach);
 								})
 							)
 							.then(literal("entities")
 								.executes(ctx -> {
-									return applyBlocksToRegion(ctx, WorldEditCompat.getSelection(ctx), cbp -> cbp.getBlockEntity() != null, attach);
+									return applyBlocksToRegion(ctx, WorldEditCompat.getSelection(ctx), cbp -> cbp.getEntity() != null, attach);
 								})
 							)
 							.executes(ctx -> {
@@ -441,58 +441,58 @@ public class RegionCommand {
 							})
 						)
 					)
-					.then(argument("corner1", BlockPosArgumentType.blockPos())
-						.then(argument("corner2", BlockPosArgumentType.blockPos())
+					.then(argument("corner1", BlockPosArgument.blockPos())
+						.then(argument("corner2", BlockPosArgument.blockPos())
 							.then(literal("entities")
 								.executes(ctx -> {
-									BlockPos corner1 = BlockPosArgumentType.getBlockPos(ctx, "corner1");
-									BlockPos corner2 = BlockPosArgumentType.getBlockPos(ctx, "corner2");
-									return applyBlocksToRegion(ctx, BlockBox.create(corner1, corner2), cbp -> cbp.getBlockEntity() != null, attach);
+									BlockPos corner1 = BlockPosArgument.getBlockPos(ctx, "corner1");
+									BlockPos corner2 = BlockPosArgument.getBlockPos(ctx, "corner2");
+									return applyBlocksToRegion(ctx, BoundingBox.fromCorners(corner1, corner2), cbp -> cbp.getEntity() != null, attach);
 								})
 							)
-							.then(argument("filter", BlockPredicateArgumentType.blockPredicate(cra))
+							.then(argument("filter", BlockPredicateArgument.blockPredicate(cra))
 								.executes(ctx -> {
-									BlockPos corner1 = BlockPosArgumentType.getBlockPos(ctx, "corner1");
-									BlockPos corner2 = BlockPosArgumentType.getBlockPos(ctx, "corner2");
-									return applyBlocksToRegion(ctx, BlockBox.create(corner1, corner2), BlockPredicateArgumentType.getBlockPredicate(ctx, "filter"), attach);
+									BlockPos corner1 = BlockPosArgument.getBlockPos(ctx, "corner1");
+									BlockPos corner2 = BlockPosArgument.getBlockPos(ctx, "corner2");
+									return applyBlocksToRegion(ctx, BoundingBox.fromCorners(corner1, corner2), BlockPredicateArgument.getBlockPredicate(ctx, "filter"), attach);
 								})
 							)
 							.executes(ctx -> {
-								BlockPos corner1 = BlockPosArgumentType.getBlockPos(ctx, "corner1");
-								BlockPos corner2 = BlockPosArgumentType.getBlockPos(ctx, "corner2");
-								return applyBlocksToRegion(ctx, BlockBox.create(corner1, corner2), null, attach);
+								BlockPos corner1 = BlockPosArgument.getBlockPos(ctx, "corner1");
+								BlockPos corner2 = BlockPosArgument.getBlockPos(ctx, "corner2");
+								return applyBlocksToRegion(ctx, BoundingBox.fromCorners(corner1, corner2), null, attach);
 							})
 						)
 					)
 				)
 				.then(literal("be-type")
-					.then(argument("type", RegistryKeyArgumentType.registryKey(RegistryKeys.BLOCK_ENTITY_TYPE))
+					.then(argument("type", ResourceKeyArgument.key(Registries.BLOCK_ENTITY_TYPE))
 						.executes(ctx -> {
 							RenderRegion r = getRegion(ctx);
 							RenderRegions regions = getRegions(ctx);
-							Identifier id = ctx.getArgument("type", RegistryKey.class).getValue();
+							ResourceLocation id = ctx.getArgument("type", ResourceKey.class).location();
 							if (attach) {
 								regions.attachBlockEntityType(r, id);
 							} else {
 								regions.detachBlockEntityType(r, id);
 							}
-							ctx.getSource().sendFeedback(() -> Text.literal("Attached block entity type " + id + " to region " + StringArgumentType.getString(ctx, "name")), true);
+							ctx.getSource().sendSuccess(() -> Component.literal("Attached block entity type " + id + " to region " + StringArgumentType.getString(ctx, "name")), true);
 							return 1;
 						})
 					)
 				)
 				.then(literal("entity-type")
-					.then(argument("type", RegistryKeyArgumentType.registryKey(RegistryKeys.ENTITY_TYPE))
+					.then(argument("type", ResourceKeyArgument.key(Registries.ENTITY_TYPE))
 						.executes(ctx -> {
 							RenderRegion r = getRegion(ctx);
 							RenderRegions regions = getRegions(ctx);
-							Identifier id = ctx.getArgument("type", RegistryKey.class).getValue();
+							ResourceLocation id = ctx.getArgument("type", ResourceKey.class).location();
 							if (attach) {
 								regions.attachEntityType(r, id);
 							} else {
 								regions.detachEntityType(r, id);
 							}
-							ctx.getSource().sendFeedback(() -> Text.literal("Attached entity type " + id + " to region " + StringArgumentType.getString(ctx, "name")), true);
+							ctx.getSource().sendSuccess(() -> Component.literal("Attached entity type " + id + " to region " + StringArgumentType.getString(ctx, "name")), true);
 							return 1;
 						})
 					)
@@ -500,14 +500,14 @@ public class RegionCommand {
 			);
 	}
 
-	private static Box toBox(BlockBox bb) {
-		return new Box(bb.getMinX(), bb.getMinY(), bb.getMinZ(),
-			bb.getMaxX(), bb.getMaxY(), bb.getMaxZ());
+	private static AABB toBox(BoundingBox bb) {
+		return new AABB(bb.minX(), bb.minY(), bb.minZ(),
+			bb.maxX(), bb.maxY(), bb.maxZ());
 	}
 
-	private static Iterable<BlockPos> iterate(BlockBox region) {
-		return BlockPos.iterate(region.getMinX(), region.getMinY(), region.getMinZ(),
-			region.getMaxX(), region.getMaxY(), region.getMaxZ());
+	private static Iterable<BlockPos> iterate(BoundingBox region) {
+		return BlockPos.betweenClosed(region.minX(), region.minY(), region.minZ(),
+			region.maxX(), region.maxY(), region.maxZ());
 	}
 
 	private interface EntitySource {
@@ -518,16 +518,16 @@ public class RegionCommand {
 		Iterable<UUID> supply(RenderRegion region) throws CommandSyntaxException;
 	}
 
-	private static int applyBlocksToRegion(CommandContext<ServerCommandSource> ctx, BlockBox region, Predicate<CachedBlockPosition> pred, boolean attach) throws CommandSyntaxException {
+	private static int applyBlocksToRegion(CommandContext<CommandSourceStack> ctx, BoundingBox region, Predicate<BlockInWorld> pred, boolean attach) throws CommandSyntaxException {
 		return applyBlocksToRegion(ctx, iterate(region), pred, attach);
 	}
 
-	private static int applyBlocksToRegion(CommandContext<ServerCommandSource> ctx, Iterable<BlockPos> region, Predicate<CachedBlockPosition> pred, boolean attach) throws CommandSyntaxException {
+	private static int applyBlocksToRegion(CommandContext<CommandSourceStack> ctx, Iterable<BlockPos> region, Predicate<BlockInWorld> pred, boolean attach) throws CommandSyntaxException {
 		RenderRegion r = getRegion(ctx);
 		RenderRegions regions = getRegions(ctx);
 		int count = 0;
 		for (BlockPos bp : region) {
-			if (pred == null || pred.test(new CachedBlockPosition(ctx.getSource().getWorld(), bp, false))) {
+			if (pred == null || pred.test(new BlockInWorld(ctx.getSource().getLevel(), bp, false))) {
 				if (attach) {
 					regions.attachBlock(r, bp.asLong());
 					count++;
@@ -539,25 +539,25 @@ public class RegionCommand {
 		final int fcount = count;
 		if (attach) {
 			if (count == 0) {
-				throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("None of the blocks matched the filter"));
+				throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("None of the blocks matched the filter"));
 			} else {
-				ctx.getSource().sendFeedback(() -> Text.literal("Attached " + fcount + " block" + (fcount == 1 ? "" : "s") + " to region " + StringArgumentType.getString(ctx, "name")), true);
+				ctx.getSource().sendSuccess(() -> Component.literal("Attached " + fcount + " block" + (fcount == 1 ? "" : "s") + " to region " + StringArgumentType.getString(ctx, "name")), true);
 			}
 		} else {
 			if (count == 0) {
-				throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("None of those blocks are attached to the region"));
+				throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("None of those blocks are attached to the region"));
 			} else {
-				ctx.getSource().sendFeedback(() -> Text.literal("Detached " + fcount + " block" + (fcount == 1 ? "" : "s") + " from region " + StringArgumentType.getString(ctx, "name")), true);
+				ctx.getSource().sendSuccess(() -> Component.literal("Detached " + fcount + " block" + (fcount == 1 ? "" : "s") + " from region " + StringArgumentType.getString(ctx, "name")), true);
 			}
 		}
 		return count;
 	}
 
-	private static int applyEntitiesToRegion(CommandContext<ServerCommandSource> ctx, EntitySource src, boolean attach) throws CommandSyntaxException {
-		return applyEntitiesByIdToRegion(ctx, r -> Iterables.transform(src.supply(r), Entity::getUuid), attach);
+	private static int applyEntitiesToRegion(CommandContext<CommandSourceStack> ctx, EntitySource src, boolean attach) throws CommandSyntaxException {
+		return applyEntitiesByIdToRegion(ctx, r -> Iterables.transform(src.supply(r), Entity::getUUID), attach);
 	}
 
-	private static int applyEntitiesByIdToRegion(CommandContext<ServerCommandSource> ctx, UUIDSource src, boolean attach) throws CommandSyntaxException {
+	private static int applyEntitiesByIdToRegion(CommandContext<CommandSourceStack> ctx, UUIDSource src, boolean attach) throws CommandSyntaxException {
 		RenderRegion r = getRegion(ctx);
 		RenderRegions regions = getRegions(ctx);
 		int count = 0;
@@ -573,38 +573,38 @@ public class RegionCommand {
 		}
 		final int fcount = count;
 		if (attach) {
-			ctx.getSource().sendFeedback(() -> Text.literal("Attached " + fcount + " entit" + (fcount == 1 ? "y" : "ies") + " to region " + StringArgumentType.getString(ctx, "name")), true);
+			ctx.getSource().sendSuccess(() -> Component.literal("Attached " + fcount + " entit" + (fcount == 1 ? "y" : "ies") + " to region " + StringArgumentType.getString(ctx, "name")), true);
 		} else {
 			if (count == 0) {
 				if (anything) {
-					throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("None of those entities are attached to the region"));
+					throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("None of those entities are attached to the region"));
 				} else {
-					throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("No entities were specified"));
+					throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("No entities were specified"));
 				}
 			} else {
-				ctx.getSource().sendFeedback(() -> Text.literal("Detached " + fcount + " entit" + (fcount == 1 ? "y" : "ies") + " from region " + StringArgumentType.getString(ctx, "name")), true);
+				ctx.getSource().sendSuccess(() -> Component.literal("Detached " + fcount + " entit" + (fcount == 1 ? "y" : "ies") + " from region " + StringArgumentType.getString(ctx, "name")), true);
 			}
 		}
 		return count;
 	}
 
-	public static RenderRegions getRegions(CommandContext<ServerCommandSource> ctx) {
-		return RenderRegionsState.get(ctx.getSource().getWorld()).getRegions();
+	public static RenderRegions getRegions(CommandContext<CommandSourceStack> ctx) {
+		return RenderRegionsState.get(ctx.getSource().getLevel()).getRegions();
 	}
 
-	private static RenderRegion getRegion(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+	private static RenderRegion getRegion(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
 		return getRegion(ctx, "name");
 	}
 
-	private static RenderRegion getRegion(CommandContext<ServerCommandSource> ctx, String tgt) throws CommandSyntaxException {
+	private static RenderRegion getRegion(CommandContext<CommandSourceStack> ctx, String tgt) throws CommandSyntaxException {
 		String name = StringArgumentType.getString(ctx, tgt);
 		RenderRegion r = getRegions(ctx).getByName(name);
 		if (r == null)
-			throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("No render region with name \"" + name + "\" exists"));
+			throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("No render region with name \"" + name + "\" exists"));
 		return r;
 	}
 
-	private static CompletableFuture<Suggestions> suggestRegionNames(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+	private static CompletableFuture<Suggestions> suggestRegionNames(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
 		for (String name : getRegions(ctx).getRegionsByName().keySet()) {
 			if (name.startsWith(builder.getRemaining())) {
 				builder.suggest(name);
@@ -613,19 +613,19 @@ public class RegionCommand {
 		return builder.buildFuture();
 	}
 
-	public static int addRegion(CommandContext<ServerCommandSource> ctx, RenderRegion rr) throws CommandSyntaxException {
+	public static int addRegion(CommandContext<CommandSourceStack> ctx, RenderRegion rr) throws CommandSyntaxException {
 		String name = StringArgumentType.getString(ctx, "name");
 		RenderRegions regions = RegionCommand.getRegions(ctx);
 		if (regions.getByName(name) != null) {
-			throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("A region with that name already exists"));
+			throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("A region with that name already exists"));
 		}
 		regions.add(name, rr);
-		ctx.getSource().sendFeedback(() -> Text.literal("Created new " + rr.mode().name().toLowerCase(Locale.ROOT) + " region " + name), true);
+		ctx.getSource().sendSuccess(() -> Component.literal("Created new " + rr.mode().name().toLowerCase(Locale.ROOT) + " region " + name), true);
 		return 1;
 	}
 
 	// Why duplicate code?
-	private static Command<ServerCommandSource> passThroughBoolean(
+	private static Command<CommandSourceStack> passThroughBoolean(
 		ObjObjBoolTriConsumer<RenderRegions, RenderRegion> triConsumer
 	) {
 		return ctx -> {
@@ -638,7 +638,7 @@ public class RegionCommand {
 		};
 	}
 
-	private static Command<ServerCommandSource> printBoolean(
+	private static Command<CommandSourceStack> printBoolean(
 		String name,
 		BiPredicate<RenderRegions, RenderRegion> toValue
 	) {
@@ -647,7 +647,7 @@ public class RegionCommand {
 			RenderRegions regions = getRegions(ctx);
 			boolean value = toValue.test(regions, r);
 
-			ctx.getSource().sendFeedback(() -> Text.of(name + ": " + value), false);
+			ctx.getSource().sendSuccess(() -> Component.nullToEmpty(name + ": " + value), false);
 
 			return 1;
 		};

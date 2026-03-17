@@ -1,22 +1,22 @@
 package net.modfest.fireblanket.mixin.be_sync;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.modfest.fireblanket.world.CachedCompoundBE;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(BlockEntity.class)
 public class MixinBlockEntity implements CachedCompoundBE {
-	private NbtCompound fireblanket$lastSeenCompound = null;
+	private CompoundTag fireblanket$lastSeenCompound = null;
 
 	@Override
-	public @Nullable NbtCompound fireblanket$getCachedCompound() {
+	public @Nullable CompoundTag fireblanket$getCachedCompound() {
 		return this.fireblanket$lastSeenCompound;
 	}
 
 	@Override
-	public void fireblanket$setCachedCompound(NbtCompound nbt) {
+	public void fireblanket$setCachedCompound(CompoundTag nbt) {
 		this.fireblanket$lastSeenCompound = nbt;
 	}
 }

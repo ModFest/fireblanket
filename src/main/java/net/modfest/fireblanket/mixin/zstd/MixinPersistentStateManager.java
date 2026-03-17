@@ -7,17 +7,17 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.datafixers.DataFixer;
 import it.unimi.dsi.fastutil.io.FastBufferedInputStream;
 import net.minecraft.SharedConstants;
-import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.registry.RegistryOps;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.PersistentStateType;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import net.minecraft.world.level.storage.DimensionDataStorage;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,7 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.GZIPInputStream;
 
-@Mixin(PersistentStateManager.class)
+@Mixin(DimensionDataStorage.class)
 public abstract class MixinPersistentStateManager {
 
 	@Shadow
@@ -47,24 +47,24 @@ public abstract class MixinPersistentStateManager {
 
 	@Shadow
 	@Final
-	private Path directory;
+	private Path dataFolder;
 	@Shadow
 	@Final
-	private DataFixer dataFixer;
+	private DataFixer fixerUpper;
 	@Shadow
 	@Final
-	private RegistryWrapper.WrapperLookup registries;
+	private HolderLookup.Provider registries;
 	@Shadow
 	@Final
-	private PersistentState.Context context;
+	private SavedData.Context context;
 
 	@Shadow
-	private Path getFile(String id) {
+	private Path getDataFile(String id) {
 		throw new AbstractMethodError();
 	}
 
 	@Shadow
-	public abstract NbtCompound readNbt(
+	public abstract CompoundTag readTagFromDisk(
 		String id,
 		DataFixTypes dataFixTypes,
 		int currentSaveVersion
@@ -72,7 +72,7 @@ public abstract class MixinPersistentStateManager {
 
 	@Unique
 	private Path getZstdFile(String id) {
-		return directory.resolve(id + ".zat");
+		return dataFolder.resolve(id + ".zat");
 	}
 
 	/**
@@ -80,17 +80,17 @@ public abstract class MixinPersistentStateManager {
 	 * @reason Don't check file before calling readNbt
 	 */
 	@Overwrite
-	private <T extends PersistentState> T readFromFile(PersistentStateType<T> type) {
+	private <T extends SavedData> T readSavedData(SavedDataType<T> type) {
 		try {
-			NbtCompound cmp = this.readNbt(
+			CompoundTag cmp = this.readTagFromDisk(
 				type.id(),
 				type.dataFixType(),
-				SharedConstants.getGameVersion().dataVersion().id()
+				SharedConstants.getCurrentVersion().dataVersion().version()
 			);
 			if (cmp == null) {
 				return null;
 			}
-			RegistryOps<NbtElement> registryOps = this.registries.getOps(NbtOps.INSTANCE);
+			RegistryOps<Tag> registryOps = this.registries.createSerializationContext(NbtOps.INSTANCE);
 			return type.codec().apply(this.context)
 				.parse(registryOps, cmp.get("data"))
 				.resultOrPartial(string -> LOGGER.error("Failed to parse saved data for '{}': {}", type, string))
@@ -106,12 +106,12 @@ public abstract class MixinPersistentStateManager {
 	 * @author Una
 	 * @reason Zstd support, code cleanup
 	 */
-	@Inject(method = "readNbt", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "readTagFromDisk", at = @At("HEAD"), cancellable = true)
 	public void fireblanket$readNbt(
 		String id,
 		DataFixTypes dataFixTypes,
 		int dataVersion,
-		CallbackInfoReturnable<NbtCompound> cir
+		CallbackInfoReturnable<CompoundTag> cir
 	) throws IOException {
 		// TODO: this uses an unconditional head cancel because Fabric API wants to mix into the same spot, and has LVT errors when encountering our method.
 		InputStream in;
@@ -119,7 +119,7 @@ public abstract class MixinPersistentStateManager {
 		if (Files.isRegularFile(zstd)) {
 			in = new FastBufferedInputStream(new ZstdInputStream(Files.newInputStream(zstd)));
 		} else {
-			Path vanilla = getFile(id);
+			Path vanilla = getDataFile(id);
 			if (Files.isRegularFile(vanilla)) {
 				in = new FastBufferedInputStream(new GZIPInputStream(Files.newInputStream(vanilla)));
 			} else {
@@ -130,9 +130,9 @@ public abstract class MixinPersistentStateManager {
 
 		try (in) {
 			DataInputStream dis = new DataInputStream(in);
-			NbtCompound nbt = NbtIo.readCompound(dis);
-			int version = NbtHelper.getDataVersion(nbt, 1343);
-			cir.setReturnValue(dataFixTypes == null ? nbt : dataFixTypes.update(dataFixer, nbt, version, dataVersion));
+			CompoundTag nbt = NbtIo.read(dis);
+			int version = NbtUtils.getDataVersion(nbt, 1343);
+			cir.setReturnValue(dataFixTypes == null ? nbt : dataFixTypes.update(fixerUpper, nbt, version, dataVersion));
 		}
 	}
 
@@ -140,17 +140,17 @@ public abstract class MixinPersistentStateManager {
 	@WrapOperation(
 		at = @At(
 			value = "INVOKE",
-			target = "net/minecraft/nbt/NbtIo.writeCompressed(Lnet/minecraft/nbt/NbtCompound;Ljava/nio/file/Path;)V"
-		), method = "save"
+			target = "Lnet/minecraft/nbt/NbtIo;writeCompressed(Lnet/minecraft/nbt/CompoundTag;Ljava/nio/file/Path;)V"
+		), method = "tryWrite"
 	)
-	public void fireblanket$writeZstd(NbtCompound nbt, Path vanilla, Operation<Void> original) throws IOException {
+	public void fireblanket$writeZstd(CompoundTag nbt, Path vanilla, Operation<Void> original) throws IOException {
 		String path = vanilla.toAbsolutePath().toString();
 		if (path.endsWith(".dat")) {
 			File zstd = new File(path.substring(0, path.length() - 4) + ".zat");
 			try (ZstdOutputStream z = new ZstdOutputStream(new FileOutputStream(zstd))) {
 				z.setChecksum(true);
 				z.setLevel(4);
-				NbtIo.write(nbt, new DataOutputStream(z));
+				NbtIo.writeUnnamedTagWithFallback(nbt, new DataOutputStream(z));
 			}
 
 			Files.deleteIfExists(vanilla);

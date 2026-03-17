@@ -1,17 +1,7 @@
 package net.modfest.fireblanket.mixin.client.be_masking;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
-import net.minecraft.client.util.math.MatrixStack;
-import net.modfest.fireblanket.client.ClientState;
-import net.modfest.fireblanket.client.render.QuadEmitter;
-import net.modfest.fireblanket.client.render.RenderLayers;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(BlockEntityRenderDispatcher.class)
 public class MixinBlockEntityRenderDispatcher {

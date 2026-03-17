@@ -1,16 +1,16 @@
 package net.modfest.fireblanket.mixin.accessor;
 
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.particle.ParticleManager;
-import net.minecraft.client.particle.ParticleTextureSheet;
+import net.minecraft.client.particle.ParticleEngine;
+import net.minecraft.client.particle.ParticleRenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.Map;
 import java.util.Queue;
 
-@Mixin(ParticleManager.class)
+@Mixin(ParticleEngine.class)
 public interface ParticleManagerAccessor {
 	@Accessor
-	Map<ParticleTextureSheet, Queue<Particle>> getParticles();
+	Map<ParticleRenderType, Queue<Particle>> getParticles();
 }

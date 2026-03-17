@@ -3,15 +3,15 @@ package net.modfest.fireblanket.command;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.logging.LogUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandOutput;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.world.CommandBlockExecutor;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.world.level.BaseCommandBlock;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixin.accessor.ServerCommandSourceAccessor;
 import net.modfest.fireblanket.util.ReflectionUtil;
@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 public final class CommandUtils {
 	private static final Logger logger = LogUtils.getLogger();
 
-	public static final DynamicCommandExceptionType GENERIC_EXCEPTION = new DynamicCommandExceptionType(message -> (Text) message);
+	public static final DynamicCommandExceptionType GENERIC_EXCEPTION = new DynamicCommandExceptionType(message -> (Component) message);
 
 	public static <S> CommandNode<S> findSourceNode(CommandNode<S> commandNode) {
 		if (commandNode.getRedirect() != null) {
@@ -31,10 +31,10 @@ public final class CommandUtils {
 		return commandNode;
 	}
 
-	public static Entity getEntityRunner(final ServerCommandSource source) {
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
+	public static Entity getEntityRunner(final CommandSourceStack source) {
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
-		if (output instanceof CommandBlockMinecartEntity.CommandExecutor executor) {
+		if (output instanceof MinecartCommandBlock.MinecartCommandBase executor) {
 			return executor.getMinecart();
 		}
 
@@ -45,18 +45,18 @@ public final class CommandUtils {
 	/**
 	 * Fetches the true command runner if the player exists.
 	 */
-	public static ServerPlayerEntity getPlayerRunner(final ServerCommandSource source) {
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
+	public static ServerPlayer getPlayerRunner(final CommandSourceStack source) {
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
 		// If someone backports or does something weird, short circuit.
-		if (output instanceof ServerPlayerEntity player) {
+		if (output instanceof ServerPlayer player) {
 			return player;
 		}
 
 		try {
 			// WARNING: this may change between versions.
 			// Handle with care when porting.
-			return ReflectionUtil.getHostStrict(output, ServerPlayerEntity.class);
+			return ReflectionUtil.getHostStrict(output, ServerPlayer.class);
 		} catch (IllegalAccessException | IllegalArgumentException iae) {
 			// This shall not be allowed to crash, log it instead.
 			logger.error("Someone made an error. Did someone miss me while porting? source: {}, output: {}", source, output, iae);
@@ -67,16 +67,16 @@ public final class CommandUtils {
 	/**
 	 * Protected command runner fetcher
 	 */
-	public static ServerPlayerEntity getPlayerIfRunner(final ServerCommandSource source) {
-		final ServerPlayerEntity player = source.getPlayer();
+	public static ServerPlayer getPlayerIfRunner(final CommandSourceStack source) {
+		final ServerPlayer player = source.getPlayer();
 
 		if (player == null) {
 			// execute as @e
 			return null;
 		}
 
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
-		if (player.getCommandOutput() != output) {
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
+		if (player.commandSource() != output) {
 			// execute as organiser
 			return null;
 		}
@@ -84,48 +84,48 @@ public final class CommandUtils {
 		return player;
 	}
 
-	public static boolean isPlayerRunner(final ServerCommandSource source) {
+	public static boolean isPlayerRunner(final CommandSourceStack source) {
 		return getPlayerIfRunner(source) != null;
 	}
 
-	public static boolean isRunner(final ServerCommandSource source) {
+	public static boolean isRunner(final CommandSourceStack source) {
 		return source.getEntity() == getEntityRunner(source);
 	}
 
-	public static boolean isConsole(final ServerCommandSource source) {
+	public static boolean isConsole(final CommandSourceStack source) {
 		if (source.getEntity() != null) {
 			return false;
 		}
 
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
 		return source.getServer() == output;
 	}
 
-	public static boolean isCommandBlock(final ServerCommandSource source) {
+	public static boolean isCommandBlock(final CommandSourceStack source) {
 		if (source.getEntity() != null) {
 			return false;
 		}
 
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
-		return output instanceof CommandBlockExecutor;
+		return output instanceof BaseCommandBlock;
 	}
 
-	public static boolean isNetAdmin(final ServerCommandSource source) {
+	public static boolean isNetAdmin(final CommandSourceStack source) {
 		return isConsole(source) || Roles.isNetadmin(getPlayerIfRunner(source));
 	}
 
-	public static boolean isOrganizer(final ServerCommandSource source) {
+	public static boolean isOrganizer(final CommandSourceStack source) {
 		return isConsole(source) || Roles.isOrganizer(getPlayerIfRunner(source));
 	}
 
-	public static boolean isBuilder(final ServerCommandSource source) {
+	public static boolean isBuilder(final CommandSourceStack source) {
 		return isConsole(source) || Roles.isBuilder(getPlayerIfRunner(source));
 	}
 
-	public static boolean shouldReceiveBroadcast(final ServerPlayerEntity player, final CommandOutput output) {
-		if (player.getCommandOutput() == output) {
+	public static boolean shouldReceiveBroadcast(final ServerPlayer player, final CommandSource output) {
+		if (player.commandSource() == output) {
 			return false;
 		}
 
@@ -136,23 +136,23 @@ public final class CommandUtils {
 		return Roles.isOrganizer(player);
 	}
 
-	public static void sendToTeam(final ServerCommandSource source, final Text message) {
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
+	public static void sendToTeam(final CommandSourceStack source, final Component message) {
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
 		sendToTeam(source.getServer(), output, message);
 	}
 
-	public static void sendToTeam(final MinecraftServer server, final @Nullable CommandOutput output, final Text message) {
-		final Text text = message.copy().formatted(Formatting.GRAY, Formatting.ITALIC);
+	public static void sendToTeam(final MinecraftServer server, final @Nullable CommandSource output, final Component message) {
+		final Component text = message.copy().withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
-		for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			if (shouldReceiveBroadcast(player, output)) {
-				player.sendMessage(text);
+				player.sendSystemMessage(text);
 			}
 		}
 
 		if (output != server) {
-			server.sendMessage(text);
+			server.sendSystemMessage(text);
 		}
 	}
 }

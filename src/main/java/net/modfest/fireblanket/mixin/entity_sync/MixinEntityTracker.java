@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixin.entity_sync;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.EntityTrackerEntry;
-import net.minecraft.server.network.PlayerAssociatedNetworkHandler;
-import net.minecraft.server.world.ServerChunkLoadingManager;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerEntity;
+import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.mixinsupport.TrackerEntityHolder;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,18 +14,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Set;
 
-@Mixin(targets = "net.minecraft.server.world.ServerChunkLoadingManager$EntityTracker")
+@Mixin(targets = "net.minecraft.server.level.ChunkMap$TrackedEntity")
 public abstract class MixinEntityTracker {
 	@Shadow
 	@Final
-	EntityTrackerEntry entry;
+	ServerEntity serverEntity;
 
 	@Shadow
 	@Final
-	private Set<PlayerAssociatedNetworkHandler> listeners;
+	private Set<ServerPlayerConnection> seenBy;
 
 	@Inject(method = "<init>", at = @At("TAIL"))
-	public void fireblanket$setTrackerRef(ServerChunkLoadingManager serverChunkLoadingManager, Entity entity, int maxDistance, int tickInterval, boolean alwaysUpdateVelocity, CallbackInfo ci) {
-		((TrackerEntityHolder)this.entry).setListeners(this.listeners);
+	public void fireblanket$setTrackerRef(ChunkMap serverChunkLoadingManager, Entity entity, int maxDistance, int tickInterval, boolean alwaysUpdateVelocity, CallbackInfo ci) {
+		((TrackerEntityHolder) this.serverEntity).setListeners(this.seenBy);
 	}
 }

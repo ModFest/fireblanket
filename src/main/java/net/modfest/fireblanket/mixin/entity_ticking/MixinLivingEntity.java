@@ -1,12 +1,11 @@
 package net.modfest.fireblanket.mixin.entity_ticking;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,23 +17,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinLivingEntity extends Entity implements ImmmovableLivingEntity {
 	private boolean fireblanket$movementless = false;
 
-	public MixinLivingEntity(EntityType<?> type, World world) {
+	public MixinLivingEntity(EntityType<?> type, Level world) {
 		super(type, world);
 	}
 
-	@Inject(method = "writeCustomData", at = @At("TAIL"))
-	private void fireblanket$addToNbt(WriteView view, CallbackInfo ci) {
+	@Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
+	private void fireblanket$addToNbt(ValueOutput view, CallbackInfo ci) {
 		if (fireblanket$movementless) {
 			view.putBoolean("NoMovement", true);
 		}
 	}
 
-	@Inject(method = "readCustomData", at = @At("TAIL"))
-	private void fireblanket$readFromNbt(ReadView view, CallbackInfo ci) {
-		fireblanket$movementless = view.getBoolean("NoMovement", false);
+	@Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
+	private void fireblanket$readFromNbt(ValueInput view, CallbackInfo ci) {
+		fireblanket$movementless = view.getBooleanOr("NoMovement", false);
 	}
 
-	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;isRemoved()Z", ordinal = 0))
+	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;isRemoved()Z", ordinal = 0))
 	private boolean fireblanket$dontTickMovement(LivingEntity instance) {
 		return super.isRemoved() || fireblanket$movementless;
 	}

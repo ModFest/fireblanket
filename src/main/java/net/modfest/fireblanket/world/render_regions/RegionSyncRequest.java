@@ -5,15 +5,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongIterator;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.EntityType;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.AddRegion;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.AttachBlock;
@@ -37,13 +37,13 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public sealed interface RegionSyncRequest extends CustomPayload permits InvalidCommand, FullState, Reset, AddRegion,
+public sealed interface RegionSyncRequest extends CustomPacketPayload permits InvalidCommand, FullState, Reset, AddRegion,
 	DestroyRegion, DetachAll, AttachEntity, AttachBlock, DetachEntity, DetachBlock, RedefineRegion, FullStateLegacy,
 	RegistryRegionSyncRequest, UpdateRegionMetadata {
 
-	CustomPayload.Id<RegionSyncRequest> ID = new CustomPayload.Id<>(Fireblanket.REGIONS_UPDATE);
+	CustomPacketPayload.Type<RegionSyncRequest> ID = new CustomPacketPayload.Type<>(Fireblanket.REGIONS_UPDATE);
 
-	PacketCodec<RegistryByteBuf, RegionSyncRequest> CODEC = PacketCodec.of(
+	StreamCodec<RegistryFriendlyByteBuf, RegionSyncRequest> CODEC = StreamCodec.ofMember(
 		RegionSyncRequest::toPacket, RegionSyncRequest::read
 	);
 
@@ -67,20 +67,20 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 		UPDATE_REGION_METADATA(UpdateRegionMetadata::read, "update_region"),
 		;
 		public static final ImmutableList<RequestType> VALUES = ImmutableList.copyOf(values());
-		public final Function<PacketByteBuf, ? extends RegionSyncRequest> reader;
-		public final Identifier id;
+		public final Function<FriendlyByteBuf, ? extends RegionSyncRequest> reader;
+		public final ResourceLocation id;
 
-		RequestType(Function<PacketByteBuf, ? extends RegionSyncRequest> reader, String name) {
+		RequestType(Function<FriendlyByteBuf, ? extends RegionSyncRequest> reader, String name) {
 			this.reader = reader;
-			this.id = Identifier.of("fireblanket", name);
+			this.id = ResourceLocation.fromNamespaceAndPath("fireblanket", name);
 		}
 
 	}
 
-	RequestType type();
+	RequestType requestType();
 
 	//  static self read(PacketByteBuf buf);
-	void write(PacketByteBuf buf);
+	void write(FriendlyByteBuf buf);
 
 	void apply(RenderRegions tgt);
 
@@ -93,37 +93,37 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 
 		String name();
 
-		Identifier id();
+		ResourceLocation id();
 
 		@Override
 		default boolean valid() {
-			return name() != null && registry().get(id()) != null;
+			return name() != null && registry().getValue(id()) != null;
 		}
 
 		@Override
-		default void write(PacketByteBuf buf) {
-			buf.writeString(name());
+		default void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name());
 			writeId(buf, registry(), id());
 		}
 	}
 
-	default void toPacket(RegistryByteBuf buf) {
-		buf.writeByte(type().ordinal());
+	default void toPacket(RegistryFriendlyByteBuf buf) {
+		buf.writeByte(requestType().ordinal());
 		write(buf);
 	}
 
 	@Override
-	default Id<? extends CustomPayload> getId() {
+	default Type<? extends CustomPacketPayload> type() {
 		return ID;
 	}
 
-	private static void writeRegion(PacketByteBuf buf, RenderRegion r) {
+	private static void writeRegion(FriendlyByteBuf buf, RenderRegion r) {
 		buf.writeByte(r.mode().ordinal());
 		buf.writeVarInt(r.minX()).writeVarInt(r.minY()).writeVarInt(r.minZ());
 		buf.writeVarInt(r.maxX()).writeVarInt(r.maxY()).writeVarInt(r.maxZ());
 	}
 
-	private static RenderRegion readRegion(PacketByteBuf buf) {
+	private static RenderRegion readRegion(FriendlyByteBuf buf) {
 		int modeId = buf.readUnsignedByte();
 		if (modeId >= Mode.VALUES.size()) {
 			Fireblanket.LOGGER.warn("Unknown region mode id {}", modeId);
@@ -135,36 +135,36 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 			mode);
 	}
 
-	private static <T> Identifier readId(PacketByteBuf buf, Registry<T> registry) {
-		return registry.getId(registry.get(buf.readVarInt()));
+	private static <T> ResourceLocation readId(FriendlyByteBuf buf, Registry<T> registry) {
+		return registry.getKey(registry.byId(buf.readVarInt()));
 	}
 
-	private static <T> void writeId(PacketByteBuf buf, Registry<T> registry, Identifier id) {
-		buf.writeVarInt(registry.getRawId(registry.get(id)));
+	private static <T> void writeId(FriendlyByteBuf buf, Registry<T> registry, ResourceLocation id) {
+		buf.writeVarInt(registry.getId(registry.getValue(id)));
 	}
 
-	private static <T> void readTo(PacketByteBuf buf, Collection<T> collection, Function<PacketByteBuf, T> function) {
+	private static <T> void readTo(FriendlyByteBuf buf, Collection<T> collection, Function<FriendlyByteBuf, T> function) {
 		final int len = buf.readVarInt();
 		for (int i = 0; i < len; i++) {
 			collection.add(function.apply(buf));
 		}
 	}
 
-	private static void readTo(PacketByteBuf buf, LongCollection collection) {
+	private static void readTo(FriendlyByteBuf buf, LongCollection collection) {
 		final int len = buf.readVarInt();
 		for (int i = 0; i < len; i++) {
 			collection.add(buf.readLong());
 		}
 	}
 
-	private static <T> void writeTo(PacketByteBuf buf, Collection<T> collection, BiConsumer<PacketByteBuf, T> consumer) {
+	private static <T> void writeTo(FriendlyByteBuf buf, Collection<T> collection, BiConsumer<FriendlyByteBuf, T> consumer) {
 		buf.writeVarInt(collection.size());
 		for (final T t : collection) {
 			consumer.accept(buf, t);
 		}
 	}
 
-	private static void writeTo(PacketByteBuf buf, LongCollection collection) {
+	private static void writeTo(FriendlyByteBuf buf, LongCollection collection) {
 		buf.writeVarInt(collection.size());
 		LongIterator itr = collection.iterator();
 		while (itr.hasNext()) {
@@ -172,7 +172,7 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 		}
 	}
 
-	static RegionSyncRequest read(RegistryByteBuf buf) {
+	static RegionSyncRequest read(RegistryFriendlyByteBuf buf) {
 		int tid = buf.readUnsignedByte();
 		if (tid >= RequestType.VALUES.size()) {
 			int len = buf.readableBytes();
@@ -187,16 +187,16 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record InvalidCommand() implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.INVALID_COMMAND;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
+		public void write(FriendlyByteBuf buf) {
 			Fireblanket.LOGGER.warn("Writing an invalid command");
 		}
 
-		public static InvalidCommand read(PacketByteBuf buf) {
+		public static InvalidCommand read(FriendlyByteBuf buf) {
 			return new InvalidCommand();
 		}
 
@@ -215,27 +215,27 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record FullStateLegacy(ImmutableMap<String, RenderRegion> regions, ImmutableMultimap<RenderRegion, UUID> entityAttachments, ImmutableMultimap<RenderRegion, Long> blockAttachments) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.FULL_STATE_LEGACY;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
+		public void write(FriendlyByteBuf buf) {
 			throw new UnsupportedOperationException();
 		}
 
-		public static FullStateLegacy read(PacketByteBuf buf) {
+		public static FullStateLegacy read(FriendlyByteBuf buf) {
 			ImmutableMap.Builder<String, RenderRegion> regionsBldr = ImmutableMap.builder();
 			ImmutableMultimap.Builder<RenderRegion, UUID> entityAttachmentsBldr = ImmutableMultimap.builder();
 			ImmutableMultimap.Builder<RenderRegion, Long> blockAttachmentsBldr = ImmutableMultimap.builder();
 			int regionCount = buf.readVarInt();
 			for (int i = 0; i < regionCount; i++) {
-				String name = buf.readString();
+				String name = buf.readUtf();
 				RenderRegion r = readRegion(buf);
 				regionsBldr.put(name, r);
 				int entityCount = buf.readVarInt();
 				for (int j = 0; j < entityCount; j++) {
-					entityAttachmentsBldr.put(r, buf.readUuid());
+					entityAttachmentsBldr.put(r, buf.readUUID());
 				}
 				int blockCount = buf.readVarInt();
 				for (int j = 0; j < blockCount; j++) {
@@ -263,16 +263,16 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record Reset(boolean valid) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.RESET;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
+		public void write(FriendlyByteBuf buf) {
 			buf.writeInt(0xDEADDEAD);
 		}
 
-		public static Reset read(PacketByteBuf buf) {
+		public static Reset read(FriendlyByteBuf buf) {
 			return new Reset(buf.readInt() == 0xDEADDEAD);
 		}
 
@@ -286,18 +286,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record AddRegion(String name, RenderRegion region) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.ADD_REGION;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 			writeRegion(buf, region);
 		}
 
-		public static AddRegion read(PacketByteBuf buf) {
-			return new AddRegion(buf.readString(), readRegion(buf));
+		public static AddRegion read(FriendlyByteBuf buf) {
+			return new AddRegion(buf.readUtf(), readRegion(buf));
 		}
 
 		@Override
@@ -315,17 +315,17 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record DestroyRegion(String name) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.DESTROY_REGION;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 		}
 
-		public static DestroyRegion read(PacketByteBuf buf) {
-			return new DestroyRegion(buf.readString());
+		public static DestroyRegion read(FriendlyByteBuf buf) {
+			return new DestroyRegion(buf.readUtf());
 		}
 
 		@Override
@@ -343,17 +343,17 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record DetachAll(String name) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.DETACH_ALL;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 		}
 
-		public static DetachAll read(PacketByteBuf buf) {
-			return new DetachAll(buf.readString());
+		public static DetachAll read(FriendlyByteBuf buf) {
+			return new DetachAll(buf.readUtf());
 		}
 
 		@Override
@@ -370,18 +370,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record AttachEntity(String name, UUID entity) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.ATTACH_ENTITY;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
-			buf.writeUuid(entity);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
+			buf.writeUUID(entity);
 		}
 
-		public static AttachEntity read(PacketByteBuf buf) {
-			return new AttachEntity(buf.readString(), buf.readUuid());
+		public static AttachEntity read(FriendlyByteBuf buf) {
+			return new AttachEntity(buf.readUtf(), buf.readUUID());
 		}
 
 		@Override
@@ -399,18 +399,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record AttachBlock(String name, long pos) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.ATTACH_BLOCK;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 			buf.writeLong(pos);
 		}
 
-		public static AttachBlock read(PacketByteBuf buf) {
-			return new AttachBlock(buf.readString(), buf.readLong());
+		public static AttachBlock read(FriendlyByteBuf buf) {
+			return new AttachBlock(buf.readUtf(), buf.readLong());
 		}
 
 		@Override
@@ -428,18 +428,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record DetachEntity(String name, UUID entity) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.DETACH_ENTITY;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
-			buf.writeUuid(entity);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
+			buf.writeUUID(entity);
 		}
 
-		public static DetachEntity read(PacketByteBuf buf) {
-			return new DetachEntity(buf.readString(), buf.readUuid());
+		public static DetachEntity read(FriendlyByteBuf buf) {
+			return new DetachEntity(buf.readUtf(), buf.readUUID());
 		}
 
 		@Override
@@ -457,18 +457,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record DetachBlock(String name, long pos) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.DETACH_BLOCK;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 			buf.writeLong(pos);
 		}
 
-		public static DetachBlock read(PacketByteBuf buf) {
-			return new DetachBlock(buf.readString(), buf.readLong());
+		public static DetachBlock read(FriendlyByteBuf buf) {
+			return new DetachBlock(buf.readUtf(), buf.readLong());
 		}
 
 		@Override
@@ -486,18 +486,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record RedefineRegion(String name, RenderRegion region) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.REDEFINE_REGION;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 			writeRegion(buf, region);
 		}
 
-		public static RedefineRegion read(PacketByteBuf buf) {
-			return new RedefineRegion(buf.readString(), readRegion(buf));
+		public static RedefineRegion read(FriendlyByteBuf buf) {
+			return new RedefineRegion(buf.readUtf(), readRegion(buf));
 		}
 
 		@Override
@@ -512,20 +512,20 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 
 	}
 
-	record AttachEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<EntityType<?>> {
+	record AttachEntityType(String name, ResourceLocation id) implements RegistryRegionSyncRequest<EntityType<?>> {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.ATTACH_ENTITY_TYPE;
 		}
 
 		@Override
 		public Registry<EntityType<?>> registry() {
-			return Registries.ENTITY_TYPE;
+			return BuiltInRegistries.ENTITY_TYPE;
 		}
 
-		public static AttachEntityType read(PacketByteBuf buf) {
-			return new AttachEntityType(buf.readString(), readId(buf, Registries.ENTITY_TYPE));
+		public static AttachEntityType read(FriendlyByteBuf buf) {
+			return new AttachEntityType(buf.readUtf(), readId(buf, BuiltInRegistries.ENTITY_TYPE));
 		}
 
 		@Override
@@ -535,20 +535,20 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 
 	}
 
-	record DetachEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<EntityType<?>> {
+	record DetachEntityType(String name, ResourceLocation id) implements RegistryRegionSyncRequest<EntityType<?>> {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.DETACH_ENTITY_TYPE;
 		}
 
 		@Override
 		public Registry<EntityType<?>> registry() {
-			return Registries.ENTITY_TYPE;
+			return BuiltInRegistries.ENTITY_TYPE;
 		}
 
-		public static DetachEntityType read(PacketByteBuf buf) {
-			return new DetachEntityType(buf.readString(), readId(buf, Registries.ENTITY_TYPE));
+		public static DetachEntityType read(FriendlyByteBuf buf) {
+			return new DetachEntityType(buf.readUtf(), readId(buf, BuiltInRegistries.ENTITY_TYPE));
 		}
 
 		@Override
@@ -558,20 +558,21 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 
 	}
 
-	record AttachBlockEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
+	record AttachBlockEntityType(String name,
+								 ResourceLocation id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.ATTACH_BLOCK_ENTITY_TYPE;
 		}
 
 		@Override
 		public Registry<BlockEntityType<?>> registry() {
-			return Registries.BLOCK_ENTITY_TYPE;
+			return BuiltInRegistries.BLOCK_ENTITY_TYPE;
 		}
 
-		public static AttachBlockEntityType read(PacketByteBuf buf) {
-			return new AttachBlockEntityType(buf.readString(), readId(buf, Registries.BLOCK_ENTITY_TYPE));
+		public static AttachBlockEntityType read(FriendlyByteBuf buf) {
+			return new AttachBlockEntityType(buf.readUtf(), readId(buf, BuiltInRegistries.BLOCK_ENTITY_TYPE));
 		}
 
 		@Override
@@ -581,20 +582,21 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 
 	}
 
-	record DetachBlockEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
+	record DetachBlockEntityType(String name,
+								 ResourceLocation id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.DETACH_BLOCK_ENTITY_TYPE;
 		}
 
 		@Override
 		public Registry<BlockEntityType<?>> registry() {
-			return Registries.BLOCK_ENTITY_TYPE;
+			return BuiltInRegistries.BLOCK_ENTITY_TYPE;
 		}
 
-		public static DetachBlockEntityType read(PacketByteBuf buf) {
-			return new DetachBlockEntityType(buf.readString(), readId(buf, Registries.BLOCK_ENTITY_TYPE));
+		public static DetachBlockEntityType read(FriendlyByteBuf buf) {
+			return new DetachBlockEntityType(buf.readUtf(), readId(buf, BuiltInRegistries.BLOCK_ENTITY_TYPE));
 		}
 
 		@Override
@@ -607,25 +609,25 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record FullState(ImmutableList<ExplainedRenderRegion> regions) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.FULL_STATE;
 		}
 
 		@Override
-		public void write(PacketByteBuf buf) {
+		public void write(FriendlyByteBuf buf) {
 			buf.writeVarInt(regions.size());
 			for (var ex : regions) {
-				buf.writeString(ex.name);
+				buf.writeUtf(ex.name);
 				int sizePos = buf.writerIndex();
 				buf.writeMedium(0);
 				int start = buf.writerIndex();
 				RenderRegion r = ex.reg;
 				writeRegion(buf, r);
 
-				writeTo(buf, ex.entityAttachments, (b, uuid) -> b.writeUuid(uuid));
+				writeTo(buf, ex.entityAttachments, (b, uuid) -> b.writeUUID(uuid));
 				writeTo(buf, ex.blockAttachments);
-				writeTo(buf, ex.entityTypeAttachments, (b, id) -> writeId(b, Registries.ENTITY_TYPE, id));
-				writeTo(buf, ex.beTypeAttachments, (b, id) -> writeId(b, Registries.BLOCK_ENTITY_TYPE, id));
+				writeTo(buf, ex.entityTypeAttachments, (b, id) -> writeId(b, BuiltInRegistries.ENTITY_TYPE, id));
+				writeTo(buf, ex.beTypeAttachments, (b, id) -> writeId(b, BuiltInRegistries.BLOCK_ENTITY_TYPE, id));
 
 				buf.writeBitSet(ex.getMeta());
 
@@ -637,20 +639,20 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 			}
 		}
 
-		public static FullState read(PacketByteBuf buf) {
+		public static FullState read(FriendlyByteBuf buf) {
 			ImmutableList.Builder<ExplainedRenderRegion> bldr = ImmutableList.builder();
 			int regionCount = buf.readVarInt();
 			for (int i = 0; i < regionCount; i++) {
-				String name = buf.readString();
+				String name = buf.readUtf();
 				int len = buf.readUnsignedMedium();
 				int start = buf.readerIndex();
 				RenderRegion r = readRegion(buf);
 				ExplainedRenderRegion ex = new ExplainedRenderRegion(name, r);
 
-				readTo(buf, ex.entityAttachments, b -> b.readUuid());
+				readTo(buf, ex.entityAttachments, b -> b.readUUID());
 				readTo(buf, ex.blockAttachments);
-				readTo(buf, ex.entityTypeAttachments, b -> readId(buf, Registries.ENTITY_TYPE));
-				readTo(buf, ex.beTypeAttachments, b -> readId(buf, Registries.BLOCK_ENTITY_TYPE));
+				readTo(buf, ex.entityTypeAttachments, b -> readId(buf, BuiltInRegistries.ENTITY_TYPE));
+				readTo(buf, ex.beTypeAttachments, b -> readId(buf, BuiltInRegistries.BLOCK_ENTITY_TYPE));
 
 				extension:
 				{
@@ -689,18 +691,18 @@ public sealed interface RegionSyncRequest extends CustomPayload permits InvalidC
 	record UpdateRegionMetadata(String name, BitSet meta) implements RegionSyncRequest {
 
 		@Override
-		public RequestType type() {
+		public RequestType requestType() {
 			return RequestType.UPDATE_REGION_METADATA;
 		}
 
 		@Override
-		public void write(final PacketByteBuf buf) {
-			buf.writeString(name);
+		public void write(final FriendlyByteBuf buf) {
+			buf.writeUtf(name);
 			buf.writeBitSet(meta);
 		}
 
-		public static UpdateRegionMetadata read(final PacketByteBuf buf) {
-			return new UpdateRegionMetadata(buf.readString(), buf.readBitSet());
+		public static UpdateRegionMetadata read(final FriendlyByteBuf buf) {
+			return new UpdateRegionMetadata(buf.readUtf(), buf.readBitSet());
 		}
 
 		@Override

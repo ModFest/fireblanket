@@ -1,19 +1,19 @@
 package net.modfest.fireblanket.mixin.block;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.c2s.play.UpdateCommandBlockC2SPacket;
-import net.minecraft.network.packet.c2s.play.UpdateCommandBlockMinecartC2SPacket;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ConnectedClientData;
-import net.minecraft.server.network.ServerCommonNetworkHandler;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.CommandBlockExecutor;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.BaseCommandBlock;
+import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.modfest.fireblanket.command.CommandUtils;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import net.modfest.fireblanket.util.TextUtil;
@@ -23,60 +23,60 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ServerPlayNetworkHandler.class)
-public abstract class MixinServerPlayNetworkHandler extends ServerCommonNetworkHandler {
+@Mixin(ServerGamePacketListenerImpl.class)
+public abstract class MixinServerPlayNetworkHandler extends ServerCommonPacketListenerImpl {
 	@Shadow
-	public ServerPlayerEntity player;
+	public ServerPlayer player;
 
-	public MixinServerPlayNetworkHandler(MinecraftServer server, ClientConnection connection, ConnectedClientData clientData) {
+	public MixinServerPlayNetworkHandler(MinecraftServer server, Connection connection, CommonListenerCookie clientData) {
 		super(server, connection, clientData);
 	}
 
-	@Inject(method = "onUpdateCommandBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/CommandBlockExecutor;markDirty()V"))
+	@Inject(method = "handleSetCommandBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BaseCommandBlock;onUpdated()V"))
 	private void fireblanket$markUpdate(
-		final UpdateCommandBlockC2SPacket packet,
+		final ServerboundSetCommandBlockPacket packet,
 		final CallbackInfo ci,
-		final @Local CommandBlockBlockEntity blockEntity
+		final @Local CommandBlockEntity blockEntity
 	) {
 		BlockPos blockPos = packet.getPos();
 
-		final Text message = Text.translatableWithFallback(
+		final Component message = Component.translatableWithFallback(
 			"commandsBlock.commandSetByPlayer",
 			// In case someone has an outdated Fireblanket, or is lacking it outright.
 			"[%s @ %s: %s]",
 			player.getName(),
-			TextUtil.ofLocationWithTeleport(blockEntity.getWorld(), blockPos),
+			TextUtil.ofLocationWithTeleport(blockEntity.getLevel(), blockPos),
 			packet.getCommand()
 		);
 
-		CommandUtils.sendToTeam(this.server, this.player.getCommandOutput(), message);
+		CommandUtils.sendToTeam(this.server, this.player.commandSource(), message);
 
 		if (blockEntity instanceof CommandBE cmd) {
-			cmd.fireblanket$setLastUpdate(this.player.getUuid());
+			cmd.fireblanket$setLastUpdate(this.player.getUUID());
 		}
 	}
 
 	@Inject(
-		method = "onUpdateCommandBlockMinecart",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/CommandBlockExecutor;markDirty()V")
+		method = "handleSetCommandMinecart",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BaseCommandBlock;onUpdated()V")
 	)
 	private void fireblanket$markUpdate(
-		final UpdateCommandBlockMinecartC2SPacket packet,
+		final ServerboundSetCommandMinecartPacket packet,
 		final CallbackInfo ci,
-		final @Local CommandBlockExecutor executor
+		final @Local BaseCommandBlock executor
 	) {
-		final int entityId = ((AccessorUpdateCommandBlockMinecartC2SPacket) packet).getEntityId();
-		final Entity entity = this.player.getWorld().getEntityById(entityId);
+		final int entityId = ((AccessorUpdateCommandBlockMinecartC2SPacket) packet).getEntity();
+		final Entity entity = this.player.level().getEntity(entityId);
 
-		final Text entityName;
+		final Component entityName;
 
 		if (entity == null) {
-			entityName = Text.of("??? Missing entity: " + entityId);
+			entityName = Component.nullToEmpty("??? Missing entity: " + entityId);
 		} else {
 			entityName = TextUtil.ofEntityWithTeleport(entity);
 		}
 
-		final Text message = Text.translatableWithFallback(
+		final Component message = Component.translatableWithFallback(
 			"commandsBlock.commandSetByPlayer",
 			// In case someone has an outdated Fireblanket, or is lacking it outright.
 			"[%s @ %s: %s]",
@@ -85,8 +85,8 @@ public abstract class MixinServerPlayNetworkHandler extends ServerCommonNetworkH
 			packet.getCommand()
 		);
 
-		CommandUtils.sendToTeam(this.server, this.player.getCommandOutput(), message);
+		CommandUtils.sendToTeam(this.server, this.player.commandSource(), message);
 
-		((CommandBE) executor).fireblanket$setLastUpdate(this.player.getUuid());
+		((CommandBE) executor).fireblanket$setLastUpdate(this.player.getUUID());
 	}
 }

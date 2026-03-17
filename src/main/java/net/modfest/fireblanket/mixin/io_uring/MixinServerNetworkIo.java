@@ -4,7 +4,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.incubator.channel.uring.IOUring;
 import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
-import net.minecraft.server.ServerNetworkIo;
+import net.minecraft.server.network.ServerConnectionListener;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.mixinsupport.IOUringSupport;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin(ServerNetworkIo.class)
+@Mixin(ServerConnectionListener.class)
 public class MixinServerNetworkIo {
 
-	@ModifyConstant(constant = @Constant(stringValue = "Using epoll channel type"), method = "bind")
+	@ModifyConstant(constant = @Constant(stringValue = "Using epoll channel type"), method = "startTcpServerListener")
 	public String fireblanket$fixLogMessage(String orig) {
 		if (IOUringSupport.ENABLED) {
 			if (IOUring.isAvailable()) {
@@ -29,7 +29,7 @@ public class MixinServerNetworkIo {
 		return orig;
 	}
 
-	@ModifyVariable(at = @At(value = "INVOKE", target = "org/slf4j/Logger.info(Ljava/lang/String;)V", ordinal = 0), method = "bind", ordinal = 0)
+	@ModifyVariable(at = @At(value = "INVOKE", target = "org/slf4j/Logger.info(Ljava/lang/String;)V", ordinal = 0), method = "startTcpServerListener", ordinal = 0)
 	public Class<? extends ServerSocketChannel> fireblanket$useIoUringClass(Class<? extends ServerSocketChannel> orig) {
 		if (IOUringSupport.ENABLED && IOUring.isAvailable()) {
 			return IOUringServerSocketChannel.class;
@@ -37,7 +37,7 @@ public class MixinServerNetworkIo {
 		return orig;
 	}
 
-	@ModifyVariable(at = @At(value = "INVOKE", target = "org/slf4j/Logger.info(Ljava/lang/String;)V", ordinal = 0), method = "bind", ordinal = 0)
+	@ModifyVariable(at = @At(value = "INVOKE", target = "org/slf4j/Logger.info(Ljava/lang/String;)V", ordinal = 0), method = "startTcpServerListener", ordinal = 0)
 	public EventLoopGroup fireblanket$useIoUringGroup(EventLoopGroup orig) {
 		if (IOUringSupport.ENABLED && IOUring.isAvailable()) {
 			return IOUringSupport.CHANNEL.get();

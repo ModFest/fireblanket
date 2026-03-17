@@ -1,23 +1,23 @@
 package net.modfest.fireblanket.util;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.vehicle.CommandBlockMinecartEntity;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandOutput;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.CommandBlockExecutor;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.world.level.BaseCommandBlock;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.modfest.fireblanket.command.CommandUtils;
 import net.modfest.fireblanket.mixin.accessor.ServerCommandSourceAccessor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
@@ -32,28 +32,28 @@ import java.util.UUID;
 public final class TextUtil {
 	// These are not truly immutable (i.e. can be casted to MutableText); guard as such.
 
-	private static final Text warning = Text.literal("⚠").setStyle(
+	private static final Component warning = Component.literal("⚠").setStyle(
 		Style.EMPTY
-			.withColor(Formatting.YELLOW)
-			.withHoverEvent(new HoverEvent.ShowText(Text.translatable("fireblanket.warning.tooltip")))
+			.withColor(ChatFormatting.YELLOW)
+			.withHoverEvent(new HoverEvent.ShowText(Component.translatable("fireblanket.warning.tooltip")))
 	);
 
-	private static final Text server = Text.empty()
-		.append(Text.literal("\uD83D\uDDA5️").formatted(Formatting.GRAY))
+	private static final Component server = Component.empty()
+		.append(Component.literal("\uD83D\uDDA5️").withStyle(ChatFormatting.GRAY))
 		.append(" Server");
 
-	private static final Text spoofed = Text.literal("\uD83C\uDFAD").setStyle(
+	private static final Component spoofed = Component.literal("\uD83C\uDFAD").setStyle(
 		Style.EMPTY
-			.withColor(Formatting.YELLOW)
-			.withHoverEvent(new HoverEvent.ShowText(Text.translatable("fireblanket.spoofed.tooltip")))
+			.withColor(ChatFormatting.YELLOW)
+			.withHoverEvent(new HoverEvent.ShowText(Component.translatable("fireblanket.spoofed.tooltip")))
 	);
 
-	public static final Text unknown = Text.translatableWithFallback("fireblanket.unknown", "???")
-		.formatted(Formatting.GRAY, Formatting.ITALIC);
+	public static final Component unknown = Component.translatableWithFallback("fireblanket.unknown", "???")
+		.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
 
-	public static Text getEntityName(final Entity entity) {
-		Text name = entity.getDisplayName();
+	public static Component getEntityName(final Entity entity) {
+		Component name = entity.getDisplayName();
 		if (name != null) {
 			return name;
 		}
@@ -61,17 +61,17 @@ public final class TextUtil {
 	}
 
 	public static ClickEvent toClickToTeleport(final Entity entity) {
-		return new ClickEvent.SuggestCommand("/tp " + entity.getUuidAsString());
+		return new ClickEvent.SuggestCommand("/tp " + entity.getStringUUID());
 	}
 
-	public static MutableText ofEntityWithTeleport(final Entity entity) {
+	public static MutableComponent ofEntityWithTeleport(final Entity entity) {
 		final ClickEvent clickEvent = toClickToTeleport(entity);
 
-		return getEntityName(entity).copy().styled(style -> style.withClickEvent(clickEvent));
+		return getEntityName(entity).copy().withStyle(style -> style.withClickEvent(clickEvent));
 	}
 
-	public static MutableText ofLocationWithTeleport(final World world, final Vec3i pos) {
-		final MutableText text = ofLocation(pos);
+	public static MutableComponent ofLocationWithTeleport(final Level world, final Vec3i pos) {
+		final MutableComponent text = ofLocation(pos);
 
 		if (world == null) {
 			return text;
@@ -80,46 +80,46 @@ public final class TextUtil {
 		return ofTextWithTeleport(text, world, pos);
 	}
 
-	public static MutableText ofLocation(final Vec3i pos) {
-		return Text.translatable("chat.coordinates", pos.getX(), pos.getY(), pos.getZ());
+	public static MutableComponent ofLocation(final Vec3i pos) {
+		return Component.translatable("chat.coordinates", pos.getX(), pos.getY(), pos.getZ());
 	}
 
-	public static ClickEvent toClickToTeleport(final World world, final Vec3i pos) {
+	public static ClickEvent toClickToTeleport(final Level world, final Vec3i pos) {
 		return new ClickEvent.SuggestCommand(
-			"/execute in " + world.getRegistryKey().getValue() + " run tp @s " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
+			"/execute in " + world.dimension().location() + " run tp @s " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
 		);
 	}
 
-	public static MutableText ofTextWithTeleport(final MutableText text, final World world, final Vec3i pos) {
-		return text.styled(style -> style.withClickEvent(toClickToTeleport(world, pos)));
+	public static MutableComponent ofTextWithTeleport(final MutableComponent text, final Level world, final Vec3i pos) {
+		return text.withStyle(style -> style.withClickEvent(toClickToTeleport(world, pos)));
 	}
 
-	public static Text ofCommandBlock(final CommandBlockExecutor executor) {
-		if (executor instanceof CommandBlockMinecartEntity.CommandExecutor minecart) {
+	public static Component ofCommandBlock(final BaseCommandBlock executor) {
+		if (executor instanceof MinecartCommandBlock.MinecartCommandBase minecart) {
 			return ofEntityWithTeleport(minecart.getMinecart())
-				.styled(style -> style.withHoverEvent(executor.getName().getStyle().getHoverEvent()));
+				.withStyle(style -> style.withHoverEvent(executor.getName().getStyle().getHoverEvent()));
 		}
 
-		return ofTextWithTeleport(executor.getName().copy(), executor.getWorld(), BlockPos.ofFloored(executor.getPos()));
+		return ofTextWithTeleport(executor.getName().copy(), executor.getLevel(), BlockPos.containing(executor.getPosition()));
 	}
 
-	public static Text ofRunner(final ServerCommandSource source) {
-		final Text rawDisplayName = Objects.requireNonNullElse(
+	public static Component ofRunner(final CommandSourceStack source) {
+		final Component rawDisplayName = Objects.requireNonNullElse(
 			((ServerCommandSourceAccessor) source).fireblanket$getRawDisplayName(),
 			unknown
 		);
 
-		final Text runner = getRunnerText(source);
+		final Component runner = getRunnerText(source);
 
 		if (source.getEntity() == null || CommandUtils.isRunner(source)) {
-			return Objects.requireNonNullElseGet(runner, () -> Text.empty()
+			return Objects.requireNonNullElseGet(runner, () -> Component.empty()
 				.append(warning)
 				.append(" ")
 				.append(rawDisplayName)
 			);
 		}
 
-		final MutableText stub = Text.empty()
+		final MutableComponent stub = Component.empty()
 			// Hardcoding spoofed to avoid translations from hiding the fact.
 			.append(spoofed)
 			.append(" ");
@@ -132,7 +132,7 @@ public final class TextUtil {
 				.append("\"");
 		}
 
-		return stub.append(Text.translatableWithFallback(
+		return stub.append(Component.translatableWithFallback(
 			"fireblanket.spoofed",
 			"%s \"%s\"",
 			runner,
@@ -147,12 +147,12 @@ public final class TextUtil {
 	 * @return Player display name if it exists, otherwise provided fallback name.
 	 * @see #getRawPlayerName(MinecraftServer, UUID, String)
 	 */
-	public static Text getPlayerName(final MinecraftServer server, final @Nullable UUID uuid, String name) {
+	public static Component getPlayerName(final MinecraftServer server, final @Nullable UUID uuid, String name) {
 		if (uuid == null) {
-			return Text.of(name);
+			return Component.nullToEmpty(name);
 		}
 
-		final ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+		final ServerPlayer player = server.getPlayerList().getPlayer(uuid);
 
 		if (player != null) {
 			// This probably can lie, but this is likely the most helpful.
@@ -165,10 +165,10 @@ public final class TextUtil {
 			name = result;
 		}
 
-		final HoverEvent.EntityContent content = new HoverEvent.EntityContent(EntityType.PLAYER, uuid, Text.of(name));
+		final HoverEvent.EntityTooltipInfo content = new HoverEvent.EntityTooltipInfo(EntityType.PLAYER, uuid, Component.nullToEmpty(name));
 		final HoverEvent event = new HoverEvent.ShowEntity(content);
 
-		return Text.literal(name).setStyle(Style.EMPTY.withHoverEvent(event));
+		return Component.literal(name).setStyle(Style.EMPTY.withHoverEvent(event));
 	}
 
 	/**
@@ -211,36 +211,36 @@ public final class TextUtil {
 		);
 	}
 
-	public static HoverEvent toBlameHover(final CommandBlockExecutor executor) {
+	public static HoverEvent toBlameHover(final BaseCommandBlock executor) {
 		final CommandBE cbe = (CommandBE) executor;
 
-		final Text name = getCommandBlockName(executor);
+		final Component name = getCommandBlockName(executor);
 
-		final Text creator = Text.literal(TextUtil.getRawPlayerName(
-			executor.getWorld().getServer(),
+		final Component creator = Component.literal(TextUtil.getRawPlayerName(
+			executor.getLevel().getServer(),
 			cbe.fireblanket$getOwner(),
 			"Unknown"
-		)).formatted(Formatting.YELLOW);
+		)).withStyle(ChatFormatting.YELLOW);
 
-		final Text creatorUuid = Text.literal(TextUtil.ofUuidWithNoDashes(cbe.fireblanket$getOwner()))
-			.formatted(Formatting.GRAY, Formatting.ITALIC);
+		final Component creatorUuid = Component.literal(TextUtil.ofUuidWithNoDashes(cbe.fireblanket$getOwner()))
+			.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
-		final Text updater = Text.literal(TextUtil.getRawPlayerName(
-			executor.getWorld().getServer(),
+		final Component updater = Component.literal(TextUtil.getRawPlayerName(
+			executor.getLevel().getServer(),
 			cbe.fireblanket$getLastUpdate(),
 			"Unknown"
-		)).formatted(Formatting.YELLOW);
+		)).withStyle(ChatFormatting.YELLOW);
 
-		final Text updaterUuid = Text.literal(TextUtil.ofUuidWithNoDashes(cbe.fireblanket$getLastUpdate()))
-			.formatted(Formatting.GRAY, Formatting.ITALIC);
+		final Component updaterUuid = Component.literal(TextUtil.ofUuidWithNoDashes(cbe.fireblanket$getLastUpdate()))
+			.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
-		final Text location = TextUtil.ofLocation(BlockPos.ofFloored(executor.getPos()))
-			.formatted(Formatting.YELLOW);
+		final Component location = TextUtil.ofLocation(BlockPos.containing(executor.getPosition()))
+			.withStyle(ChatFormatting.YELLOW);
 
-		final Text world = Text.literal(executor.getWorld().getRegistryKey().getValue().toString())
-			.formatted(Formatting.GRAY, Formatting.ITALIC);
+		final Component world = Component.literal(executor.getLevel().dimension().location().toString())
+			.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
-		final Text hover = Text.translatableWithFallback(
+		final Component hover = Component.translatableWithFallback(
 			"fireblanket.command.blame",
 			"%s\nC: %s - %s\nU: %s - %s\n@: %s @ %s",
 			name,
@@ -255,28 +255,28 @@ public final class TextUtil {
 		return new HoverEvent.ShowText(hover);
 	}
 
-	private static Text getCommandBlockName(final CommandBlockExecutor executor) {
-		if (executor instanceof CommandBlockMinecartEntity.CommandExecutor minecart) {
-			return minecart.getMinecart().getType().getName();
+	private static Component getCommandBlockName(final BaseCommandBlock executor) {
+		if (executor instanceof MinecartCommandBlock.MinecartCommandBase minecart) {
+			return minecart.getMinecart().getType().getDescription();
 		}
 
 		try {
 			final BlockEntity blockEntity = ReflectionUtil.getHost(executor, BlockEntity.class);
 
 			if (blockEntity != null) {
-				return blockEntity.getCachedState().getBlock().getName();
+				return blockEntity.getBlockState().getBlock().getName();
 			} else {
-				return Text.of(executor.getClass().getName());
+				return Component.nullToEmpty(executor.getClass().getName());
 			}
 		} catch (IllegalAccessException e) {
-			return Text.of(e.getMessage());
+			return Component.nullToEmpty(e.getMessage());
 		}
 	}
 
-	private static Text getRunnerText(final ServerCommandSource source) {
-		final CommandOutput output = ((ServerCommandSourceAccessor) source).getOutput();
+	private static Component getRunnerText(final CommandSourceStack source) {
+		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
-		if (output == null || output == CommandOutput.DUMMY) {
+		if (output == null || output == CommandSource.NULL) {
 			return null;
 		}
 
@@ -284,11 +284,11 @@ public final class TextUtil {
 			return server;
 		}
 
-		if (output instanceof CommandBlockExecutor executor) {
+		if (output instanceof BaseCommandBlock executor) {
 			return ofCommandBlock(executor);
 		}
 
-		final ServerPlayerEntity player = CommandUtils.getPlayerRunner(source);
+		final ServerPlayer player = CommandUtils.getPlayerRunner(source);
 
 		if (player != null) {
 			return ofEntityWithTeleport(player);
@@ -299,7 +299,7 @@ public final class TextUtil {
 		final String name = clazz.getSimpleName();
 
 		// Require a strict name check
-		return Text.literal(name.isBlank() ? clazz.toString() : name)
-			.styled(style -> style.withHoverEvent(new HoverEvent.ShowText(Text.of(clazz.getName()))));
+		return Component.literal(name.isBlank() ? clazz.toString() : name)
+			.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.nullToEmpty(clazz.getName()))));
 	}
 }

@@ -3,15 +3,15 @@ package net.modfest.fireblanket.command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.registry.Registries;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.world.CommandBlockExecutor;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.BaseCommandBlock;
 import net.modfest.fireblanket.compat.roles.Roles;
 
 import java.util.ArrayList;
@@ -19,25 +19,25 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.literal;
 
 public class DumpCommand {
-	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
+	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("dump")
-			.requires(source -> source.hasPermissionLevel(4) || Roles.isOrganizer(source.getPlayer()))
+			.requires(source -> source.hasPermission(4) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("command-blocks")
 				.executes(ctx -> {
 					final MinecraftServer server = ctx.getSource().getServer();
 
 					final CmdFindReplaceCommand.Counter counter = CmdFindReplaceCommand.iterate(server, (text, cbe) -> {
-							final CommandBlockExecutor executor = cbe.fireblanket$getCommandExecutor();
+						final BaseCommandBlock executor = cbe.fireblanket$getCommandExecutor();
 
-							final Optional<Text> result = CmdFindReplaceCommand.toText(server, text, cbe, executor.getCommand());
+						final Optional<Component> result = CmdFindReplaceCommand.toText(server, text, cbe, executor.getCommand());
 
 							if (result.isEmpty()) {
 								return 0;
 							}
-							ctx.getSource().sendFeedback(result::get, false);
+						ctx.getSource().sendSuccess(result::get, false);
 							return 1;
 						}
 					);
@@ -48,8 +48,8 @@ public class DumpCommand {
 			)
 			.then(literal("entity-types")
 				.executes(server -> {
-					for (EntityType<?> type : Registries.ENTITY_TYPE) {
-						server.getSource().sendFeedback(() -> Text.literal(Registries.ENTITY_TYPE.getId(type) + " alwaysUpdateVelocity=" + type.alwaysUpdateVelocity() + " updateDistance(blocks)=" + (type.getMaxTrackDistance() * 16) + " tickInterval=" + type.getTrackTickInterval()), false);
+					for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+						server.getSource().sendSuccess(() -> Component.literal(BuiltInRegistries.ENTITY_TYPE.getKey(type) + " alwaysUpdateVelocity=" + type.trackDeltas() + " updateDistance(blocks)=" + (type.clientTrackingRange() * 16) + " tickInterval=" + type.updateInterval()), false);
 					}
 
 					return 0;
@@ -59,12 +59,12 @@ public class DumpCommand {
 				.executes(cmd -> {
 					MinecraftServer server = cmd.getSource().getServer();
 					server.submit(() -> {
-						for (ServerWorld world : server.getWorlds()) {
-							cmd.getSource().sendFeedback(() -> Text.literal("----- Dumping types for dimension " + world.getDimensionEntry().getKey().get().getValue() + " --------"), false);
+						for (ServerLevel world : server.getAllLevels()) {
+							cmd.getSource().sendSuccess(() -> Component.literal("----- Dumping types for dimension " + world.dimensionTypeRegistration().unwrapKey().get().location() + " --------"), false);
 
 							Object2IntOpenHashMap<EntityType<?>> map = new Object2IntOpenHashMap<>();
 
-							for (Entity entity : world.iterateEntities()) {
+							for (Entity entity : world.getAllEntities()) {
 								int r = map.getOrDefault(entity.getType(), 0);
 								map.put(entity.getType(), r + 1);
 							}
@@ -74,9 +74,9 @@ public class DumpCommand {
 							Collections.reverse(entries);
 							for (Object2IntMap.Entry<EntityType<?>> e : entries) {
 								EntityType<?> key = e.getKey();
-								String string = Registries.ENTITY_TYPE.getId(key).toString();
+								String string = BuiltInRegistries.ENTITY_TYPE.getKey(key).toString();
 
-								cmd.getSource().sendFeedback(() -> Text.literal(string + " -> " + e.getIntValue()), false);
+								cmd.getSource().sendSuccess(() -> Component.literal(string + " -> " + e.getIntValue()), false);
 							}
 						}
 					});

@@ -1,12 +1,12 @@
 package net.modfest.fireblanket.mixin.block;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.CommandBlockExecutor;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.world.level.BaseCommandBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.CommandBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,45 +14,45 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.UUID;
 
-@Mixin(CommandBlockBlockEntity.class)
+@Mixin(CommandBlockEntity.class)
 public abstract class MixinCommandBlockBlockEntity extends BlockEntity implements CommandBE {
 	@Shadow
 	@Final
-	private CommandBlockExecutor commandExecutor;
+	private BaseCommandBlock commandBlock;
 
 	public MixinCommandBlockBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 	}
 
 	@Override
-	public CommandBlockExecutor fireblanket$getCommandExecutor() {
-		return this.commandExecutor;
+	public BaseCommandBlock fireblanket$getCommandExecutor() {
+		return this.commandBlock;
 	}
 
 	@Override
 	public void fireblanket$setOwner(UUID uuid) {
-		((CommandBE) commandExecutor).fireblanket$setOwner(uuid);
-		markDirty();
+		((CommandBE) commandBlock).fireblanket$setOwner(uuid);
+		setChanged();
 	}
 
 	@Override
 	public void fireblanket$setLastUpdate(UUID uuid) {
-		((CommandBE) commandExecutor).fireblanket$setLastUpdate(uuid);
-		markDirty();
+		((CommandBE) commandBlock).fireblanket$setLastUpdate(uuid);
+		setChanged();
 	}
 
 	@Override
 	public UUID fireblanket$getOwner() {
-		return ((CommandBE) commandExecutor).fireblanket$getOwner();
+		return ((CommandBE) commandBlock).fireblanket$getOwner();
 	}
 
 	@Override
 	public UUID fireblanket$getLastUpdate() {
-		return ((CommandBE) commandExecutor).fireblanket$getLastUpdate();
+		return ((CommandBE) commandBlock).fireblanket$getLastUpdate();
 	}
 
 	@Override
 	public HoverEvent fireblanket$getBlame() {
-		return ((CommandBE) commandExecutor).fireblanket$getBlame();
+		return ((CommandBE) commandBlock).fireblanket$getBlame();
 	}
 }

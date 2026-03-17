@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixin.stack;
 
-import net.minecraft.component.MergedComponentMap;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.component.PatchedDataComponentMap;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 import net.modfest.fireblanket.mixinsupport.IdStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -17,11 +17,11 @@ public class MixinItemStack implements IdStack {
 	private int fireblanket$id = 0;
 
 	@Inject(
-		method = "<init>(Lnet/minecraft/item/ItemConvertible;ILnet/minecraft/component/MergedComponentMap;)V",
+		method = "<init>(Lnet/minecraft/world/level/ItemLike;ILnet/minecraft/core/component/PatchedDataComponentMap;)V",
 		at = @At("TAIL")
 	)
-	private void fireblanket$initFull(ItemConvertible item, int count, MergedComponentMap components, CallbackInfo ci) {
-		fireblanket$id = Registries.ITEM.getRawId(item.asItem());
+	private void fireblanket$initFull(ItemLike item, int count, PatchedDataComponentMap components, CallbackInfo ci) {
+		fireblanket$id = BuiltInRegistries.ITEM.getId(item.asItem());
 	}
 
 	@Override

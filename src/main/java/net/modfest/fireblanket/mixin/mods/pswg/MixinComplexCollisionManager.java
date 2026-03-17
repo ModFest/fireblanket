@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixin.mods.pswg;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -17,7 +17,7 @@ public class MixinComplexCollisionManager {
 	 * @author Una
 	 */
 	@Overwrite
-	public static Optional<Vec3d> adjustMovementForCollisions(Entity entity, Vec3d currentMovement) {
+	public static Optional<Vec3> adjustMovementForCollisions(Entity entity, Vec3 currentMovement) {
 		return Optional.empty();
 	}
 

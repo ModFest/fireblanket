@@ -2,31 +2,25 @@ package net.modfest.fireblanket.world;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.util.Uuids;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
-public class RepeatingBlockState extends PersistentState {
+public class RepeatingBlockState extends SavedData {
 	private final Set<UUID> uuids = new HashSet<>();
 
 	public static Codec<RepeatingBlockState> CODEC = RecordCodecBuilder.create(
 		instance -> instance.group(
-			Uuids.SET_CODEC.fieldOf("uuids").forGetter(state -> state.uuids)
+			UUIDUtil.CODEC_SET.fieldOf("uuids").forGetter(state -> state.uuids)
 		).apply(instance, RepeatingBlockState::new)
 	);
 
 	public RepeatingBlockState() {
-		this.markDirty();
+		this.setDirty();
 	}
 
 	public RepeatingBlockState(Set<UUID> uuids) {
@@ -37,11 +31,11 @@ public class RepeatingBlockState extends PersistentState {
 		return this.uuids.add(uuid);
 	}
 
-	public static PersistentStateType<RepeatingBlockState> TYPE = new PersistentStateType<>(
+	public static SavedDataType<RepeatingBlockState> TYPE = new SavedDataType<>(
 		"fireblanket:repeating_command_block_placed", RepeatingBlockState::new, CODEC, null
 	);
 
-	public static PersistentStateType<RepeatingBlockState> getType() {
+	public static SavedDataType<RepeatingBlockState> getType() {
 		return TYPE;
 	}
 }

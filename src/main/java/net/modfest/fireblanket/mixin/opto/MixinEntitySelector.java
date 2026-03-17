@@ -3,15 +3,15 @@ package net.modfest.fireblanket.mixin.opto;
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.command.EntitySelector;
-import net.minecraft.entity.Entity;
-import net.minecraft.predicate.NumberRange;
-import net.minecraft.resource.featuretoggle.FeatureSet;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.Util;
+import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.flag.FeatureFlagSet;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 @Mixin(EntitySelector.class)
 public abstract class MixinEntitySelector {
 	@Shadow
-	protected abstract void checkSourcePermission(ServerCommandSource source) throws CommandSyntaxException;
+	protected abstract void checkPermissions(CommandSourceStack source) throws CommandSyntaxException;
 
 	@Shadow
 	@Final
@@ -36,82 +36,82 @@ public abstract class MixinEntitySelector {
 
 	@Shadow
 	@Final
-	private @Nullable UUID uuid;
+	private @Nullable UUID entityUUID;
 
 	@Shadow
 	@Final
-	private Function<Vec3d, Vec3d> positionOffset;
+	private Function<Vec3, Vec3> position;
 
 	@Shadow
-	protected abstract Predicate<Entity> getPositionPredicate(Vec3d pos, @Nullable Box box, @Nullable FeatureSet enabledFeatures);
-
-	@Shadow
-	@Final
-	private boolean senderOnly;
-
-	@Shadow
-	protected abstract int getAppendLimit();
-
-	@Shadow
-	public abstract boolean isLocalWorldOnly();
-
-	@Shadow
-	protected abstract <T extends Entity> List<T> getEntities(Vec3d pos, List<T> entities);
+	protected abstract Predicate<Entity> getPredicate(Vec3 pos, @Nullable AABB box, @Nullable FeatureFlagSet enabledFeatures);
 
 	@Shadow
 	@Final
-	private NumberRange.DoubleRange distance;
+	private boolean currentEntity;
+
+	@Shadow
+	protected abstract int getResultLimit();
+
+	@Shadow
+	public abstract boolean isWorldLimited();
+
+	@Shadow
+	protected abstract <T extends Entity> List<T> sortAndLimit(Vec3 pos, List<T> entities);
 
 	@Shadow
 	@Final
-	private @Nullable Box box;
+	private MinMaxBounds.Doubles range;
+
+	@Shadow
+	@Final
+	private @Nullable AABB aabb;
 
 	@Shadow
 	@Nullable
-	protected abstract Box getOffsetBox(Vec3d offset);
+	protected abstract AABB getAbsoluteAabb(Vec3 offset);
 
 	@Shadow
 	@Final
-	private List<Predicate<Entity>> predicates;
+	private List<Predicate<Entity>> contextFreePredicates;
 
 	/**
 	 * @author Jasmine
 	 * @reason Always predicate on distance and d(x|y|z) *before* checking the NBT, or any other predicate.
 	 */
 	@Overwrite
-	public List<ServerPlayerEntity> getPlayers(ServerCommandSource source) throws CommandSyntaxException {
-		this.checkSourcePermission(source);
+	public List<ServerPlayer> findPlayers(CommandSourceStack source) throws CommandSyntaxException {
+		this.checkPermissions(source);
 		if (this.playerName != null) {
-			ServerPlayerEntity serverPlayerEntity = source.getServer().getPlayerManager().getPlayer(this.playerName);
+			ServerPlayer serverPlayerEntity = source.getServer().getPlayerList().getPlayerByName(this.playerName);
 			return serverPlayerEntity == null ? Collections.emptyList() : Lists.newArrayList(serverPlayerEntity);
-		} else if (this.uuid != null) {
-			ServerPlayerEntity serverPlayerEntity = source.getServer().getPlayerManager().getPlayer(this.uuid);
+		} else if (this.entityUUID != null) {
+			ServerPlayer serverPlayerEntity = source.getServer().getPlayerList().getPlayer(this.entityUUID);
 			return serverPlayerEntity == null ? Collections.emptyList() : Lists.newArrayList(serverPlayerEntity);
 		} else {
-			Vec3d pos = this.positionOffset.apply(source.getPosition());
-			Box box = this.getOffsetBox(pos);
-			Predicate<Entity> predicate = this.getPositionPredicate(pos, box, null);
-			if (this.senderOnly) {
-				if (source.getEntity() instanceof ServerPlayerEntity serverPlayerEntity2 && predicate.test(serverPlayerEntity2)) {
+			Vec3 pos = this.position.apply(source.getPosition());
+			AABB box = this.getAbsoluteAabb(pos);
+			Predicate<Entity> predicate = this.getPredicate(pos, box, null);
+			if (this.currentEntity) {
+				if (source.getEntity() instanceof ServerPlayer serverPlayerEntity2 && predicate.test(serverPlayerEntity2)) {
 					return Lists.newArrayList(serverPlayerEntity2);
 				}
 
 				return Collections.emptyList();
 			} else {
-				int i = this.getAppendLimit();
-				List<ServerPlayerEntity> list;
-				if (this.isLocalWorldOnly()) {
+				int i = this.getResultLimit();
+				List<ServerPlayer> list;
+				if (this.isWorldLimited()) {
 					// The change is here: Get players with distance predicate first, move onto base predicate later.
 					predicate = getPositionOnlyPredicate(pos, box, null);
 
-					Predicate<Entity> basePredicate = Util.allOf(this.predicates);
+					Predicate<Entity> basePredicate = Util.allOf(this.contextFreePredicates);
 
-					list = source.getWorld().getPlayers(predicate, i);
+					list = source.getLevel().getPlayers(predicate, i);
 					list.removeIf(basePredicate.negate());
 				} else {
 					list = Lists.newArrayList();
 
-					for (ServerPlayerEntity serverPlayerEntity3 : source.getServer().getPlayerManager().getPlayerList()) {
+					for (ServerPlayer serverPlayerEntity3 : source.getServer().getPlayerList().getPlayers()) {
 						if (predicate.test(serverPlayerEntity3)) {
 							list.add(serverPlayerEntity3);
 							if (list.size() >= i) {
@@ -121,29 +121,29 @@ public abstract class MixinEntitySelector {
 					}
 				}
 
-				return this.getEntities(pos, list);
+				return this.sortAndLimit(pos, list);
 			}
 		}
 	}
 
-	private Predicate<Entity> getPositionOnlyPredicate(Vec3d pos) {
+	private Predicate<Entity> getPositionOnlyPredicate(Vec3 pos) {
 		Predicate<Entity> predicate = e -> true;
-		if (this.box != null) {
-			Box box = this.box.offset(pos);
+		if (this.aabb != null) {
+			AABB box = this.aabb.move(pos);
 			predicate = predicate.and(entity -> box.intersects(entity.getBoundingBox()));
 		}
 
-		if (!this.distance.isDummy()) {
-			predicate = predicate.and(entity -> this.distance.testSqrt(entity.squaredDistanceTo(pos)));
+		if (!this.range.isAny()) {
+			predicate = predicate.and(entity -> this.range.matchesSqr(entity.distanceToSqr(pos)));
 		}
 
 		return predicate;
 	}
 
-	private Predicate<Entity> getPositionOnlyPredicate(Vec3d pos, @Nullable Box box, @Nullable FeatureSet enabledFeatures) {
+	private Predicate<Entity> getPositionOnlyPredicate(Vec3 pos, @Nullable AABB box, @Nullable FeatureFlagSet enabledFeatures) {
 		boolean bl = enabledFeatures != null;
 		boolean bl2 = box != null;
-		boolean bl3 = !this.distance.isDummy();
+		boolean bl3 = !this.range.isAny();
 		int i = (bl ? 1 : 0) + (bl2 ? 1 : 0) + (bl3 ? 1 : 0);
 		List<Predicate<Entity>> list;
 		if (i == 0) {
@@ -159,7 +159,7 @@ public abstract class MixinEntitySelector {
 			}
 
 			if (bl3) {
-				list2.add(entity -> this.distance.testSqrt(entity.squaredDistanceTo(pos)));
+				list2.add(entity -> this.range.matchesSqr(entity.distanceToSqr(pos)));
 			}
 
 			list = list2;

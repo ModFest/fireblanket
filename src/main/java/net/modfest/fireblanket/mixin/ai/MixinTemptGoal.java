@@ -1,6 +1,6 @@
 package net.modfest.fireblanket.mixin.ai;
 
-import net.minecraft.entity.ai.goal.TemptGoal;
+import net.minecraft.world.entity.ai.goal.TemptGoal;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -11,7 +11,7 @@ public class MixinTemptGoal {
 	 * @reason Hey, at least it's better than injecting unconditionally at head.
 	 */
 	@Overwrite
-	public boolean canStart() {
+	public boolean canUse() {
 		return false;
 	}
 }

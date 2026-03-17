@@ -2,19 +2,19 @@ package net.modfest.fireblanket.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.entity.Entity;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.CommandBlockExecutor;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.BaseCommandBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixin.accessor.CommandBlockExecutorAccessor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
@@ -28,8 +28,8 @@ import java.util.function.ToIntBiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public final class CmdFindReplaceCommand {
 
@@ -39,10 +39,10 @@ public final class CmdFindReplaceCommand {
 		"Replaced %s occurrences across %s blocks"
 	};
 
-	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
+	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("commandblock")
 			.then(literal("sed")
-				.requires(source -> source.hasPermissionLevel(4) && Roles.isNetadmin(source.getPlayer()))
+				.requires(source -> source.hasPermission(4) && Roles.isNetadmin(source.getPlayer()))
 				.then(argument("regex", StringArgumentType.string())
 					.then(argument("replacement", StringArgumentType.string())
 						.executes(ctx -> {
@@ -57,7 +57,7 @@ public final class CmdFindReplaceCommand {
 							);
 
 							if (count.matches() == 0) {
-								throw CommandUtils.GENERIC_EXCEPTION.create(Text.literal("No command blocks matched the regex"));
+								throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("No command blocks matched the regex"));
 							} else {
 								int resultIndex;
 								if (count.blocks() == 1) {
@@ -66,7 +66,7 @@ public final class CmdFindReplaceCommand {
 									resultIndex = 2;
 								}
 
-								ctx.getSource().sendFeedback(() -> Text.translatableWithFallback(
+								ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(
 									"fireblanket.commands.command.sed.result." + resultIndex,
 									sed[resultIndex],
 									count.matches(),
@@ -84,7 +84,7 @@ public final class CmdFindReplaceCommand {
 		// grep just needs org, not netadmin
 		base.then(literal("commandblock")
 			.then(literal("grep")
-				.requires(source -> source.hasPermissionLevel(4) && Roles.isOrganizer(source.getPlayer()))
+				.requires(source -> source.hasPermission(4) && Roles.isOrganizer(source.getPlayer()))
 				.then(argument("regex", StringArgumentType.string())
 					.executes(ctx -> {
 						Pattern p = Pattern.compile(StringArgumentType.getString(ctx, "regex"));
@@ -92,15 +92,15 @@ public final class CmdFindReplaceCommand {
 						final MinecraftServer server = ctx.getSource().getServer();
 
 						final Counter count = iterate(server, (text, cbe) -> {
-							final Optional<Text> result = find(server, p, text, cbe);
+							final Optional<Component> result = find(server, p, text, cbe);
 							if (result.isEmpty()) {
 								return 0;
 							}
-							ctx.getSource().sendFeedback(result::get, false);
+							ctx.getSource().sendSuccess(result::get, false);
 							return 1;
 						});
 
-						ctx.getSource().sendFeedback(() -> Text.translatableWithFallback(
+						ctx.getSource().sendSuccess(() -> Component.translatableWithFallback(
 							"fireblanket.commands.command.grep.result",
 							"Found %s matches.",
 							count.matches()
@@ -113,13 +113,13 @@ public final class CmdFindReplaceCommand {
 		);
 	}
 
-	static Counter iterate(final MinecraftServer server, final ToIntBiFunction<Text, CommandBE> function) {
+	static Counter iterate(final MinecraftServer server, final ToIntBiFunction<Component, CommandBE> function) {
 		int blocks = 0;
 		int matches = 0;
 
-		for (final ServerWorld world : server.getWorlds()) {
-			for (ChunkHolder holder : world.getChunkManager().chunkLoadingManager.entryIterator()) {
-				WorldChunk chunk = holder.getWorldChunk();
+		for (final ServerLevel world : server.getAllLevels()) {
+			for (ChunkHolder holder : world.getChunkSource().chunkMap.getChunks()) {
+				LevelChunk chunk = holder.getTickingChunk();
 				if (chunk == null) {
 					continue;
 				}
@@ -130,13 +130,13 @@ public final class CmdFindReplaceCommand {
 						if (count > 0) {
 							blocks++;
 							matches += count;
-							e.getValue().markDirty();
+							e.getValue().setChanged();
 						}
 					}
 				}
 			}
 
-			for (Entity entity : world.iterateEntities()) {
+			for (Entity entity : world.getAllEntities()) {
 				if (entity instanceof CommandBE cbe) {
 					final int count = function.applyAsInt(ExecutorUtils.toBlame(entity), cbe);
 					if (count > 0) {
@@ -153,7 +153,7 @@ public final class CmdFindReplaceCommand {
 	private static int replace(final StringBuilder sb, final Pattern p, final String replacement, final CommandBE cbe) {
 		int matches = 0;
 		sb.setLength(0);
-		CommandBlockExecutor executor = cbe.fireblanket$getCommandExecutor();
+		BaseCommandBlock executor = cbe.fireblanket$getCommandExecutor();
 		String cmd = executor.getCommand();
 		Matcher m = p.matcher(cmd);
 		while (m.find()) {
@@ -163,15 +163,15 @@ public final class CmdFindReplaceCommand {
 		m.appendTail(sb);
 		if (matches != 0) {
 			executor.setCommand(sb.toString());
-			executor.markDirty();
+			executor.onUpdated();
 		}
 		return matches;
 	}
 
-	private static Optional<Text> find(
+	private static Optional<Component> find(
 		final MinecraftServer server,
 		final Pattern p,
-		final Text name,
+		final Component name,
 		final CommandBE cbe
 	) {
 		String cmd = cbe.fireblanket$getCommandExecutor().getCommand();
@@ -181,53 +181,53 @@ public final class CmdFindReplaceCommand {
 			return Optional.empty();
 		}
 
-		String newCmd = m.replaceAll(result -> Formatting.GOLD + result.group() + Formatting.RESET);
+		String newCmd = m.replaceAll(result -> ChatFormatting.GOLD + result.group() + ChatFormatting.RESET);
 
 		return toText(server, name, cbe, newCmd);
 	}
 
-	static Optional<Text> toText(
+	static Optional<Component> toText(
 		final MinecraftServer server,
-		final Text name,
+		final Component name,
 		final CommandBE cbe,
 		final String command
 	) {
 		UUID owner = cbe.fireblanket$getOwner();
 		UUID lastUpdate = cbe.fireblanket$getLastUpdate();
 
-		final CommandBlockExecutor executor = cbe.fireblanket$getCommandExecutor();
+		final BaseCommandBlock executor = cbe.fireblanket$getCommandExecutor();
 
-		Text ownerName = TextUtil.getPlayerName(server, owner, "Unknown")
-			.copy().formatted(Formatting.YELLOW);
-		Text commandText = Text.literal(command).formatted(Formatting.GRAY)
-			.styled(style -> style.withHoverEvent(new HoverEvent.ShowText(executor.getLastOutput())));
+		Component ownerName = TextUtil.getPlayerName(server, owner, "Unknown")
+			.copy().withStyle(ChatFormatting.YELLOW);
+		Component commandText = Component.literal(command).withStyle(ChatFormatting.GRAY)
+			.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(executor.getLastOutput())));
 
-		final Text lastExecuted;
+		final Component lastExecuted;
 
 		final long lastExecution = ((CommandBlockExecutorAccessor) executor).getLastExecution();
 
 		if (lastExecution == -1) {
-			lastExecuted = TextUtil.unknown.copy().formatted(Formatting.GRAY);
+			lastExecuted = TextUtil.unknown.copy().withStyle(ChatFormatting.GRAY);
 		} else {
-			final long ticks = executor.getWorld().getTime() - lastExecution;
+			final long ticks = executor.getLevel().getGameTime() - lastExecution;
 
-			final Formatting formatting;
+			final ChatFormatting formatting;
 			if (ticks == 0) {
-				formatting = Formatting.RED;
+				formatting = ChatFormatting.RED;
 			} else if (ticks <= 20) {
-				formatting = Formatting.GOLD;
+				formatting = ChatFormatting.GOLD;
 			} else if (ticks <= 200) {
-				formatting = Formatting.YELLOW;
+				formatting = ChatFormatting.YELLOW;
 			} else {
-				formatting = Formatting.GREEN;
+				formatting = ChatFormatting.GREEN;
 			}
 
 			lastExecuted = ExecutorUtils.buildDuration(ticks)
-				.formatted(formatting);
+				.withStyle(formatting);
 		}
 
 		if (Objects.equals(owner, lastUpdate)) {
-			return Optional.of(Text.translatableWithFallback(
+			return Optional.of(Component.translatableWithFallback(
 				"fireblanket.commands.command.grep.entry.same",
 				"[%s] [%s] [%s]: %s",
 				name,
@@ -237,10 +237,10 @@ public final class CmdFindReplaceCommand {
 			));
 		}
 
-		Text lastUpdateName = TextUtil.getPlayerName(server, lastUpdate, "Unknown")
-			.copy().formatted(Formatting.YELLOW);
+		Component lastUpdateName = TextUtil.getPlayerName(server, lastUpdate, "Unknown")
+			.copy().withStyle(ChatFormatting.YELLOW);
 
-		return Optional.of(Text.translatableWithFallback(
+		return Optional.of(Component.translatableWithFallback(
 			"fireblanket.commands.command.grep.entry",
 			"[%s] [%s / %s] [%s]: %s",
 			name,

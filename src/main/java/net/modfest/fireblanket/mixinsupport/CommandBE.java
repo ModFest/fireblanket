@@ -1,12 +1,12 @@
 package net.modfest.fireblanket.mixinsupport;
 
-import net.minecraft.text.HoverEvent;
-import net.minecraft.world.CommandBlockExecutor;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.world.level.BaseCommandBlock;
 
 import java.util.UUID;
 
 public interface CommandBE {
-	CommandBlockExecutor fireblanket$getCommandExecutor();
+	BaseCommandBlock fireblanket$getCommandExecutor();
 
 	void fireblanket$setOwner(UUID uuid);
 

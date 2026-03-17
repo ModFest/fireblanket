@@ -4,10 +4,10 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.context.CommandContextBuilder;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.modfest.fireblanket.FireblanketConstants;
 import net.modfest.fireblanket.command.CommandUtils;
 import net.modfest.fireblanket.config.ConfigSpecs;
@@ -27,7 +27,7 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 
 
-@Mixin(CommandManager.class)
+@Mixin(Commands.class)
 public class MixinCommandManager {
 	@Shadow
 	@Final
@@ -39,20 +39,20 @@ public class MixinCommandManager {
 	 *
 	 * @author Luna (Awakened-Redstone)
 	 */
-	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/command/CommandManager;callWithContext(Lnet/minecraft/server/command/ServerCommandSource;Ljava/util/function/Consumer;)V", shift = At.Shift.BEFORE), method = "execute")
-	private void logPlayerCommands(ParseResults<ServerCommandSource> parseResults, String command, CallbackInfo ci) {
+	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/commands/Commands;executeCommandInContext(Lnet/minecraft/commands/CommandSourceStack;Ljava/util/function/Consumer;)V", shift = At.Shift.BEFORE), method = "performCommand")
+	private void logPlayerCommands(ParseResults<CommandSourceStack> parseResults, String command, CallbackInfo ci) {
 		if (!FireblanketConfig.get(ConfigSpecs.LOG_PLAYER_COMMANDS)) return;
 
-		CommandContextBuilder<ServerCommandSource> context = parseResults.getContext();
-		ServerCommandSource source = context.getSource();
-		if (!source.isExecutedByPlayer()) return;
+		CommandContextBuilder<CommandSourceStack> context = parseResults.getContext();
+		CommandSourceStack source = context.getSource();
+		if (!source.isPlayer()) return;
 
 		String baseCommand = CommandUtils.findSourceNode(context.getNodes().getFirst().getNode()).getName();
 		if (FireblanketConfig.get(ConfigSpecs.IGNORED_COMMAND_LOGS).contains(baseCommand)) {
 			return;
 		}
 
-		Text message = Text.translatable("chat.type.admin", TextUtil.ofRunner(source), Text.literal("/" + command));
+		Component message = Component.translatable("chat.type.admin", TextUtil.ofRunner(source), Component.literal("/" + command));
 
 		CommandUtils.sendToTeam(source, message);
 
@@ -62,8 +62,8 @@ public class MixinCommandManager {
 		);
 	}
 
-	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/command/ServerCommandSource;sendError(Lnet/minecraft/text/Text;)V", ordinal = 0), method = "execute")
-	private void logCommandErrors(ParseResults<ServerCommandSource> parseResults, String command, CallbackInfo ci, @Local Exception exception) {
+	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/commands/CommandSourceStack;sendFailure(Lnet/minecraft/network/chat/Component;)V", ordinal = 0), method = "performCommand")
+	private void logCommandErrors(ParseResults<CommandSourceStack> parseResults, String command, CallbackInfo ci, @Local Exception exception) {
 		if (FireblanketConfig.get(ConfigSpecs.LOG_COMMAND_ERRORS)) {
 			LOGGER.error("'/{}' threw an exception", command, exception);
 		}
@@ -73,9 +73,9 @@ public class MixinCommandManager {
 	 * Transforms the given command source and command string into a log entry.
 	 */
 	@Unique
-	private static String toLog(final ServerCommandSource source, final String command) {
+	private static String toLog(final CommandSourceStack source, final String command) {
 		final GameProfile sourceProfile = source.getPlayer().getGameProfile();
-		final ServerPlayerEntity runner = CommandUtils.getPlayerRunner(source);
+		final ServerPlayer runner = CommandUtils.getPlayerRunner(source);
 		final String time = FireblanketConstants.SIMPLE_TIME_FORMATTER.format(LocalDateTime.now());
 
 		if (runner == source.getEntity()) {
@@ -91,7 +91,7 @@ public class MixinCommandManager {
 			return MessageFormat.format("[{0}] [\0{1}\0 \uD83C\uDFAD \0{2}\0:{3}]: /{4}\n",
 				time,
 				// FIXME:
-				source.getName().replace('\0', '�'),
+				source.getTextName().replace('\0', '�'),
 				sourceProfile.getName().replace('\0', '�'),
 				sourceProfile.getId(),
 				command

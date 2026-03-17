@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.stacksmash;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.util.StringRepresentable;
 import org.slf4j.Logger;
 
 import java.lang.StackWalker.StackFrame;
@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * @author Ampflower
  **/
-public enum TraceLevel implements StringIdentifiable {
+public enum TraceLevel implements StringRepresentable {
 	/**
 	 * Disabled, no-op.
 	 */
@@ -173,7 +173,7 @@ public enum TraceLevel implements StringIdentifiable {
 	}
 
 	@Override
-	public String asString() {
+	public String getSerializedName() {
 		return brigadierName;
 	}
 

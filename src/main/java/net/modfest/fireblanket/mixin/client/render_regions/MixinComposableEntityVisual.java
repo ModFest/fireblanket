@@ -1,15 +1,7 @@
 package net.modfest.fireblanket.mixin.client.render_regions;
 
-//import dev.engine_room.flywheel.api.visualization.VisualizationContext;
-//import dev.engine_room.vanillin.compose.ConfiguredElement;
-//import dev.engine_room.vanillin.compose.VisualizationPredicate;
-import net.minecraft.entity.Entity;
-import net.modfest.fireblanket.FireblanketClient;
-import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Pseudo
 @Mixin(targets = "dev.engine_room.vanillin.compose.ComposableEntityVisual")

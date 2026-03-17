@@ -1,26 +1,9 @@
 package net.modfest.fireblanket.mixin.client.color;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
-import net.minecraft.client.render.item.tint.TintSource;
-import net.minecraft.client.render.item.tint.TintSourceTypes;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.collection.IdList;
-import net.modfest.fireblanket.mixinsupport.ColorStack;
-import net.modfest.fireblanket.mixinsupport.IdStack;
-import net.modfest.fireblanket.util.Box;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.client.color.item.ItemTintSources;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(TintSourceTypes.class)
+@Mixin(ItemTintSources.class)
 public class MixinItemColors {
 //	@Shadow
 //	@Final

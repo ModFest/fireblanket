@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixin.block;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.vehicle.AbstractMinecartEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.level.Level;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,11 +16,11 @@ import java.util.UUID;
 /**
  * @author Ampflower
  **/
-@Mixin(AbstractMinecartEntity.class)
+@Mixin(AbstractMinecart.class)
 public class MixinAbstractMinecartEntity {
 
 	@Inject(
-		method = "create",
+		method = "createMinecart",
 		at = @At(
 			value = "INVOKE",
 			target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V",
@@ -28,16 +28,16 @@ public class MixinAbstractMinecartEntity {
 		),
 		slice = @Slice(from = @At(
 			value = "INVOKE",
-			target = "Lnet/minecraft/entity/EntityType;copier(Lnet/minecraft/world/World;Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/LivingEntity;)Ljava/util/function/Consumer;"
+			target = "Lnet/minecraft/world/entity/EntityType;createDefaultStackConfig(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/LivingEntity;)Ljava/util/function/Consumer;"
 		))
 	)
 	private static void fireblanket$onCreateMinecart(
-		final CallbackInfoReturnable<AbstractMinecartEntity> ci,
-		final @Local(argsOnly = true) World world,
-		final @Local(argsOnly = true) PlayerEntity player,
-		final @Local AbstractMinecartEntity minecartEntity
+		final CallbackInfoReturnable<AbstractMinecart> ci,
+		final @Local(argsOnly = true) Level world,
+		final @Local(argsOnly = true) Player player,
+		final @Local AbstractMinecart minecartEntity
 	) {
-		if (world.isClient) {
+		if (world.isClientSide) {
 			return;
 		}
 
@@ -49,7 +49,7 @@ public class MixinAbstractMinecartEntity {
 		//  Currently opting to clear the last set if player's unknown.
 		UUID uuid = null;
 		if (player != null) {
-			uuid = player.getUuid();
+			uuid = player.getUUID();
 		}
 
 		cbe.fireblanket$setOwner(uuid);

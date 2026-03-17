@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixin.client.be_masking;
 
-import net.minecraft.client.render.chunk.ChunkBuilder;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(ChunkBuilder.BuiltChunk.RebuildTask.class)
+@Mixin(SectionRenderDispatcher.RenderSection.RebuildTask.class)
 public class MixinRebuildTask {
 	// todo
 //	@Inject(method = "addBlockEntity", at = @At("TAIL"))

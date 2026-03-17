@@ -1,6 +1,6 @@
 package net.modfest.fireblanket.mixin.client.pose_stack;
 
-import net.minecraft.client.util.math.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.modfest.fireblanket.stacksmash.Guard;
 import net.modfest.fireblanket.stacksmash.GuardProxy;
 import net.modfest.fireblanket.stacksmash.StackTracer;
@@ -20,29 +20,29 @@ import java.util.NoSuchElementException;
 /**
  * @author Ampflower
  **/
-@Mixin(MatrixStack.class)
+@Mixin(PoseStack.class)
 public class MixinMatrixStack implements TracerProxy, GuardProxy {
 	@Unique
 	private final StackTracer tracer = new StackTracer();
 
 	@Shadow
 	@Final
-	private List<MatrixStack.Entry> stack;
+	private List<PoseStack.Pose> poses;
 
 	@Shadow
-	private int stackDepth;
+	private int lastIndex;
 
 	@Shadow
-	private void loadIdentity() {
+	private void setIdentity() {
 		throw new AssertionError();
 	}
 
-	@Inject(method = "push", at = @At("TAIL"))
+	@Inject(method = "pushPose", at = @At("TAIL"))
 	private void onPush(CallbackInfo ci) {
 		this.tracer.fireblanket$push(2);
 	}
 
-	@Inject(method = "pop", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "popPose", at = @At("HEAD"), cancellable = true)
 	private void onPop(CallbackInfo ci) {
 		if (this.tracer.fireblanket$pop(2)) {
 			return;
@@ -62,15 +62,15 @@ public class MixinMatrixStack implements TracerProxy, GuardProxy {
 			throw new NoSuchElementException();
 		}
 
-		final int index = this.stackDepth;
+		final int index = this.lastIndex;
 		if (index == 0) {
-			this.loadIdentity();
+			this.setIdentity();
 			return;
 		}
 
-		final AccessorMatrixStackEntry head = (AccessorMatrixStackEntry) (Object) this.stack.get(index);
+		final AccessorMatrixStackEntry head = (AccessorMatrixStackEntry) (Object) this.poses.get(index);
 
-		head.invokeCopy(this.stack.get(index - 1));
+		head.invokeSet(this.poses.get(index - 1));
 	}
 
 	@Override
@@ -85,10 +85,10 @@ public class MixinMatrixStack implements TracerProxy, GuardProxy {
 
 	@Override
 	public void fireblanket$guard$popStack(final int delta) {
-		if ((this.stackDepth -= delta) < 0) {
+		if ((this.lastIndex -= delta) < 0) {
 			// Defensive set in case the stack gets reused despite the illegal state.
-			this.stackDepth = 0;
-			this.loadIdentity();
+			this.lastIndex = 0;
+			this.setIdentity();
 			throw new NoSuchElementException("tried to over-pop: " + delta);
 		}
 	}

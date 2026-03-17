@@ -2,7 +2,7 @@ package net.modfest.fireblanket.compat.roles;
 
 import dev.gegy.roles.api.PlayerRolesApi;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class PlayerRolesCompat {
 	public static boolean isLoaded = false;
@@ -13,19 +13,19 @@ public class PlayerRolesCompat {
 		}
 	}
 
-	public static boolean isNetadmin(PlayerEntity player) {
+	public static boolean isNetadmin(Player player) {
 		return is(player, "netadmin");
 	}
 
-	public static boolean isOrganizer(PlayerEntity player) {
+	public static boolean isOrganizer(Player player) {
 		return is(player, "organizer") || is(player, "team");
 	}
 
-	public static boolean isBuilder(PlayerEntity player) {
+	public static boolean isBuilder(Player player) {
 		return is(player, "builder") || is(player, "fixer") || is(player, "participant");
 	}
 
-	private static boolean is(PlayerEntity player, String id) {
+	private static boolean is(Player player, String id) {
 		return PlayerRolesApi.lookup().byPlayer(player).stream().anyMatch(r -> r.getId().equals(id));
 	}
 }

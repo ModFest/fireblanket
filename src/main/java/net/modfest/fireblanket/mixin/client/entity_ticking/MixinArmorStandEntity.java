@@ -1,17 +1,14 @@
 package net.modfest.fireblanket.mixin.client.entity_ticking;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.world.World;
-import net.modfest.fireblanket.world.entity.EntityTick;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ArmorStandEntity.class)
+@Mixin(ArmorStand.class)
 public abstract class MixinArmorStandEntity extends LivingEntity {
-	protected MixinArmorStandEntity(EntityType<? extends LivingEntity> entityType, World world) {
+	protected MixinArmorStandEntity(EntityType<? extends LivingEntity> entityType, Level world) {
 		super(entityType, world);
 	}
 

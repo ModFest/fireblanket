@@ -1,22 +1,22 @@
 package net.modfest.fireblanket.mixin.gamemode_selection;
 
-import net.minecraft.client.gui.screen.GameModeSwitcherScreen;
-import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.gui.screens.debug.GameModeSwitcherScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.modfest.fireblanket.util.CanSwitchGameMode;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * @see CanSwitchGameMode#canSwitchGameMode(ClientPlayerEntity)
+ * @see CanSwitchGameMode#canSwitchGameMode(LocalPlayer)
  */
 @Mixin(GameModeSwitcherScreen.class)
 public class MixinSelectionScreen {
 	/**
-	 * Replaces a {@link net.minecraft.entity.Entity#hasPermissionLevel(int)} check with the one in {@link CanSwitchGameMode}.
+	 * Replaces a {@link net.minecraft.world.entity.Entity#hasPermissionLevel(int)} check with the one in {@link CanSwitchGameMode}.
 	 */
-	@Redirect(method = "apply(Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/client/gui/screen/GameModeSwitcherScreen$GameModeSelection;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerEntity;hasPermissionLevel(I)Z"))
-	private static boolean redirectPermissionCheck(ClientPlayerEntity instance, int i) {
+	@Redirect(method = "switchToHoveredGameMode(Lnet/minecraft/client/Minecraft;Lnet/minecraft/client/gui/screens/debug/GameModeSwitcherScreen$GameModeIcon;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;hasPermissions(I)Z"))
+	private static boolean redirectPermissionCheck(LocalPlayer instance, int i) {
 		return CanSwitchGameMode.canSwitchGameMode(instance);
 	}
 }

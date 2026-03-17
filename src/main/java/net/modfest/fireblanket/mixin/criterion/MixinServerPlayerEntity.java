@@ -1,15 +1,11 @@
 package net.modfest.fireblanket.mixin.criterion;
 
-import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.advancement.criterion.TickCriterion;
-import net.minecraft.block.BlockState;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ServerPlayerEntity.class)
+@Mixin(ServerPlayer.class)
 public class MixinServerPlayerEntity {
 	/**
 	 * @author jaskarth
@@ -17,6 +13,6 @@ public class MixinServerPlayerEntity {
 	 * @reason It's not worth it to call the criterion.
 	 */
 	@Overwrite
-	public void onBlockCollision(BlockState state) {
+	public void onInsideBlock(BlockState state) {
 	}
 }

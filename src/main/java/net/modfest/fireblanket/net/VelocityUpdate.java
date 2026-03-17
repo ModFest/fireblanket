@@ -1,15 +1,15 @@
 package net.modfest.fireblanket.net;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.modfest.fireblanket.mixin.accessor.EntityVelocityUpdateS2CPacketAccessor;
 
 public record VelocityUpdate(int entity, boolean allZero, int velocityX, int velocityY,	int velocityZ) {
-	public static final PacketCodec<RegistryByteBuf, VelocityUpdate> CODEC = new PacketCodec<>() {
+	public static final StreamCodec<RegistryFriendlyByteBuf, VelocityUpdate> CODEC = new StreamCodec<>() {
 
 		@Override
-		public void encode(RegistryByteBuf buf, VelocityUpdate value) {
+		public void encode(RegistryFriendlyByteBuf buf, VelocityUpdate value) {
 			if (value.entity > (1 << 30)) {
 				throw new IllegalStateException("Optimized entity velocity encoding failed (Do we have 1 billion entities???)");
 			}
@@ -25,7 +25,7 @@ public record VelocityUpdate(int entity, boolean allZero, int velocityX, int vel
 		}
 
 		@Override
-		public VelocityUpdate decode(RegistryByteBuf buf) {
+		public VelocityUpdate decode(RegistryFriendlyByteBuf buf) {
 			int packed = buf.readVarInt();
 			boolean allZero = (packed & 1) == 1;
 			int id = packed >>> 1;
@@ -42,12 +42,12 @@ public record VelocityUpdate(int entity, boolean allZero, int velocityX, int vel
 		}
 	};
 
-	public static VelocityUpdate of(EntityVelocityUpdateS2CPacket packet) {
+	public static VelocityUpdate of(ClientboundSetEntityMotionPacket packet) {
 		EntityVelocityUpdateS2CPacketAccessor acc = (EntityVelocityUpdateS2CPacketAccessor) packet;
 		int vx = acc.vx();
 		int vy = acc.vy();
 		int vz = acc.vz();
-		return new VelocityUpdate(packet.getEntityId(), vx == 0 && vy == 0 && vz == 0, vx, vy, vz);
+		return new VelocityUpdate(packet.getId(), vx == 0 && vy == 0 && vz == 0, vx, vy, vz);
 	}
 
 	public double getVelocityX() {

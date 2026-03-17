@@ -3,7 +3,6 @@ package net.modfest.fireblanket;
 import com.bawnorton.mixinsquared.api.MixinCanceller;
 import com.bawnorton.mixinsquared.canceller.MixinCancellerRegistrar;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.Bootstrap;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import org.objectweb.asm.tree.ClassNode;
@@ -47,10 +46,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			if ("net.frozenblock.lib.spotting_icons.mixin.client.LevelRendererMixin".equals(mixinClassName)) {
 				return true;
 			}
-			if ("io.wispforest.affinity.mixin.MapStateMixin".equals(mixinClassName)) {
-				return true;
-			}
-			return false;
+			return "io.wispforest.affinity.mixin.MapStateMixin".equals(mixinClassName);
 		}
 	}
 

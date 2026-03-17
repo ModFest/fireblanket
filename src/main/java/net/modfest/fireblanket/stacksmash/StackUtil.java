@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.stacksmash;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.util.math.MatrixStack;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import org.jetbrains.annotations.CheckReturnValue;
@@ -45,7 +45,7 @@ public final class StackUtil {
 	 * Vanilla or Fireblanket classes that are known to wrap push/pop.
 	 */
 	private static final Set<Class<?>> knownSkippableClasses = Set.of(
-		MatrixStack.class
+		PoseStack.class
 	);
 
 	/**

@@ -1,11 +1,12 @@
 package net.modfest.fireblanket.mixinsupport;
 
-import net.minecraft.network.packet.s2c.play.ChunkData;
-import net.minecraft.network.packet.s2c.play.LightData;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
+import net.minecraft.network.protocol.game.ClientboundLightUpdatePacketData;
 
 public interface CacheableChunk {
 
-	record CachedChunkPacketData(ChunkData chunkData, LightData lightData) {
+	record CachedChunkPacketData(ClientboundLevelChunkPacketData chunkData,
+								 ClientboundLightUpdatePacketData lightData) {
 	}
 
 	CachedChunkPacketData fireblanket$getCachedPacket();

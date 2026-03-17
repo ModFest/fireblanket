@@ -2,57 +2,57 @@ package net.modfest.fireblanket.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.argument.RegistryKeyArgumentType;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.ResourceKeyArgument;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.world.ItemBan;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public class ItemBanCommand {
-	public static void init(LiteralArgumentBuilder<ServerCommandSource> base, CommandRegistryAccess access) {
+	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("itemban")
-			.requires(source -> source.hasPermissionLevel(4) || Roles.isOrganizer(source.getPlayer()))
+			.requires(source -> source.hasPermission(4) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("list").executes(s -> execList(s.getSource())))
 			.then(literal("add")
 				.then(argument("value", StringArgumentType.greedyString())
 					// Delegate suggestions to the registry argument type
-					.suggests(RegistryKeyArgumentType.registryKey(RegistryKeys.ITEM)::listSuggestions)
+					.suggests(ResourceKeyArgument.key(Registries.ITEM)::listSuggestions)
 					.executes(s -> execAdd(s.getSource(), StringArgumentType.getString(s, "value")))))
 			.then(literal("remove")
 				.then(
 					argument("value", StringArgumentType.greedyString())
-						.suggests((ctx, builder) -> CommandSource.suggestMatching(ItemBan.BANNED_IDS, builder))
+						.suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ItemBan.BANNED_IDS, builder))
 						.executes(s -> execRemove(s.getSource(), StringArgumentType.getString(s, "value")))
 				)
 			)
 		);
 	}
 
-	private static int execList(ServerCommandSource src) {
-		src.sendFeedback(() -> Text.literal("Currently banned items: " + ItemBan.BANNED_IDS), false);
+	private static int execList(CommandSourceStack src) {
+		src.sendSuccess(() -> Component.literal("Currently banned items: " + ItemBan.BANNED_IDS), false);
 		return 0;
 	}
 
-	private static int execAdd(ServerCommandSource src, String value) {
+	private static int execAdd(CommandSourceStack src, String value) {
 		if (ItemBan.BANNED_IDS.add(value)) {
-			src.sendFeedback(() -> Text.literal("Successfully added " + value + "."), false);
+			src.sendSuccess(() -> Component.literal("Successfully added " + value + "."), false);
 		} else {
-			src.sendError(Text.literal("Didn't add as it is already banned"));
+			src.sendFailure(Component.literal("Didn't add as it is already banned"));
 		}
 		return 0;
 	}
 
-	private static int execRemove(ServerCommandSource src, String value) {
+	private static int execRemove(CommandSourceStack src, String value) {
 		if (ItemBan.BANNED_IDS.remove(value)) {
-			src.sendFeedback(() -> Text.literal("Successfully removed " + value + "."), false);
+			src.sendSuccess(() -> Component.literal("Successfully removed " + value + "."), false);
 		} else {
-			src.sendError(Text.literal("Didn't remove as it wasn't banned"));
+			src.sendFailure(Component.literal("Didn't remove as it wasn't banned"));
 		}
 		return 0;
 	}

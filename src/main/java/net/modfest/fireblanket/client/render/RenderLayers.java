@@ -1,14 +1,5 @@
 package net.modfest.fireblanket.client.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderPhase;
-//import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.util.Identifier;
-
-import java.util.OptionalDouble;
-
 public abstract class RenderLayers{ //extends RenderLayer {
 //	public static final RenderLayer TRANSLUCENT_BROKEN_DEPTH = of(
 //		"translucent_broken_depth", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL,

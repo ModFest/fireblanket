@@ -1,12 +1,12 @@
 package net.modfest.fireblanket.world.blocks;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.HangingSignBlock;
-import net.minecraft.block.SignBlock;
-import net.minecraft.block.WallHangingSignBlock;
-import net.minecraft.block.WallSignBlock;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CeilingHangingSignBlock;
+import net.minecraft.world.level.block.StandingSignBlock;
+import net.minecraft.world.level.block.WallHangingSignBlock;
+import net.minecraft.world.level.block.WallSignBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.mixin.accessor.BlockEntityTypeAccessor;
 
@@ -15,26 +15,26 @@ import java.util.HashSet;
 public class UpdateSignBlockEntityTypes {
 	public static void apply(Block block) {
 		try {
-			if (block instanceof WallHangingSignBlock || block instanceof HangingSignBlock) {
+			if (block instanceof WallHangingSignBlock || block instanceof CeilingHangingSignBlock) {
 				BlockEntityTypeAccessor sign = (BlockEntityTypeAccessor) BlockEntityType.HANGING_SIGN;
 
-				if (!(sign.getBlocks() instanceof HashSet<Block>)) {
-					sign.setBlocks(new HashSet<>(sign.getBlocks()));
+				if (!(sign.getValidBlocks() instanceof HashSet<Block>)) {
+					sign.setValidBlocks(new HashSet<>(sign.getValidBlocks()));
 				}
 
-				sign.getBlocks().add(block);
-				Fireblanket.LOGGER.debug("Force-registered a hanging sign block entity: " + Registries.BLOCK.getId(block));
+				sign.getValidBlocks().add(block);
+				Fireblanket.LOGGER.debug("Force-registered a hanging sign block entity: " + BuiltInRegistries.BLOCK.getKey(block));
 			}
 
-			if (block instanceof SignBlock || block instanceof WallSignBlock) {
+			if (block instanceof StandingSignBlock || block instanceof WallSignBlock) {
 				BlockEntityTypeAccessor sign = (BlockEntityTypeAccessor) BlockEntityType.SIGN;
 
-				if (!(sign.getBlocks() instanceof HashSet<Block>)) {
-					sign.setBlocks(new HashSet<>(sign.getBlocks()));
+				if (!(sign.getValidBlocks() instanceof HashSet<Block>)) {
+					sign.setValidBlocks(new HashSet<>(sign.getValidBlocks()));
 				}
 
-				sign.getBlocks().add(block);
-				Fireblanket.LOGGER.debug("Force-registered a sign block entity: " + Registries.BLOCK.getId(block));
+				sign.getValidBlocks().add(block);
+				Fireblanket.LOGGER.debug("Force-registered a sign block entity: " + BuiltInRegistries.BLOCK.getKey(block));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

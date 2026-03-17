@@ -2,11 +2,11 @@ package net.modfest.fireblanket.mixin.footgun;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
-import net.minecraft.command.EntitySelector;
-import net.minecraft.command.EntitySelectorReader;
-import net.minecraft.entity.Entity;
-import net.minecraft.predicate.NumberRange;
-import net.minecraft.text.Text;
+import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.commands.arguments.selector.EntitySelectorParser;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.mixinsupport.ForceableArgument;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,24 +20,24 @@ import java.util.function.Predicate;
 /**
  * Prevents foot-gunning by using an unlimited @e selector without forcing to assure you know what you're doing
  */
-@Mixin(EntitySelectorReader.class)
+@Mixin(EntitySelectorParser.class)
 public class MixinEntitySelectorReader implements ForceableArgument {
 	@Shadow
-	private boolean includesNonPlayers;
+	private boolean includesEntities;
 	@Shadow
-	private int limit;
+	private int maxResults;
 	@Shadow
-	private NumberRange.DoubleRange distance;
+	private MinMaxBounds.Doubles distance;
 	@Shadow
-	private Double dx;
+	private Double deltaX;
 	@Shadow
-	private Double dy;
+	private Double deltaY;
 	@Shadow
-	private Double dz;
+	private Double deltaZ;
 	private boolean forced = false;
 
 	private static final DynamicCommandExceptionType LIMIT_UNFORCED = new DynamicCommandExceptionType(
-		count -> Text.stringifiedTranslatable("argument.entity.selector.limit.unforced", count)
+		count -> Component.translatableEscape("argument.entity.selector.limit.unforced", count)
 	);
 
 	@Override
@@ -50,14 +50,14 @@ public class MixinEntitySelectorReader implements ForceableArgument {
 		return forced;
 	}
 
-	@Inject(method = "read", at = @At("RETURN"))
+	@Inject(method = "parse", at = @At("RETURN"))
 	private void fireblanket$preventFootgun(CallbackInfoReturnable<EntitySelector> info) throws CommandSyntaxException {
-		if (this.includesNonPlayers
+		if (this.includesEntities
 			//main anti-footgun: don't allow someone to affect every single entity on the server at once
-			&& (this.limit > 50 && this.distance == NumberRange.DoubleRange.ANY)
-			&& (this.dx == null && this.dy == null && this.dz == null)
+			&& (this.maxResults > 50 && this.distance == MinMaxBounds.Doubles.ANY)
+			&& (this.deltaX == null && this.deltaY == null && this.deltaZ == null)
 			&& !forced) {
-			throw LIMIT_UNFORCED.create(this.limit);
+			throw LIMIT_UNFORCED.create(this.maxResults);
 		}
 	}
 

@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixin.client.timing;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.modfest.fireblanket.mixinsupport.ObservableTicks;
 import org.spongepowered.asm.mixin.Mixin;
 

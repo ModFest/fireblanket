@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixin.client.render_regions;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.FireblanketClient;
 import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 import org.spongepowered.asm.mixin.Mixin;

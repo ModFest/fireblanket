@@ -1,8 +1,8 @@
 package net.modfest.fireblanket.mixin.zstd;
 
-import net.minecraft.world.storage.ChunkCompressionFormat;
-import net.minecraft.world.storage.RegionFile;
-import net.minecraft.world.storage.StorageKey;
+import net.minecraft.world.level.chunk.storage.RegionFile;
+import net.minecraft.world.level.chunk.storage.RegionFileVersion;
+import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
 import net.modfest.fireblanket.mixinsupport.ChunkCompressionFormatExt;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,12 +20,12 @@ public class MixinRegionFile {
 	@Mutable
 	@Shadow
 	@Final
-	private ChunkCompressionFormat compressionFormat;
+	private RegionFileVersion version;
 
 	@Inject(at = @At("TAIL"),
-		method = "<init>(Lnet/minecraft/world/storage/StorageKey;Ljava/nio/file/Path;Ljava/nio/file/Path;Lnet/minecraft/world/storage/ChunkCompressionFormat;Z)V")
-	private void fireblanket$useZstd(StorageKey storageKey, Path path, Path directory, ChunkCompressionFormat compressionFormat, boolean dsync, CallbackInfo ci) {
-		ChunkCompressionFormat.exists(0); // initialize class
-		this.compressionFormat = ChunkCompressionFormatExt.ZSTD;
+		method = "<init>(Lnet/minecraft/world/level/chunk/storage/RegionStorageInfo;Ljava/nio/file/Path;Ljava/nio/file/Path;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion;Z)V")
+	private void fireblanket$useZstd(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync, CallbackInfo ci) {
+		RegionFileVersion.isValidVersion(0); // initialize class
+		this.version = ChunkCompressionFormatExt.ZSTD;
 	}
 }

@@ -1,11 +1,6 @@
 package net.modfest.fireblanket.mixin.client.color;
 
-import it.unimi.dsi.fastutil.ints.Int2IntOpenCustomHashMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-//import net.minecraft.client.color.item.ItemColorProvider;
-import net.minecraft.item.ItemStack;
-import net.modfest.fireblanket.mixinsupport.ColorStack;
-import net.modfest.fireblanket.util.Box;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(ItemStack.class)

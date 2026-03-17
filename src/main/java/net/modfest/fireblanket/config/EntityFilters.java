@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.config;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.entity.EntityType;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.mixin.accessor.EntityTypeAccessor;
 import net.modfest.fireblanket.world.entity.EntityFilter;
@@ -85,11 +85,11 @@ public class EntityFilters {
 	public static void apply() {
 		for (EntityFilter filter : FILTERS) {
 			Fireblanket.LOGGER.debug("Applying entity type filter " + filter.pattern().pattern());
-			for (EntityType<?> type : Registries.ENTITY_TYPE) {
-				Identifier id = Registries.ENTITY_TYPE.getId(type);
+			for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+				ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
 				if (filter.pattern().asMatchPredicate().test(id.toString())) {
-					((EntityTypeAccessor) type).setMaxTrackDistance(filter.trackingRangeChunks());
-					((EntityTypeAccessor) type).setTrackTickInterval(filter.tickRate());
+					((EntityTypeAccessor) type).setClientTrackingRange(filter.trackingRangeChunks());
+					((EntityTypeAccessor) type).setUpdateInterval(filter.tickRate());
 
 					if (filter.forceNoVelcityUpdate()) {
 						FORCE_VELOCITY_UPDATE_OFF.add(type);

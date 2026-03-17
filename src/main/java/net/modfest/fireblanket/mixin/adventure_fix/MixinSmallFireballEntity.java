@@ -2,15 +2,15 @@ package net.modfest.fireblanket.mixin.adventure_fix;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.projectile.AbstractFireballEntity;
-import net.minecraft.entity.projectile.SmallFireballEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.projectile.Fireball;
+import net.minecraft.world.entity.projectile.SmallFireball;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -21,18 +21,18 @@ import org.spongepowered.asm.mixin.injection.At;
  *
  * @author Ampflower
  **/
-@Mixin(SmallFireballEntity.class)
-public abstract class MixinSmallFireballEntity extends AbstractFireballEntity {
+@Mixin(SmallFireball.class)
+public abstract class MixinSmallFireballEntity extends Fireball {
 
-	public MixinSmallFireballEntity(final EntityType<? extends AbstractFireballEntity> entityType, final World world) {
+	public MixinSmallFireballEntity(final EntityType<? extends Fireball> entityType, final Level world) {
 		super(entityType, world);
 	}
 
 	@ModifyExpressionValue(
-		method = "onBlockHit",
+		method = "onHitBlock",
 		at = @At(
 			value = "INVOKE",
-			target = "Lnet/minecraft/world/World;isAir(Lnet/minecraft/util/math/BlockPos;)Z"
+			target = "Lnet/minecraft/world/level/Level;isEmptyBlock(Lnet/minecraft/core/BlockPos;)Z"
 		)
 	)
 	private boolean fireblanket$madeAccurate(
@@ -44,14 +44,14 @@ public abstract class MixinSmallFireballEntity extends AbstractFireballEntity {
 		}
 
 		// we're already past the gate, don't bother to check.
-		final ServerWorld world = (ServerWorld) this.getWorld();
+		final ServerLevel world = (ServerLevel) this.level();
 		// Annoyingly, we can't just @Local it.
 		final Entity entity = this.getOwner();
 
-		if (entity == null && !world.getGameRules().getBoolean(GameRules.DO_FIRE_TICK)) {
+		if (entity == null && !world.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
 			return false;
 		}
 
-		return !(entity instanceof ServerPlayerEntity player) || player.canModifyAt(world, blockPos);
+		return !(entity instanceof ServerPlayer player) || player.mayInteract(world, blockPos);
 	}
 }

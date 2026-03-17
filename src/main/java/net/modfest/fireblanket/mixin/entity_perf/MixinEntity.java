@@ -1,33 +1,25 @@
 package net.modfest.fireblanket.mixin.entity_perf;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityCollisionHandler;
-import net.minecraft.util.crash.CrashException;
-import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
-
-import java.util.List;
 
 @Mixin(value = Entity.class, priority = 900)
 public abstract class MixinEntity {
 	@Shadow
-	public abstract Box getBoundingBox();
+	public abstract AABB getBoundingBox();
 
 	@Shadow
 	public abstract boolean isAlive();
 
 	@Shadow
-	public abstract World getWorld();
+	public abstract Level level();
 
 	@Shadow
-	protected abstract void onBlockCollision(BlockState state);
+	protected abstract void onInsideBlock(BlockState state);
 
 	/**
 	 * @author jaskarth

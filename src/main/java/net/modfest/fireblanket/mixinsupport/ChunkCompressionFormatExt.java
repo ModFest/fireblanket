@@ -1,9 +1,9 @@
 package net.modfest.fireblanket.mixinsupport;
 
-import net.minecraft.world.storage.ChunkCompressionFormat;
+import net.minecraft.world.level.chunk.storage.RegionFileVersion;
 
 public class ChunkCompressionFormatExt {
 
-	public static ChunkCompressionFormat ZSTD;
+	public static RegionFileVersion ZSTD;
 
 }

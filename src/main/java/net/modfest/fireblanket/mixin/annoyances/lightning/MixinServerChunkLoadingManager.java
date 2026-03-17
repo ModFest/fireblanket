@@ -1,10 +1,10 @@
 package net.modfest.fireblanket.mixin.annoyances.lightning;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LightningEntity;
-import net.minecraft.server.world.ServerChunkLoadingManager;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LightningBolt;
 import net.modfest.fireblanket.Fireblanket;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,14 +16,14 @@ import org.spongepowered.asm.mixin.injection.Slice;
 /**
  * @author Ampflower
  **/
-@Mixin(ServerChunkLoadingManager.class)
+@Mixin(ChunkMap.class)
 public class MixinServerChunkLoadingManager {
 	@Shadow
 	@Final
-	ServerWorld world;
+	ServerLevel level;
 
 	@ModifyVariable(
-		method = "loadEntity",
+		method = "addEntity",
 		at = @At(
 			value = "STORE",
 			ordinal = 0
@@ -31,13 +31,13 @@ public class MixinServerChunkLoadingManager {
 		slice = @Slice(
 			from = @At(
 				value = "INVOKE",
-				target = "Lnet/minecraft/entity/EntityType;getMaxTrackDistance()I"
+				target = "Lnet/minecraft/world/entity/EntityType;clientTrackingRange()I"
 			)
 		)
 	)
 	private int modifyVariable(int input, @Local(argsOnly = true) Entity entity) {
-		if (entity instanceof LightningEntity) {
-			final int distance = this.world.getGameRules().getInt(Fireblanket.LIGHTNING_BROADCAST_RADIUS);
+		if (entity instanceof LightningBolt) {
+			final int distance = this.level.getGameRules().getInt(Fireblanket.LIGHTNING_BROADCAST_RADIUS);
 			if (distance >= 0) {
 				return distance;
 			}

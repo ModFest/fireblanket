@@ -1,12 +1,10 @@
 package net.modfest.fireblanket.world.entity;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.entity.Entity;
 
 public class EntityTick {
 	public static void minimalTick(Entity e) {
-		e.resetPosition();
+		e.setOldPosAndRot();
 	}
 
 //	public static void minimalLivingTick(LivingEntity e) {

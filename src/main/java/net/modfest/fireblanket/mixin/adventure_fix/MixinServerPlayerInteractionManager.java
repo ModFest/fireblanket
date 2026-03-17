@@ -2,44 +2,43 @@ package net.modfest.fireblanket.mixin.adventure_fix;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.world.World;
-import net.modfest.fireblanket.FireblanketConstants;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.modfest.fireblanket.mixinsupport.InteractionCheck;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin(ServerPlayerInteractionManager.class)
+@Mixin(ServerPlayerGameMode.class)
 public class MixinServerPlayerInteractionManager {
 	@WrapOperation(
-		method = "interactBlock",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;onUseWithItem(Lnet/minecraft/item/ItemStack;Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;Lnet/minecraft/util/hit/BlockHitResult;)Lnet/minecraft/util/ActionResult;")
+		method = "useItemOn",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;useItemOn(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult;")
 	)
-	private ActionResult fireblanket$filterItemBlockInteractByTag(BlockState blockState, ItemStack stack, World world, PlayerEntity player, Hand hand, BlockHitResult hitResult, Operation<ActionResult> op) {
-		if (!player.getAbilities().allowModifyWorld) {
+	private InteractionResult fireblanket$filterItemBlockInteractByTag(BlockState blockState, ItemStack stack, Level world, Player player, InteractionHand hand, BlockHitResult hitResult, Operation<InteractionResult> op) {
+		if (!player.getAbilities().mayBuild) {
 			if (InteractionCheck.preventUseItem(player, stack)) {
-				return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
+				return InteractionResult.TRY_WITH_EMPTY_HAND;
 			}
 			if (InteractionCheck.preventUseBlock(player, blockState)) {
-				return ActionResult.FAIL;
+				return InteractionResult.FAIL;
 			}
 		}
 		return op.call(blockState, stack, world, player, hand, hitResult);
 	}
 
 	@WrapOperation(
-		method = "interactBlock",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;onUse(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/hit/BlockHitResult;)Lnet/minecraft/util/ActionResult;")
+		method = "useItemOn",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;useWithoutItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult;")
 	)
-	private ActionResult fireblanket$filterBlockInteractByTag(BlockState blockState, World world, PlayerEntity player, BlockHitResult hitResult, Operation<ActionResult> op) {
-		if (!player.getAbilities().allowModifyWorld && InteractionCheck.preventUseBlock(player, blockState)) {
-			return ActionResult.FAIL;
+	private InteractionResult fireblanket$filterBlockInteractByTag(BlockState blockState, Level world, Player player, BlockHitResult hitResult, Operation<InteractionResult> op) {
+		if (!player.getAbilities().mayBuild && InteractionCheck.preventUseBlock(player, blockState)) {
+			return InteractionResult.FAIL;
 		}
 		return op.call(blockState, world, player, hitResult);
 	}

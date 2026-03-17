@@ -1,11 +1,11 @@
 package net.modfest.fireblanket.world;
 
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Nullable;
 
 public interface CachedCompoundBE {
 	@Nullable
-	NbtCompound fireblanket$getCachedCompound();
+	CompoundTag fireblanket$getCachedCompound();
 
-	void fireblanket$setCachedCompound(NbtCompound nbt);
+	void fireblanket$setCachedCompound(CompoundTag nbt);
 }

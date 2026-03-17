@@ -1,18 +1,18 @@
 package net.modfest.fireblanket.net;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-public record CommandBlockPacket() implements CustomPayload {
-	public static final CustomPayload.Id<CommandBlockPacket> ID =
-		new CustomPayload.Id<>(Identifier.of("fireblanket", "place_command_block"));
+public record CommandBlockPacket() implements CustomPacketPayload {
+	public static final CustomPacketPayload.Type<CommandBlockPacket> ID =
+		new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("fireblanket", "place_command_block"));
 	public static final CommandBlockPacket INST = new CommandBlockPacket();
-	public static final PacketCodec<RegistryByteBuf, CommandBlockPacket> CODEC = PacketCodec.unit(INST);
+	public static final StreamCodec<RegistryFriendlyByteBuf, CommandBlockPacket> CODEC = StreamCodec.unit(INST);
 
 	@Override
-	public Id<? extends CustomPayload> getId() {
+	public Type<? extends CustomPacketPayload> type() {
 		return ID;
 	}
 }

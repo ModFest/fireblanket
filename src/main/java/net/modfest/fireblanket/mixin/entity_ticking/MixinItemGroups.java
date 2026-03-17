@@ -1,51 +1,51 @@
 package net.modfest.fireblanket.mixin.entity_ticking;
 
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ItemGroups.class)
+@Mixin(CreativeModeTabs.class)
 public class MixinItemGroups {
-	@Inject(method = "method_51311(Lnet/minecraft/item/ItemGroup$DisplayContext;Lnet/minecraft/item/ItemGroup$Entries;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemGroup$Entries;add(Lnet/minecraft/item/ItemConvertible;)V", ordinal = 8))
-	private static void fireblanket$addHammers(ItemGroup.DisplayContext ctx, ItemGroup.Entries entries, CallbackInfo ci) {
+	@Inject(method = "method_51311(Lnet/minecraft/world/item/CreativeModeTab$ItemDisplayParameters;Lnet/minecraft/world/item/CreativeModeTab$Output;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/CreativeModeTab$Output;accept(Lnet/minecraft/world/level/ItemLike;)V", ordinal = 8))
+	private static void fireblanket$addHammers(CreativeModeTab.ItemDisplayParameters ctx, CreativeModeTab.Output entries, CallbackInfo ci) {
 		ItemStack noai = new ItemStack(Items.DEBUG_STICK);
-		noai.apply(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT, n -> {
-			NbtCompound nbt = new NbtCompound();
+		noai.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoAI", true);
-			return NbtComponent.of(nbt);
+			return CustomData.of(nbt);
 		});
-		entries.add(noai);
+		entries.accept(noai);
 
 		ItemStack nograv = new ItemStack(Items.DEBUG_STICK);
-		nograv.apply(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT, n -> {
-			NbtCompound nbt = new NbtCompound();
+		nograv.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoGravity", true);
-			return NbtComponent.of(nbt);
+			return CustomData.of(nbt);
 		});
-		entries.add(nograv);
+		entries.accept(nograv);
 
 		ItemStack nomov = new ItemStack(Items.DEBUG_STICK);
-		nomov.apply(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT, n -> {
-			NbtCompound nbt = new NbtCompound();
+		nomov.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoMovement", true);
-			return NbtComponent.of(nbt);
+			return CustomData.of(nbt);
 		});
-		entries.add(nomov);
+		entries.accept(nomov);
 
 		ItemStack noVehicle = new ItemStack(Items.DEBUG_STICK);
-		noVehicle.apply(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT, n -> {
-			NbtCompound nbt = new NbtCompound();
+		noVehicle.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoVehicleEntering", true);
-			return NbtComponent.of(nbt);
+			return CustomData.of(nbt);
 		});
-		entries.add(noVehicle);
+		entries.accept(noVehicle);
 	}
 }

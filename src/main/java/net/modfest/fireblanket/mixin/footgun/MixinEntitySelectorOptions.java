@@ -1,8 +1,8 @@
 package net.modfest.fireblanket.mixin.footgun;
 
-import net.minecraft.command.EntitySelectorOptions;
-import net.minecraft.command.EntitySelectorReader;
-import net.minecraft.text.Text;
+import net.minecraft.commands.arguments.selector.EntitySelectorParser;
+import net.minecraft.commands.arguments.selector.options.EntitySelectorOptions;
+import net.minecraft.network.chat.Component;
 import net.modfest.fireblanket.mixinsupport.ForceableArgument;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 @Mixin(EntitySelectorOptions.class)
 public abstract class MixinEntitySelectorOptions {
 	@Shadow
-	private static void putOption(String id, EntitySelectorOptions.SelectorHandler handler, Predicate<EntitySelectorReader> condition, Text description) {
+	private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
 		throw new IllegalStateException("Unimplemented mixin");
 	}
 
@@ -26,13 +26,13 @@ public abstract class MixinEntitySelectorOptions {
 	@Final
 	private static Map OPTIONS;
 
-	@Inject(method = "register", at = @At("TAIL"))
+	@Inject(method = "bootStrap", at = @At("TAIL"))
 	private static void injectForce(CallbackInfo info) {
 		if (!OPTIONS.containsKey("force")) {
-			putOption("force", reader -> {
-				reader.setLocalWorldOnly();
+			register("force", reader -> {
+				reader.setWorldLimited();
 				((ForceableArgument) reader).setForced(reader.getReader().readBoolean());
-			}, reader -> !((ForceableArgument) reader).isForced(), Text.translatable("argument.entity.options.force.description"));
+			}, reader -> !((ForceableArgument) reader).isForced(), Component.translatable("argument.entity.options.force.description"));
 		}
 	}
 }

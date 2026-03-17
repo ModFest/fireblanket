@@ -1,17 +1,19 @@
 package net.modfest.fireblanket.mixin.opto;
 
-import net.minecraft.item.map.MapState;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(MapState.class)
+@Mixin(MapItemSavedData.class)
 public class MixinMapState {
-	@Shadow @Final private boolean showDecorations;
+	@Shadow
+	@Final
+	private boolean trackingPosition;
 
 	public MixinMapState() {}
 
 	{
-		this.showDecorations = false;
+		this.trackingPosition = false;
 	}
 }

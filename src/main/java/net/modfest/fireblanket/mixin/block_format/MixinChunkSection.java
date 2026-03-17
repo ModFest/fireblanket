@@ -1,14 +1,14 @@
 package net.modfest.fireblanket.mixin.block_format;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.crash.CrashException;
-import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.PalettedContainer;
+import net.minecraft.CrashReport;
+import net.minecraft.CrashReportCategory;
+import net.minecraft.ReportedException;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainer;
+import net.minecraft.world.level.material.FluidState;
 import net.modfest.fireblanket.world.blocks.FlatBlockstateArray;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * setting. As many minecraft structures rely on the palette, when the palette is queried, for saving or networking,
  * it flushes the data from the flat array back into the palette.
  */
-@Mixin(value = ChunkSection.class, priority = 900)
+@Mixin(value = LevelChunkSection.class, priority = 900)
 public abstract class MixinChunkSection {
 	// Will be real due to mixin plugin
 
@@ -40,13 +40,13 @@ public abstract class MixinChunkSection {
 
 	@Shadow
 	@Final
-	private PalettedContainer<BlockState> blockStateContainer;
+	private PalettedContainer<BlockState> states;
 	@Shadow
 	private short nonEmptyBlockCount;
 	@Shadow
-	private short nonEmptyFluidCount;
+	private short tickingFluidCount;
 	@Shadow
-	private short randomTickableBlockCount;
+	private short tickingBlockCount;
 
 	// 20 bits per block, so 3 blocks per long. ceil(4096/3) --> 1366
 	private final long[] fireblanket$denseBlockStorage = new long[1366];
@@ -54,9 +54,9 @@ public abstract class MixinChunkSection {
 
 	private final AtomicLong fireblanket$stamp = new AtomicLong();
 
-	@Redirect(method = "<init>(Lnet/minecraft/world/chunk/PalettedContainer;Lnet/minecraft/world/chunk/ReadableContainer;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;calculateCounts()V"))
-	private void fireblanket$setupState(ChunkSection instance) {
-		PalettedContainer<BlockState> container = this.blockStateContainer;
+	@Redirect(method = "<init>(Lnet/minecraft/world/level/chunk/PalettedContainer;Lnet/minecraft/world/level/chunk/PalettedContainerRO;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/LevelChunkSection;recalcBlockCounts()V"))
+	private void fireblanket$setupState(LevelChunkSection instance) {
+		PalettedContainer<BlockState> container = this.states;
 
 		fireblanket$applyFromPalette(container);
 	}
@@ -95,7 +95,7 @@ public abstract class MixinChunkSection {
 			oldState = FlatBlockstateArray.FROM_ID[((int) (oldBits >>> shift) & MASK_BITS)];
 
 			// Make data for the new state
-			long newId = Block.STATE_IDS.getRawId(state);
+			long newId = Block.BLOCK_STATE_REGISTRY.getId(state);
 			long newBitsIn = newId << shift;
 			long mask = (long) MASK_BITS << shift;
 
@@ -116,9 +116,9 @@ public abstract class MixinChunkSection {
 
 				String error = "Accessing ChunkSection from multiple threads!";
 				CrashReport crashReport = new CrashReport(error, new IllegalStateException(error));
-				CrashReportSection crashReportSection = crashReport.addElement("Thread dumps");
-				crashReportSection.add("Thread dumps", dumps);
-				throw new CrashException(crashReport);
+				CrashReportCategory crashReportSection = crashReport.addCategory("Thread dumps");
+				crashReportSection.setDetail("Thread dumps", dumps);
+				throw new ReportedException(crashReport);
 			}
 		}
 
@@ -128,24 +128,24 @@ public abstract class MixinChunkSection {
 		FluidState fluidState2 = state.getFluidState();
 		if (!oldState.isAir()) {
 			--this.nonEmptyBlockCount;
-			if (oldState.hasRandomTicks()) {
-				--this.randomTickableBlockCount;
+			if (oldState.isRandomlyTicking()) {
+				--this.tickingBlockCount;
 			}
 		}
 
 		if (!fluidState.isEmpty()) {
-			--this.nonEmptyFluidCount;
+			--this.tickingFluidCount;
 		}
 
 		if (!state.isAir()) {
 			++this.nonEmptyBlockCount;
-			if (state.hasRandomTicks()) {
-				++this.randomTickableBlockCount;
+			if (state.isRandomlyTicking()) {
+				++this.tickingBlockCount;
 			}
 		}
 
 		if (!fluidState2.isEmpty()) {
-			++this.nonEmptyFluidCount;
+			++this.tickingFluidCount;
 		}
 
 		return oldState;
@@ -193,7 +193,7 @@ public abstract class MixinChunkSection {
 	 * @reason Flush all updates to the container
 	 */
 	@Overwrite
-	public PalettedContainer<BlockState> getBlockStateContainer() {
+	public PalettedContainer<BlockState> getStates() {
 		if (fireblanket$dirty.cardinality() > 0) {
 			for (int i = 0; i < 4096; i++) {
 				if (fireblanket$dirty.get(i)) {
@@ -201,36 +201,36 @@ public abstract class MixinChunkSection {
 					int x = (i >> 4) & 15;
 					int z = (i >> 0) & 15;
 
-					this.blockStateContainer.swapUnsafe(x, y, z, getBlockState(x, y, z));
+					this.states.getAndSetUnchecked(x, y, z, getBlockState(x, y, z));
 				}
 			}
 		}
 
 		fireblanket$dirty.clear();
 
-		return this.blockStateContainer;
+		return this.states;
 	}
 
 	// Originally this was one injector, but broke horribly, so we're doing it the spacious way instead
-	@Inject(method = "toPacket", at = @At("HEAD"))
-	private void fireblanket$resetUnderlyingStateToPacket(PacketByteBuf buf, CallbackInfo ci) {
-		getBlockStateContainer();
+	@Inject(method = "write", at = @At("HEAD"))
+	private void fireblanket$resetUnderlyingStateToPacket(FriendlyByteBuf buf, CallbackInfo ci) {
+		getStates();
 	}
 
-	@Inject(method = "getPacketSize", at = @At("HEAD"))
+	@Inject(method = "getSerializedSize", at = @At("HEAD"))
 	private void fireblanket$resetUnderlyingStateGetPacketSize(CallbackInfoReturnable<Integer> cir) {
-		getBlockStateContainer();
+		getStates();
 	}
 
-	@Inject(method = "hasAny", at = @At("HEAD"))
+	@Inject(method = "maybeHas", at = @At("HEAD"))
 	private void fireblanket$resetUnderlyingStateHasAny(Predicate<BlockState> predicate, CallbackInfoReturnable<Boolean> cir) {
-		getBlockStateContainer();
+		getStates();
 	}
 
 	// Dear god please no one use this on their client. Support is provided for completeness.
-	@Inject(method = "readDataPacket", at = @At("TAIL"))
-	private void fireblanket$resetForPacketBadTerrible(PacketByteBuf buf, CallbackInfo ci) {
-		fireblanket$applyFromPalette(this.blockStateContainer);
+	@Inject(method = "read", at = @At("TAIL"))
+	private void fireblanket$resetForPacketBadTerrible(FriendlyByteBuf buf, CallbackInfo ci) {
+		fireblanket$applyFromPalette(this.states);
 	}
 
 	/**
@@ -238,7 +238,7 @@ public abstract class MixinChunkSection {
 	 * @reason We don't really need this
 	 */
 	@Overwrite
-	public void calculateCounts() {
+	public void recalcBlockCounts() {
 		// Only ever used in one place, which is redirected, so I figure it's better to implement this on a need basis.
 		throw new UnsupportedOperationException("Not implemented");
 	}

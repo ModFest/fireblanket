@@ -2,8 +2,8 @@ package net.modfest.fireblanket.mixin.entity_sync;
 
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.PlayerAssociatedNetworkHandler;
-import net.minecraft.server.world.ServerChunkManager;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.network.ServerPlayerConnection;
 import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.ProtoVelocityUpdate;
 import net.modfest.fireblanket.net.TrackerGlobal;
@@ -18,25 +18,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
-@Mixin(ServerChunkManager.class)
+@Mixin(ServerChunkCache.class)
 public class MixinServerChunkManager {
-	@Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkLoadingManager;tickEntityMovement()V", shift = At.Shift.BEFORE))
+	@Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ChunkMap;tick()V", shift = At.Shift.BEFORE))
 	public void fireblanket$tickEntityBefore(BooleanSupplier shouldKeepTicking, boolean tickChunks, CallbackInfo ci) {
 		TrackerGlobal.UPDATES.clear();
 	}
 
-	@Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkLoadingManager;tickEntityMovement()V", shift = At.Shift.AFTER))
+	@Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ChunkMap;tick()V", shift = At.Shift.AFTER))
 	public void fireblanket$tickEntityAfter(BooleanSupplier shouldKeepTicking, boolean tickChunks, CallbackInfo ci) {
 		if (!TrackerGlobal.UPDATES.isEmpty()) {
 
-			Reference2ReferenceOpenHashMap<PlayerAssociatedNetworkHandler, List<VelocityUpdate>> map = new Reference2ReferenceOpenHashMap<>();
+			Reference2ReferenceOpenHashMap<ServerPlayerConnection, List<VelocityUpdate>> map = new Reference2ReferenceOpenHashMap<>();
 			for (ProtoVelocityUpdate update : TrackerGlobal.UPDATES) {
-				for (PlayerAssociatedNetworkHandler listener : update.listeners()) {
+				for (ServerPlayerConnection listener : update.listeners()) {
 					map.computeIfAbsent(listener, k -> new ArrayList<>()).add(update.update());
 				}
 			}
 
-			for (Map.Entry<PlayerAssociatedNetworkHandler, List<VelocityUpdate>> e : map.entrySet()) {
+			for (Map.Entry<ServerPlayerConnection, List<VelocityUpdate>> e : map.entrySet()) {
 				ServerPlayNetworking.send(e.getKey().getPlayer(), new BatchedEntityVelocityUpdatePacket(e.getValue()));
 			}
 

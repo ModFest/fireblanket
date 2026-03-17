@@ -1,14 +1,14 @@
 accessWidener v2 named
 #
-accessible class net/minecraft/client/render/chunk/ChunkBuilder$BuiltChunk$RebuildTask
-accessible class net/minecraft/server/world/ServerChunkManager$MainThreadExecutor
+accessible class net/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$RebuildTask
+accessible class net/minecraft/server/level/ServerChunkCache$MainThreadExecutor
 #
-accessible class net/minecraft/server/network/ServerPlayNetworkHandler$Interaction
-accessible method net/minecraft/server/world/ServerChunkLoadingManager entryIterator ()Ljava/lang/Iterable;
+accessible class net/minecraft/server/network/ServerGamePacketListenerImpl$EntityInteraction
+accessible method net/minecraft/server/level/ChunkMap getChunks ()Ljava/lang/Iterable;
 #
-accessible method net/minecraft/world/storage/ChunkCompressionFormat <init> (ILjava/lang/String;Lnet/minecraft/world/storage/ChunkCompressionFormat$Wrapper;Lnet/minecraft/world/storage/ChunkCompressionFormat$Wrapper;)V
-accessible class net/minecraft/world/storage/ChunkCompressionFormat$Wrapper
-#
+accessible method net/minecraft/world/level/chunk/storage/RegionFileVersion <init> (ILjava/lang/String;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper;)V
+accessible class net/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper
+# FIXME: These have been left as yarn as there are no Mojang equivalent for some of these fields.
 #accessible method net/minecraft/entity/Entity setRotation (FF)V
 #accessible field net/minecraft/entity/LivingEntity serverX D
 #accessible field net/minecraft/entity/LivingEntity serverY D
@@ -19,7 +19,7 @@ accessible class net/minecraft/world/storage/ChunkCompressionFormat$Wrapper
 #accessible field net/minecraft/entity/LivingEntity serverHeadYaw D
 #accessible field net/minecraft/entity/LivingEntity serverPitch D
 #
-accessible method net/minecraft/network/packet/s2c/play/BlockEntityUpdateS2CPacket <init> (Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/entity/BlockEntityType;Lnet/minecraft/nbt/NbtCompound;)V
-accessible field net/minecraft/entity/PositionInterpolator lerpDuration I
+accessible method net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket <init> (Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/BlockEntityType;Lnet/minecraft/nbt/CompoundTag;)V
+accessible field net/minecraft/world/entity/InterpolationHandler interpolationSteps I
 
-accessible method net/minecraft/server/command/ServerCommandSource sendToOps (Lnet/minecraft/text/Text;)V
+accessible method net/minecraft/commands/CommandSourceStack broadcastToAdmins (Lnet/minecraft/network/chat/Component;)V

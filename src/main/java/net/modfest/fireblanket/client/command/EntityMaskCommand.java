@@ -5,16 +5,16 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic3CommandExceptionType;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.RegistryEntryArgumentType;
-import net.minecraft.entity.EntityType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.arguments.ResourceOrIdArgument;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.EntityType;
 import net.modfest.fireblanket.client.ClientState;
 
 import java.util.stream.Collectors;
@@ -23,26 +23,26 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.arg
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public class EntityMaskCommand {
-	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandRegistryAccess access) {
+	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandBuildContext access) {
 		base.then(literal("entity")
 			.then(literal("add")
 				.then(argument("type", new EntityTypeArgumentType(access))
 					.executes(client -> {
-						RegistryEntry.Reference<EntityType<?>> type = getRegistryEntry(
+						Holder.Reference<EntityType<?>> type = getRegistryEntry(
 							client,
 							"type",
-							RegistryKeys.ENTITY_TYPE
+							Registries.ENTITY_TYPE
 						);
 
-						if (type.getKey().isEmpty()) {
-							client.getSource().sendFeedback(Text.literal("This entity seems to not be registered??"));
+						if (type.unwrapKey().isEmpty()) {
+							client.getSource().sendFeedback(Component.literal("This entity seems to not be registered??"));
 							return 1;
 						}
 
 						client.getSource()
-							.sendFeedback(Text.literal("Added " + type.registryKey().getValue() + " to the mask."));
+							.sendFeedback(Component.literal("Added " + type.key().location() + " to the mask."));
 
-						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.add(type.value()));
+						Minecraft.getInstance().submit(() -> ClientState.MASKED_ENTITIES.add(type.value()));
 						return 0;
 					})
 				)
@@ -50,21 +50,21 @@ public class EntityMaskCommand {
 			.then(literal("remove")
 				.then(argument("type", new EntityTypeArgumentType(access))
 					.executes(client -> {
-						RegistryEntry.Reference<EntityType<?>> type = getRegistryEntry(
+						Holder.Reference<EntityType<?>> type = getRegistryEntry(
 							client,
 							"type",
-							RegistryKeys.ENTITY_TYPE
+							Registries.ENTITY_TYPE
 						);
 
-						if (type.getKey().isEmpty()) {
-							client.getSource().sendFeedback(Text.literal("This entity seems to not be registered??"));
+						if (type.unwrapKey().isEmpty()) {
+							client.getSource().sendFeedback(Component.literal("This entity seems to not be registered??"));
 							return 1;
 						}
 
 						client.getSource()
-							.sendFeedback(Text.literal("Removed " + type.registryKey().getValue() + " to the mask."));
+							.sendFeedback(Component.literal("Removed " + type.key().location() + " to the mask."));
 
-						MinecraftClient.getInstance().submit(() -> ClientState.MASKED_ENTITIES.remove(type.value()));
+						Minecraft.getInstance().submit(() -> ClientState.MASKED_ENTITIES.remove(type.value()));
 						return 0;
 					})
 				)
@@ -72,12 +72,12 @@ public class EntityMaskCommand {
 			.then(literal("list")
 				.executes(client -> {
 					if (ClientState.MASKED_ENTITIES.isEmpty()) {
-						client.getSource().sendFeedback(Text.literal("Your mask is empty."));
+						client.getSource().sendFeedback(Component.literal("Your mask is empty."));
 					} else {
 						String string = ClientState.MASKED_ENTITIES.stream()
-							.map(t -> Registries.ENTITY_TYPE.getId(t).toString())
+							.map(t -> BuiltInRegistries.ENTITY_TYPE.getKey(t).toString())
 							.collect(Collectors.joining(", "));
-						client.getSource().sendFeedback(Text.literal("You are currently masking: " + string));
+						client.getSource().sendFeedback(Component.literal("You are currently masking: " + string));
 					}
 					return 0;
 				})
@@ -85,10 +85,10 @@ public class EntityMaskCommand {
 			.then(literal("clear")
 				.executes(client -> {
 					int size = ClientState.MASKED_ENTITIES.size();
-					MinecraftClient.getInstance().submit(ClientState.MASKED_ENTITIES::clear);
+					Minecraft.getInstance().submit(ClientState.MASKED_ENTITIES::clear);
 
 					client.getSource()
-						.sendFeedback(Text.literal("Cleared " + size + " entit" + (size == 1 ?
+						.sendFeedback(Component.literal("Cleared " + size + " entit" + (size == 1 ?
 							"y" :
 							"ies") + " out of the mask."));
 					return 0;
@@ -98,31 +98,31 @@ public class EntityMaskCommand {
 	}
 
 	private static final Dynamic3CommandExceptionType WRONG_TYPE_EXCEPTION = new Dynamic3CommandExceptionType(
-		(tag, type, expectedType) -> Text.translatable("argument.resource_tag.invalid_type", tag, type, expectedType)
+		(tag, type, expectedType) -> Component.translatable("argument.resource_tag.invalid_type", tag, type, expectedType)
 	);
 
-	public static <T> RegistryEntry.Reference<T> getRegistryEntry(
+	public static <T> Holder.Reference<T> getRegistryEntry(
 		CommandContext<FabricClientCommandSource> context,
 		String name,
-		RegistryKey<Registry<T>> registryRef
+		ResourceKey<Registry<T>> registryRef
 	) throws CommandSyntaxException {
-		RegistryEntry.Reference<T> reference = context.getArgument(name, RegistryEntry.Reference.class);
-		RegistryKey<?> registryKey = reference.registryKey();
-		if (registryKey.isOf(registryRef)) {
+		Holder.Reference<T> reference = context.getArgument(name, Holder.Reference.class);
+		ResourceKey<?> registryKey = reference.key();
+		if (registryKey.isFor(registryRef)) {
 			return reference;
 		} else {
 			throw WRONG_TYPE_EXCEPTION.create(
-				registryKey.getValue(),
-				registryKey.getRegistry(),
-				registryRef.getValue()
+				registryKey.location(),
+				registryKey.registry(),
+				registryRef.location()
 			);
 		}
 	}
 
-	public static class EntityTypeArgumentType extends RegistryEntryArgumentType<EntityType<?>> {
+	public static class EntityTypeArgumentType extends ResourceOrIdArgument<EntityType<?>> {
 
-		protected EntityTypeArgumentType(CommandRegistryAccess registryAccess) {
-			super(registryAccess, RegistryKeys.ENTITY_TYPE, Registries.ENTITY_TYPE.getCodec());
+		protected EntityTypeArgumentType(CommandBuildContext registryAccess) {
+			super(registryAccess, Registries.ENTITY_TYPE, BuiltInRegistries.ENTITY_TYPE.byNameCodec());
 		}
 	}
 }

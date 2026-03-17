@@ -1,13 +1,13 @@
 package net.modfest.fireblanket.compat.roles;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class Roles {
-	private static boolean isSingleplayer(PlayerEntity player) {
+	private static boolean isSingleplayer(Player player) {
 		return player.getServer() != null && player.getServer().isSingleplayer();
 	}
 
-	public static boolean isNetadmin(PlayerEntity player) {
+	public static boolean isNetadmin(Player player) {
 		if (player == null) {
 			return false;
 		}
@@ -18,15 +18,12 @@ public class Roles {
 			}
 		}
 
-		if (isSingleplayer(player)) {
-			return true;
-		}
+		return isSingleplayer(player);
 
 		// check fb config as well
-		return false;
 	}
 
-	public static boolean isOrganizer(PlayerEntity player) {
+	public static boolean isOrganizer(Player player) {
 		if (player == null) {
 			return false;
 		}
@@ -41,15 +38,12 @@ public class Roles {
 			}
 		}
 
-		if (isSingleplayer(player)) {
-			return true;
-		}
+		return isSingleplayer(player);
 
 		// check fb config as well
-		return false;
 	}
 
-	public static boolean isBuilder(PlayerEntity player) {
+	public static boolean isBuilder(Player player) {
 		if (player == null) {
 			return false;
 		}
@@ -64,11 +58,8 @@ public class Roles {
 			}
 		}
 
-		if (isSingleplayer(player)) {
-			return true;
-		}
+		return isSingleplayer(player);
 
 		// check fb config as well
-		return false;
 	}
 }

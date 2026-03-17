@@ -1,19 +1,19 @@
 package net.modfest.fireblanket.client.render;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.HashCommon;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.debug.DebugRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.debug.DebugRenderer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.modfest.fireblanket.FireblanketClient;
 import net.modfest.fireblanket.world.render_regions.RenderRegion;
 
 import java.util.Locale;
 import java.util.Map;
 
-public final class RenderRegionRenderer implements DebugRenderer.Renderer {
+public final class RenderRegionRenderer implements DebugRenderer.SimpleDebugRenderer {
 	public static final RenderRegionRenderer instance = new RenderRegionRenderer();
 
 	public static boolean shouldRenderBox = false;
@@ -21,8 +21,8 @@ public final class RenderRegionRenderer implements DebugRenderer.Renderer {
 
 	@Override
 	public void render(
-		final MatrixStack matrices,
-		final VertexConsumerProvider imm,
+		final PoseStack matrices,
+		final MultiBufferSource imm,
 		final double cameraX,
 		final double cameraY,
 		final double cameraZ
@@ -47,17 +47,17 @@ public final class RenderRegionRenderer implements DebugRenderer.Renderer {
 
 			int mix = HashCommon.mix(rr.hashCode()) & 0xFFFFFF;
 
-			r = MathHelper.clamp(r + (((mix >> 16 & 0xFF) - 128) / 8), 0, 255);
-			g = MathHelper.clamp(g + (((mix >> 8 & 0xFF) - 128) / 8), 0, 255);
-			b = MathHelper.clamp(b + (((mix >> 0 & 0xFF) - 128) / 8), 0, 255);
+			r = Mth.clamp(r + (((mix >> 16 & 0xFF) - 128) / 8), 0, 255);
+			g = Mth.clamp(g + (((mix >> 8 & 0xFF) - 128) / 8), 0, 255);
+			b = Mth.clamp(b + (((mix >> 0 & 0xFF) - 128) / 8), 0, 255);
 
 			float fR = r / 255f;
 			float fG = g / 255f;
 			float fB = b / 255f;
 
-			DebugRenderer.drawVoxelShapeOutlines(
-				matrices, imm.getBuffer(RenderLayer.getLines()),
-				VoxelShapes.cuboid(minX, minY, minZ, maxX, maxY, maxZ),
+			DebugRenderer.renderVoxelShape(
+				matrices, imm.getBuffer(RenderType.lines()),
+				Shapes.box(minX, minY, minZ, maxX, maxY, maxZ),
 				0, 0, 0,
 				fR, fG, fB, 1.f,
 				false
@@ -67,7 +67,7 @@ public final class RenderRegionRenderer implements DebugRenderer.Renderer {
 
 			double y = rr.mode().ordinal() * 0.5 - 0.5;
 
-			DebugRenderer.drawString(matrices, imm, name,
+			DebugRenderer.renderFloatingText(matrices, imm, name,
 				rr.minX() + (rr.maxX() - rr.minX()) / 2.0 + 0.5,
 				rr.minY() + (rr.maxY() - rr.minY()) / 2.0 + y,
 				rr.minZ() + (rr.maxZ() - rr.minZ()) / 2.0 + 0.5,

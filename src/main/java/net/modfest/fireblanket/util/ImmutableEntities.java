@@ -1,6 +1,6 @@
 package net.modfest.fireblanket.util;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.mixin.accessor.ArmorStandEntityAccessor;
 import net.modfest.fireblanket.mixin.accessor.ItemFrameAccessor;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;

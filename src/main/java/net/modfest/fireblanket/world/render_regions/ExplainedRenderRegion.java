@@ -3,11 +3,11 @@ package net.modfest.fireblanket.world.render_regions;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.BitSet;
 import java.util.Set;
@@ -27,8 +27,8 @@ public class ExplainedRenderRegion {
 
 	public final Set<UUID> entityAttachments = new ObjectOpenHashSet<>();
 	public final LongSet blockAttachments = new LongOpenHashSet();
-	public final Set<Identifier> entityTypeAttachments = new ObjectOpenHashSet<>();
-	public final Set<Identifier> beTypeAttachments = new ObjectOpenHashSet<>();
+	public final Set<ResourceLocation> entityTypeAttachments = new ObjectOpenHashSet<>();
+	public final Set<ResourceLocation> beTypeAttachments = new ObjectOpenHashSet<>();
 
 	public ExplainedRenderRegion(String name, RenderRegion reg) {
 		this.name = name;
@@ -49,22 +49,22 @@ public class ExplainedRenderRegion {
 		return nw;
 	}
 
-	public boolean isEntityTypeTargeted(Identifier id) {
+	public boolean isEntityTypeTargeted(ResourceLocation id) {
 		return entityTypeAttachmentsInverted ^ entityTypeAttachments.contains(id);
 	}
 
 	public boolean isEntityTypeTargeted(Entity entity) {
-		return isEntityTypeTargeted(EntityType.getId(entity.getType()))
-			&& (!entityTypeBoxBounded || reg.contains(entity.getPos()));
+		return isEntityTypeTargeted(EntityType.getKey(entity.getType()))
+			&& (!entityTypeBoxBounded || reg.contains(entity.position()));
 	}
 
-	public boolean isBlockEntityTypeTargeted(Identifier id) {
+	public boolean isBlockEntityTypeTargeted(ResourceLocation id) {
 		return beTypeAttachmentsInverted ^ beTypeAttachments.contains(id);
 	}
 
 	public boolean isBlockEntityTypeTargeted(BlockEntity blockEntity) {
-		return isBlockEntityTypeTargeted(BlockEntityType.getId(blockEntity.getType()))
-			&& (!beTypeBoxBounded || reg.contains(blockEntity.getPos()));
+		return isBlockEntityTypeTargeted(BlockEntityType.getKey(blockEntity.getType()))
+			&& (!beTypeBoxBounded || reg.contains(blockEntity.getBlockPos()));
 	}
 
 	public BitSet getMeta() {

@@ -1,6 +1,6 @@
 package net.modfest.fireblanket.util;
 
-import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.player.LocalPlayer;
 
 public class CanSwitchGameMode {
 	/**
@@ -12,8 +12,8 @@ public class CanSwitchGameMode {
 	 * give /gamemode without giving the whole permission level
 	 * @see net.modfest.fireblanket.mixin.gamemode_selection.MixinSelectionScreen
 	 */
-	public static boolean canSwitchGameMode(ClientPlayerEntity player) {
-		var dispatcher = player.networkHandler.getCommandDispatcher();
+	public static boolean canSwitchGameMode(LocalPlayer player) {
+		var dispatcher = player.connection.getCommands();
 		return dispatcher.getRoot().getChild("gamemode") != null;
 	}
 }

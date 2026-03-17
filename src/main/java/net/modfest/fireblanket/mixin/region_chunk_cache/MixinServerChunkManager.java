@@ -1,21 +1,21 @@
 package net.modfest.fireblanket.mixin.region_chunk_cache;
 
 import com.mojang.datafixers.DataFixer;
-import net.minecraft.server.WorldGenerationProgressListener;
-import net.minecraft.server.world.OptionalChunk;
-import net.minecraft.server.world.ServerChunkManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructureTemplateManager;
-import net.minecraft.util.Util;
-import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.profiler.Profilers;
-import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.ChunkStatusChangeListener;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.level.storage.LevelStorage;
+import net.minecraft.Util;
+import net.minecraft.server.level.ChunkResult;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.progress.ChunkProgressListener;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.entity.ChunkStatusUpdateListener;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.storage.DimensionDataStorage;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import org.jetbrains.annotations.Nullable;
@@ -34,47 +34,47 @@ import java.util.function.Supplier;
 /**
  * NOTE: only ever applied when fireblanket.loadRadius is specified!
  */
-@Mixin(ServerChunkManager.class)
+@Mixin(ServerChunkCache.class)
 public abstract class MixinServerChunkManager {
 	@Shadow
 	@Final
-	Thread serverThread;
+	Thread mainThread;
 
 	@Shadow
 	@Final
-	ServerWorld world;
+	ServerLevel level;
 
 	@Shadow
 	@Final
-	private ServerChunkManager.MainThreadExecutor mainThreadExecutor;
+	private ServerChunkCache.MainThreadExecutor mainThreadProcessor;
 
 	@Shadow
-	protected abstract CompletableFuture<OptionalChunk<Chunk>> getChunkFuture(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create);
+	protected abstract CompletableFuture<ChunkResult<ChunkAccess>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create);
 
 	@Shadow
-	public abstract @Nullable Chunk getChunk(int x, int z, ChunkStatus leastStatus, boolean create);
+	public abstract @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create);
 
 	@Shadow
-	protected abstract void putInCache(long pos, @Nullable Chunk chunk, ChunkStatus status);
+	protected abstract void storeInCache(long pos, @Nullable ChunkAccess chunk, ChunkStatus status);
 
-	private Chunk[] fireblanket$chunkCache;
+	private ChunkAccess[] fireblanket$chunkCache;
 	private ChunkStatus[] fireblanket$chunkStatusCache;
 	private int fireblanket$min;
 	private int fireblanket$max;
 	private int fireblanket$width;
 
 	@Inject(method = "<init>", at = @At("TAIL"))
-	private void fireblanket$initData(ServerWorld world, LevelStorage.Session session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> persistentStateManagerFactory, CallbackInfo ci) {
+	private void fireblanket$initData(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, CallbackInfo ci) {
 		// Will be real due to mixin plugin
 
-		if (this.world.getRegistryKey().equals(World.OVERWORLD)) {
+		if (this.level.dimension().equals(Level.OVERWORLD)) {
 			int radius = FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS);
 			int min = (int) Math.floor(-radius / 16);
 			int max = (int) Math.ceil(radius / 16);
 
 			int width = (max - min) + 1;
 
-			this.fireblanket$chunkCache = new Chunk[width * width];
+			this.fireblanket$chunkCache = new ChunkAccess[width * width];
 			this.fireblanket$chunkStatusCache = new ChunkStatus[width * width];
 			this.fireblanket$min = min;
 			this.fireblanket$max = max;
@@ -88,26 +88,26 @@ public abstract class MixinServerChunkManager {
 	 * @author Jasmine
 	 * @reason More optimal to have a cache of a given size
 	 */
-	@Inject(method = "getChunk(IILnet/minecraft/world/chunk/ChunkStatus;Z)Lnet/minecraft/world/chunk/Chunk;", at = @At("HEAD"), cancellable = true)
-	private void fireblanket$patchGetChunk(int x, int z, ChunkStatus leastStatus, boolean create, CallbackInfoReturnable<Chunk> cir) {
-		if (this.world.getRegistryKey().equals(World.OVERWORLD)) {
+	@Inject(method = "getChunk(IILnet/minecraft/world/level/chunk/status/ChunkStatus;Z)Lnet/minecraft/world/level/chunk/ChunkAccess;", at = @At("HEAD"), cancellable = true)
+	private void fireblanket$patchGetChunk(int x, int z, ChunkStatus leastStatus, boolean create, CallbackInfoReturnable<ChunkAccess> cir) {
+		if (this.level.dimension().equals(Level.OVERWORLD)) {
 			// Copy of vanilla logic with custom caching
-			if (Thread.currentThread() != this.serverThread) {
-				Chunk c = CompletableFuture.supplyAsync(() -> this.getChunk(x, z, leastStatus, create), this.mainThreadExecutor).join();
+			if (Thread.currentThread() != this.mainThread) {
+				ChunkAccess c = CompletableFuture.supplyAsync(() -> this.getChunk(x, z, leastStatus, create), this.mainThreadProcessor).join();
 				cir.setReturnValue(c);
 			} else {
-				Profiler profiler = Profilers.get();
-				profiler.visit("getChunk");
+				ProfilerFiller profiler = Profiler.get();
+				profiler.incrementCounter("getChunk");
 
 				int min = this.fireblanket$min;
 				int max = this.fireblanket$max;
 
-				Chunk[] cache = this.fireblanket$chunkCache;
+				ChunkAccess[] cache = this.fireblanket$chunkCache;
 				ChunkStatus[] scache = this.fireblanket$chunkStatusCache;
 				int cacheIdx = this.fireblanket$getIndex(x, z);
 
 				if (cacheIdx < cache.length && cacheIdx >= 0 && x >= min && x <= max && z >= min && z <= max) {
-					Chunk chunk = cache[cacheIdx];
+					ChunkAccess chunk = cache[cacheIdx];
 
 					// impl note: this is checking for /reference equality/ of the chunk status, but the param mapping
 					// mentions that it's the "least status". Let's just replicate the vanilla behavior and not
@@ -132,13 +132,13 @@ public abstract class MixinServerChunkManager {
 					// miss: do the rest of the logic
 
 					// Generate the chunk
-					profiler.visit("getChunkCacheMiss");
-					CompletableFuture<OptionalChunk<Chunk>> completableFuture = this.getChunkFuture(x, z, leastStatus, create);
-					this.mainThreadExecutor.runTasks(completableFuture::isDone);
-					OptionalChunk<Chunk> optionalChunk = completableFuture.join();
-					Chunk chunkx = optionalChunk.orElse(null);
+					profiler.incrementCounter("getChunkCacheMiss");
+					CompletableFuture<ChunkResult<ChunkAccess>> completableFuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
+					this.mainThreadProcessor.managedBlock(completableFuture::isDone);
+					ChunkResult<ChunkAccess> optionalChunk = completableFuture.join();
+					ChunkAccess chunkx = optionalChunk.orElse(null);
 					if (chunkx == null) {
-						throw Util.getFatalOrPause(new IllegalStateException("Chunk not there when requested: " + optionalChunk.getError()));
+						throw Util.pauseInIde(new IllegalStateException("Chunk not there when requested: " + optionalChunk.getError()));
 					} else {
 						// Put in the cache for next time
 						cache[cacheIdx] = chunk;

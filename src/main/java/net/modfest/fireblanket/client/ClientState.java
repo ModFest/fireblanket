@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.client;
 
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.EntityType;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.HashSet;
 import java.util.Set;

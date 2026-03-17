@@ -1,12 +1,11 @@
 package net.modfest.fireblanket.mixin.vehicle;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.modfest.fireblanket.mixinsupport.NonVehicleEnteringLivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,20 +16,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinLivingEntity extends Entity implements NonVehicleEnteringLivingEntity {
 	private boolean fireblanket$nonVehicleEntering = false;
 
-	public MixinLivingEntity(EntityType<?> type, World world) {
+	public MixinLivingEntity(EntityType<?> type, Level world) {
 		super(type, world);
 	}
 
-	@Inject(method = "writeCustomData", at = @At("TAIL"))
-	private void fireblanket$addNoVehicleEnteringToNbt(WriteView view, CallbackInfo ci) {
+	@Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
+	private void fireblanket$addNoVehicleEnteringToNbt(ValueOutput view, CallbackInfo ci) {
 		if (fireblanket$nonVehicleEntering) {
 			view.putBoolean("NoVehicleEntering", true);
 		}
 	}
 
-	@Inject(method = "readCustomData", at = @At("TAIL"))
-	private void fireblanket$readNoVehicleEnteringFromNbt(ReadView view, CallbackInfo ci) {
-		fireblanket$nonVehicleEntering = view.getBoolean("NoVehicleEntering", false);
+	@Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
+	private void fireblanket$readNoVehicleEnteringFromNbt(ValueInput view, CallbackInfo ci) {
+		fireblanket$nonVehicleEntering = view.getBooleanOr("NoVehicleEntering", false);
 	}
 
 	public boolean nonVehicleEntering() {

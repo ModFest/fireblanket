@@ -1,10 +1,10 @@
 package net.modfest.fireblanket.mixin.client.hooks;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.debug.DebugRenderer;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,8 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DebugRenderer.class)
 @Environment(EnvType.CLIENT)
 public class MixinDebugRenderer {
-	@Inject(method = "renderLate", at = @At("RETURN"))
-	private void onRenderLate(MatrixStack stack, VertexConsumerProvider.Immediate imm, double cx, double cy, double cz, CallbackInfo ci) {
+	@Inject(method = "renderAfterTranslucents", at = @At("RETURN"))
+	private void onRenderLate(PoseStack stack, MultiBufferSource.BufferSource imm, double cx, double cy, double cz, CallbackInfo ci) {
 		RenderRegionRenderer.instance.render(stack, imm, cx, cy, cz);
 	}
 }

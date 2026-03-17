@@ -1,24 +1,19 @@
 package net.modfest.fireblanket.mixin.be_sync;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.AbstractChunkHolder;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.GenerationChunkHolder;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.modfest.fireblanket.net.BEUpdate;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
-import net.modfest.fireblanket.world.CachedCompoundBE;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,10 +22,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Mixin(ChunkHolder.class)
-public abstract class MixinChunkHolder extends AbstractChunkHolder {
+public abstract class MixinChunkHolder extends GenerationChunkHolder {
 	private static final List<BEUpdate> BATCHED_UPDATES = new ArrayList<>();
 
 	public MixinChunkHolder(ChunkPos pos) {
@@ -38,12 +32,13 @@ public abstract class MixinChunkHolder extends AbstractChunkHolder {
 	}
 
 	@Shadow
-	protected abstract void sendBlockEntityUpdatePacket(List<ServerPlayerEntity> players, World world, BlockPos pos);
+	protected abstract void broadcastBlockEntity(List<ServerPlayer> players, Level world, BlockPos pos);
 
-	@Shadow protected abstract void sendPacketToPlayers(List<ServerPlayerEntity> players, Packet<?> packet);
+	@Shadow
+	protected abstract void broadcast(List<ServerPlayer> players, Packet<?> packet);
 
 	@Shadow @Final
-	private ChunkHolder.PlayersWatchingChunkProvider playersWatchingChunkProvider;
+	private ChunkHolder.PlayerProvider playerProvider;
 
 	/**
 	 * @author Jasmine
@@ -77,29 +72,28 @@ public abstract class MixinChunkHolder extends AbstractChunkHolder {
 //			}
 //		}
 //	}
-
-	@Redirect(method = "sendBlockEntityUpdatePacket", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ChunkHolder;sendPacketToPlayers(Ljava/util/List;Lnet/minecraft/network/packet/Packet;)V"))
-	private void fireblanket$dontSendUpdate(ChunkHolder instance, List<ServerPlayerEntity> players, Packet<?> packet) {
-		if (packet instanceof BlockEntityUpdateS2CPacket bes2c) {
+	@Redirect(method = "broadcastBlockEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ChunkHolder;broadcast(Ljava/util/List;Lnet/minecraft/network/protocol/Packet;)V"))
+	private void fireblanket$dontSendUpdate(ChunkHolder instance, List<ServerPlayer> players, Packet<?> packet) {
+		if (packet instanceof ClientboundBlockEntityDataPacket bes2c) {
 			// We're a chunk update- let's batch per chunk
-			BATCHED_UPDATES.add(new BEUpdate(bes2c.getPos(), bes2c.getBlockEntityType(), bes2c.getNbt()));
+			BATCHED_UPDATES.add(new BEUpdate(bes2c.getPos(), bes2c.getType(), bes2c.getTag()));
 		} else {
 			// No idea what we are- need to fall back to worst case
-			this.sendPacketToPlayers(players, packet);
+			this.broadcast(players, packet);
 		}
 	}
 
-	@Inject(method = "flushUpdates", at = @At("HEAD"))
-	private void fireblanket$flushUpdates$head(WorldChunk chunk, CallbackInfo ci) {
+	@Inject(method = "broadcastChanges", at = @At("HEAD"))
+	private void fireblanket$flushUpdates$head(LevelChunk chunk, CallbackInfo ci) {
 		// Should probably assert here for the list being clear
 
 		BATCHED_UPDATES.clear();
 	}
 
-	@Inject(method = "flushUpdates", at = @At("TAIL"))
-	private void fireblanket$flushUpdates$tail(WorldChunk chunk, CallbackInfo ci) {
+	@Inject(method = "broadcastChanges", at = @At("TAIL"))
+	private void fireblanket$flushUpdates$tail(LevelChunk chunk, CallbackInfo ci) {
 		if (!BATCHED_UPDATES.isEmpty()) {
-			List<ServerPlayerEntity> list = this.playersWatchingChunkProvider.getPlayersWatchingChunk(this.pos, false);
+			List<ServerPlayer> list = this.playerProvider.getPlayers(this.pos, false);
 
 			int size = BATCHED_UPDATES.size();
 			if (list.isEmpty()) {
@@ -107,7 +101,7 @@ public abstract class MixinChunkHolder extends AbstractChunkHolder {
 				return;
 			}
 
-			for (ServerPlayerEntity p : list) {
+			for (ServerPlayer p : list) {
 				ServerPlayNetworking.send(p, new BatchedBEUpdatePayload(new ArrayList<>(BATCHED_UPDATES)));
 			}
 

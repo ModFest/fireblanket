@@ -3,14 +3,14 @@ package net.modfest.fireblanket.mixin.client.annoyances.adventure;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.component.type.BlockPredicatesComponent;
-import net.minecraft.predicate.BlockPredicate;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.advancements.critereon.BlockPredicate;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.world.item.AdventureModePredicate;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,26 +26,26 @@ import java.util.stream.Stream;
 /**
  * @author Ampflower
  **/
-@Mixin(BlockPredicatesComponent.class)
+@Mixin(AdventureModePredicate.class)
 public class MixinBlockPredicatesComponent {
 	@Shadow
 	@Final
 	private List<BlockPredicate> predicates;
 
 	@Unique
-	private static final Style DARK_GRAY = Style.EMPTY.withColor(Formatting.DARK_GRAY);
+	private static final Style DARK_GRAY = Style.EMPTY.withColor(ChatFormatting.DARK_GRAY);
 	@Unique
 	private static final int PAGE_SIZE = 5;
 	@Unique
 	private static final boolean trap = FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT;
 
 	@Unique
-	private List<Text> friendlierTooltip;
+	private List<Component> friendlierTooltip;
 	@Unique
 	private long count = -1;
 
-	@ModifyReturnValue(method = "getOrCreateTooltipText", at = @At("RETURN"))
-	private List<Text> fireblanket$maybeReplaceTooltipText(final List<Text> original) {
+	@ModifyReturnValue(method = "tooltip", at = @At("RETURN"))
+	private List<Component> fireblanket$maybeReplaceTooltipText(final List<Component> original) {
 		if (!trap && count > 0) {
 			// Warning: client-only. Do not call on the server.
 			return fireblanket$clientOnly$replaceAndPageTooltipText(original);
@@ -65,11 +65,11 @@ public class MixinBlockPredicatesComponent {
 	// allowing one to check all of what it could be placed on without taking up the entire screen.
 	// The server and any recipe viewers don't need to have a paginated view, so, ideally, they'd be left alone.
 	@Unique
-	private List<Text> fireblanket$clientOnly$replaceAndPageTooltipText(final List<Text> original) {
-		final MinecraftClient client = MinecraftClient.getInstance();
+	private List<Component> fireblanket$clientOnly$replaceAndPageTooltipText(final List<Component> original) {
+		final Minecraft client = Minecraft.getInstance();
 
 		// Avoid modifying vanilla output while not in a screen, or on the server.
-		if (!client.isOnThread() || client.currentScreen == null) {
+		if (!client.isSameThread() || client.screen == null) {
 			return original;
 		}
 
@@ -87,7 +87,7 @@ public class MixinBlockPredicatesComponent {
 	}
 
 	@Unique
-	private static List<Text> fireblanket$page(final List<Text> texts, final int time) {
+	private static List<Component> fireblanket$page(final List<Component> texts, final int time) {
 		if (texts.size() <= 10) {
 			return texts;
 		}
@@ -99,33 +99,33 @@ public class MixinBlockPredicatesComponent {
 		return texts.subList(page * PAGE_SIZE, Math.min(page * PAGE_SIZE + PAGE_SIZE, texts.size()));
 	}
 
-	@Inject(method = "addTooltips", at = @At("HEAD"))
-	private void fireblanket$injectCount(final Consumer<Text> adder, final CallbackInfo ci) {
+	@Inject(method = "addToTooltip", at = @At("HEAD"))
+	private void fireblanket$injectCount(final Consumer<Component> adder, final CallbackInfo ci) {
 		if (this.count == -1) {
 			this.count = this.predicates.stream()
 				.flatMap(predicate -> predicate.blocks().orElseThrow().stream())
-				.map(RegistryEntry::value)
+				.map(Holder::value)
 				.distinct()
 				.count();
 		}
 		if (this.count > 1) {
-			adder.accept(Text.translatable("fireblanket.item.canUse.count", count));
+			adder.accept(Component.translatable("fireblanket.item.canUse.count", count));
 		}
 	}
 
 	@Unique
-	private static List<Text> fireblanket$makeFriendlierTooltip(final List<BlockPredicate> predicates) {
+	private static List<Component> fireblanket$makeFriendlierTooltip(final List<BlockPredicate> predicates) {
 		return predicates.stream()
 			.flatMap(predicate -> predicate
 				.blocks()
 				.orElseThrow()
-				.getStorage()
+				.unwrap()
 				.map(
-					tag -> Stream.of(Text.translatable("tag.block." + tag.id().getNamespace() + "." + tag.id().getPath())),
-					blocks -> blocks.stream().map(entry -> Text.translatable(entry.value().getTranslationKey()))
+					tag -> Stream.of(Component.translatable("tag.block." + tag.location().getNamespace() + "." + tag.location().getPath())),
+					blocks -> blocks.stream().map(entry -> Component.translatable(entry.value().getDescriptionId()))
 				)
 			)
-			.map(text -> (Text) text.setStyle(DARK_GRAY))
+			.map(text -> (Component) text.setStyle(DARK_GRAY))
 			.toList();
 	}
 

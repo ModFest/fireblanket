@@ -1,16 +1,16 @@
 package net.modfest.fireblanket.mixin.client.timing;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.client.ClientState;
 import net.modfest.fireblanket.mixinsupport.ObservableTicks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ClientWorld.class)
+@Mixin(ClientLevel.class)
 public class MixinClientWorld {
-	@Redirect(method = "tickEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;tick()V"))
+	@Redirect(method = "tickNonPassenger", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;tick()V"))
 	private void fireblanket$measureTick(Entity instance) {
 		if (ClientState.displayTickTimes) {
 			ObservableTicks observe = (ObservableTicks) instance;

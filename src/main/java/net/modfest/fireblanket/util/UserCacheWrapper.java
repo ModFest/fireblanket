@@ -3,8 +3,8 @@ package net.modfest.fireblanket.util;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.UserCache;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.GameProfileCache;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashSet;
@@ -27,15 +27,15 @@ public final class UserCacheWrapper {
 			return null;
 		}
 
-		final ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+		final ServerPlayer player = server.getPlayerList().getPlayer(uuid);
 
 		if (player != null) {
 			return player.getGameProfile().getName();
 		}
 
-		final UserCache cache = server.getUserCache();
+		final GameProfileCache cache = server.getProfileCache();
 
-		final Optional<GameProfile> profile = cache.getByUuid(uuid);
+		final Optional<GameProfile> profile = cache.get(uuid);
 
 		if (profile.isPresent()) {
 			return profile.get().getName();

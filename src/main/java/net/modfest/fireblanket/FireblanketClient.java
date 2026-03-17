@@ -9,11 +9,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.Vec3;
 import net.modfest.fireblanket.client.command.ClientRegionCommand;
 import net.modfest.fireblanket.client.command.CountParticleTypesCommand;
 import net.modfest.fireblanket.client.command.StackTracerCommand;
@@ -68,8 +68,8 @@ public class FireblanketClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(BatchedBEUpdatePayload.ID, (payload, context) -> {
 			for (BEUpdate update : payload.updates()) {
-				BlockEntityUpdateS2CPacket fakePacket = new BlockEntityUpdateS2CPacket(update.pos(), update.type(), update.nbt());
-				context.client().execute(() -> context.client().getNetworkHandler().onBlockEntityUpdate(fakePacket));
+				ClientboundBlockEntityDataPacket fakePacket = new ClientboundBlockEntityDataPacket(update.pos(), update.type(), update.nbt());
+				context.client().execute(() -> context.client().getConnection().handleBlockEntityData(fakePacket));
 			}
 		});
 
@@ -81,9 +81,9 @@ public class FireblanketClient implements ClientModInitializer {
 				double vz = update.getVelocityZ();
 
 				context.client().execute(() -> {
-					Entity entity = context.client().world.getEntityById(id);
+					Entity entity = context.client().level.getEntity(id);
 					if (entity != null) {
-						entity.setVelocityClient(vx, vy, vz);
+						entity.lerpMotion(vx, vy, vz);
 					}
 				});
 			}
@@ -91,34 +91,34 @@ public class FireblanketClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(RegionSyncRequest.ID, (payload, ctx) -> {
 			if (payload.valid()) {
-				ctx.client().send(() -> {
+				ctx.client().schedule(() -> {
 					payload.apply(renderRegions);
 				});
 			}
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(CommandBlockPacket.ID, (payload, ctx) -> {
-			ctx.client().execute(() -> MinecraftClient.getInstance().setScreen(new PlaceCommandBlockScreen()));
+			ctx.client().execute(() -> Minecraft.getInstance().setScreen(new PlaceCommandBlockScreen()));
 		});
 
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-			client.send(renderRegions::clear);
+			client.schedule(renderRegions::clear);
 		});
 	}
 
 	public static boolean shouldRender(Entity entity) {
-		Vec3d c = getCameraPos();
+		Vec3 c = getCameraPos();
 		return renderRegions.shouldRender(c.x, c.y, c.z, entity);
 	}
 
 	public static boolean shouldRender(BlockEntity entity) {
-		Vec3d c = getCameraPos();
+		Vec3 c = getCameraPos();
 		return renderRegions.shouldRender(c.x, c.y, c.z, entity);
 	}
 
-	private static Vec3d getCameraPos() {
-		MinecraftClient mc = MinecraftClient.getInstance();
-		Vec3d c = mc.gameRenderer.getCamera().getPos();
+	private static Vec3 getCameraPos() {
+		Minecraft mc = Minecraft.getInstance();
+		Vec3 c = mc.gameRenderer.getMainCamera().getPosition();
 		return c;
 	}
 

@@ -1,14 +1,14 @@
 package net.modfest.fireblanket.mixin.accessor;
 
-import net.minecraft.network.ClientConnection;
-import net.minecraft.server.network.ServerLoginNetworkHandler;
+import net.minecraft.network.Connection;
+import net.minecraft.server.network.ServerLoginPacketListenerImpl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(ServerLoginNetworkHandler.class)
+@Mixin(ServerLoginPacketListenerImpl.class)
 public interface ServerLoginNetworkHandlerAccessor {
 
 	@Accessor("connection")
-	ClientConnection fireblanket$getConnection();
+	Connection fireblanket$getConnection();
 
 }
