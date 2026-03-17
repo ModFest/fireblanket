@@ -127,3 +127,7 @@ publishing {
 		}
 	}
 }
+
+test {
+	failOnNoDiscoveredTests = false
+}
