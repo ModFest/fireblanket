@@ -9,13 +9,15 @@ import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.util.TextUtil;
 
+import static net.minecraft.commands.Commands.LEVEL_GAMEMASTERS;
+import static net.minecraft.commands.Commands.LEVEL_OWNERS;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
-public class StareCommand {
+public final class StareCommand {
 	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("whoareyou")
-			.requires(source -> source.hasPermission(4) || Roles.isOrganizer(source.getPlayer()))
+			.requires(source -> LEVEL_OWNERS.check(source.permissions()) || Roles.isOrganizer(source.getPlayer()))
 			.then(argument("targets", EntityArgument.entities())
 				.executes(ctx -> {
 					for (Entity t : EntityArgument.getEntities(ctx, "targets")) {
@@ -27,7 +29,7 @@ public class StareCommand {
 
 		// Harmless debug command. May come in handy for someone, someday.
 		base.then(literal("whoami")
-			.requires(source -> source.hasPermission(2) || Roles.isOrganizer(source.getPlayer()))
+			.requires(source -> LEVEL_GAMEMASTERS.check(source.permissions()) || Roles.isOrganizer(source.getPlayer()))
 			.executes(ctx -> {
 				final CommandSourceStack source = ctx.getSource();
 				source.sendSuccess(() -> TextUtil.ofRunner(source), false);

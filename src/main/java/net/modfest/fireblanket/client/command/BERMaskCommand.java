@@ -19,10 +19,10 @@ import net.modfest.fireblanket.client.ClientState;
 
 import java.util.stream.Collectors;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
-public class BERMaskCommand {
+public final class BERMaskCommand {
 	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandBuildContext access) {
 		base.then(literal("be")
 			.then(literal("add")
@@ -35,7 +35,7 @@ public class BERMaskCommand {
 							return 1;
 						}
 
-						client.getSource().sendFeedback(Component.literal("Added " + type.key().location() + " to the mask."));
+						client.getSource().sendFeedback(Component.literal("Added " + type.key().identifier() + " to the mask."));
 
 						Minecraft.getInstance().submit(() -> ClientState.MASKED_BERS.add(type.value()));
 						return 0;
@@ -52,7 +52,7 @@ public class BERMaskCommand {
 							return 1;
 						}
 
-						client.getSource().sendFeedback(Component.literal("Removed " + type.key().location() + " to the mask."));
+						client.getSource().sendFeedback(Component.literal("Removed " + type.key().identifier() + " to the mask."));
 
 						Minecraft.getInstance().submit(() -> ClientState.MASKED_BERS.remove(type.value()));
 						return 0;
@@ -92,7 +92,7 @@ public class BERMaskCommand {
 		if (registryKey.isFor(registryRef)) {
 			return reference;
 		} else {
-			throw WRONG_TYPE_EXCEPTION.create(registryKey.location(), registryKey.registry(), registryRef.location());
+			throw WRONG_TYPE_EXCEPTION.create(registryKey.identifier(), registryKey.registry(), registryRef.identifier());
 		}
 	}
 

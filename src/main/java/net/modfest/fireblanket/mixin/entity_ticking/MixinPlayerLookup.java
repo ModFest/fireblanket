@@ -2,8 +2,8 @@ package net.modfest.fireblanket.mixin.entity_ticking;
 
 import com.google.common.collect.ImmutableSet;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.mixin.networking.accessor.ChunkMapAccessor;
 import net.fabricmc.fabric.mixin.networking.accessor.EntityTrackerAccessor;
-import net.fabricmc.fabric.mixin.networking.accessor.ServerChunkLoadingManagerAccessor;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Mixin(PlayerLookup.class)
-public class MixinPlayerLookup {
+public final class MixinPlayerLookup {
 	/**
 	 * @author jaskarth
 	 *
@@ -32,12 +32,12 @@ public class MixinPlayerLookup {
 
 		if (manager instanceof ServerChunkCache) {
 			ChunkMap chunkLoadingManager = ((ServerChunkCache) manager).chunkMap;
-			EntityTrackerAccessor tracker = ((ServerChunkLoadingManagerAccessor) chunkLoadingManager).getEntityTrackers().get(entity.getId());
+			EntityTrackerAccessor tracker = ((ChunkMapAccessor) chunkLoadingManager).getEntityMap().get(entity.getId());
 
 			// return an immutable collection to guard against accidental removals.
 			// Fireblanket: Don't use a stream.
 			if (tracker != null) {
-				Set<ServerPlayerConnection> tracking = tracker.getPlayersTracking();
+				Set<ServerPlayerConnection> tracking = tracker.getSeenBy();
 				ImmutableSet.Builder<ServerPlayer> builder = ImmutableSet.builderWithExpectedSize(tracking.size());
 				for (ServerPlayerConnection h : tracking) {
 					builder.add(h.getPlayer());

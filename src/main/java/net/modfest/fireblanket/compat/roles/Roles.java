@@ -1,10 +1,11 @@
 package net.modfest.fireblanket.compat.roles;
 
 import net.minecraft.world.entity.player.Player;
+import net.modfest.fireblanket.mixin.accessor.ServerPlayerAccessor;
 
-public class Roles {
+public final class Roles {
 	private static boolean isSingleplayer(Player player) {
-		return player.getServer() != null && player.getServer().isSingleplayer();
+		return player instanceof ServerPlayerAccessor serverPlayer && serverPlayer.getServer().isSingleplayer();
 	}
 
 	public static boolean isNetadmin(Player player) {

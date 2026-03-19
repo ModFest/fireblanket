@@ -1,9 +1,8 @@
 package net.modfest.fireblanket.mixin.client.hooks;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,8 +16,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DebugRenderer.class)
 @Environment(EnvType.CLIENT)
 public class MixinDebugRenderer {
-	@Inject(method = "renderAfterTranslucents", at = @At("RETURN"))
-	private void onRenderLate(PoseStack stack, MultiBufferSource.BufferSource imm, double cx, double cy, double cz, CallbackInfo ci) {
-		RenderRegionRenderer.instance.render(stack, imm, cx, cy, cz);
+	// FIXME: just integrate this into the vanilla debug stack.
+	//  The renderer in question is already built for it.
+	@Inject(method = "emitGizmos", at = @At("RETURN"))
+	private void onRenderLate(final Frustum frustum, final double camX, final double camY, final double camZ, final float partialTicks, final CallbackInfo ci) {
+		RenderRegionRenderer.instance.emitGizmos(camX, camY, camZ, /* unused */ null, frustum, partialTicks);
 	}
 }

@@ -1,35 +1,27 @@
 package net.modfest.fireblanket.mixin.region_chunk_cache;
 
-import com.mojang.datafixers.DataFixer;
-import net.minecraft.Util;
 import net.minecraft.server.level.ChunkResult;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.progress.ChunkProgressListener;
+import net.minecraft.util.Util;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.entity.ChunkStatusUpdateListener;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
-import net.minecraft.world.level.storage.DimensionDataStorage;
-import net.minecraft.world.level.storage.LevelStorageSource;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
 /**
  * NOTE: only ever applied when fireblanket.loadRadius is specified!
@@ -38,11 +30,11 @@ import java.util.function.Supplier;
 public abstract class MixinServerChunkManager {
 	@Shadow
 	@Final
-	Thread mainThread;
+	private Thread mainThread;
 
 	@Shadow
 	@Final
-	ServerLevel level;
+	private ServerLevel level;
 
 	@Shadow
 	@Final
@@ -57,14 +49,19 @@ public abstract class MixinServerChunkManager {
 	@Shadow
 	protected abstract void storeInCache(long pos, @Nullable ChunkAccess chunk, ChunkStatus status);
 
+	@Unique
 	private ChunkAccess[] fireblanket$chunkCache;
+	@Unique
 	private ChunkStatus[] fireblanket$chunkStatusCache;
+	@Unique
 	private int fireblanket$min;
+	@Unique
 	private int fireblanket$max;
+	@Unique
 	private int fireblanket$width;
 
 	@Inject(method = "<init>", at = @At("TAIL"))
-	private void fireblanket$initData(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, CallbackInfo ci) {
+	private void fireblanket$initData(CallbackInfo ci) {
 		// Will be real due to mixin plugin
 
 		if (this.level.dimension().equals(Level.OVERWORLD)) {
@@ -116,7 +113,7 @@ public abstract class MixinServerChunkManager {
 						// cache hit!
 
 						// Debug, but let's leave it in: the JIT will uncommon_trap this, so it shouldn't matter
-						if (chunk.getPos().x != x || chunk.getPos().z != z) {
+						if (chunk.getPos().x() != x || chunk.getPos().z() != z) {
 							throw new IllegalStateException("Fireblanket detected a catastrophic mismatch in its chunk cache. " +
 								"Please report this to Jasmine with the following information: " + chunk.getPos() + " " + x + " " + z + " " + cacheIdx);
 						}
@@ -151,6 +148,7 @@ public abstract class MixinServerChunkManager {
 		}
 	}
 
+	@Unique
 	private int fireblanket$getIndex(int x, int z) {
 		x -= this.fireblanket$min;
 		z -= this.fireblanket$min;

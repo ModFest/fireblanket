@@ -6,7 +6,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;

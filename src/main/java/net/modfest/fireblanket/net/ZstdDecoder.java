@@ -5,13 +5,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageDecoder;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import net.modfest.fireblanket.util.EndlessByteBufInputStream;
 
 import java.io.IOException;
 import java.util.List;
 
-public class ZstdDecoder extends MessageToMessageDecoder<ByteBuf> {
+public class ZstdDecoder extends ByteToMessageDecoder {
 
 	private final ByteBuf inBuf = Unpooled.buffer();
 
@@ -32,8 +32,8 @@ public class ZstdDecoder extends MessageToMessageDecoder<ByteBuf> {
 	}
 
 	@Override
-	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-		super.handlerRemoved(ctx);
+	public void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
+		// super.handlerRemoved(ctx);
 		stream.close();
 	}
 

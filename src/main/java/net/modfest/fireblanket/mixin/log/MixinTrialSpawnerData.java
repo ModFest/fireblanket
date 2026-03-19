@@ -11,7 +11,7 @@ public class MixinTrialSpawnerData {
 
 	@Redirect(
 		method = "countAdditionalPlayers",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;logAndPauseIfInIde(Ljava/lang/String;)V")
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Util;logAndPauseIfInIde(Ljava/lang/String;)V")
 	)
 	private void fireblanket$noLog(String message) {
 

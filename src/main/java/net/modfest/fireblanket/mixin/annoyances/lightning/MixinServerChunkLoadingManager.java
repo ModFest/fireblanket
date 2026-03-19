@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Slice;
 public class MixinServerChunkLoadingManager {
 	@Shadow
 	@Final
-	ServerLevel level;
+	private ServerLevel level;
 
 	@ModifyVariable(
 		method = "addEntity",
@@ -33,11 +33,12 @@ public class MixinServerChunkLoadingManager {
 				value = "INVOKE",
 				target = "Lnet/minecraft/world/entity/EntityType;clientTrackingRange()I"
 			)
-		)
+		),
+		name = "range"
 	)
 	private int modifyVariable(int input, @Local(argsOnly = true) Entity entity) {
 		if (entity instanceof LightningBolt) {
-			final int distance = this.level.getGameRules().getInt(Fireblanket.LIGHTNING_BROADCAST_RADIUS);
+			final int distance = this.level.getGameRules().get(Fireblanket.LIGHTNING_BROADCAST_RADIUS);
 			if (distance >= 0) {
 				return distance;
 			}

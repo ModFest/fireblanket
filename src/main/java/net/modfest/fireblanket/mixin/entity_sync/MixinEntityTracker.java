@@ -18,7 +18,7 @@ import java.util.Set;
 public abstract class MixinEntityTracker {
 	@Shadow
 	@Final
-	ServerEntity serverEntity;
+	private ServerEntity serverEntity;
 
 	@Shadow
 	@Final
@@ -26,6 +26,6 @@ public abstract class MixinEntityTracker {
 
 	@Inject(method = "<init>", at = @At("TAIL"))
 	public void fireblanket$setTrackerRef(ChunkMap serverChunkLoadingManager, Entity entity, int maxDistance, int tickInterval, boolean alwaysUpdateVelocity, CallbackInfo ci) {
-		((TrackerEntityHolder) this.serverEntity).setListeners(this.seenBy);
+		((TrackerEntityHolder) this.serverEntity).fireblanket$setListeners(this.seenBy);
 	}
 }

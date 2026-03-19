@@ -91,7 +91,7 @@ public final class ConfigSpecs {
 	public static final ConfigSpec<List<String>> LOCKED_GAMERULES = new ConfigSpec<>("locked-gamerules", "Ignored command logs",
 		"""
 			A list of gamerules that are not allowed to be changed by non team/organizers.
-			""", "sendCommandFeedback,reducedDebugInfo,logAdminCommands", ConfigParsers.STRING_LIST);
+			""", "send_command_feedback,reduced_debug_info,log_admin_commands", ConfigParsers.STRING_LIST);
 
 	public static final ConfigSpec<String> TRACE_LEVEL = new ConfigSpec<>("trace-level", "Stack Tracer Level",
 		"""

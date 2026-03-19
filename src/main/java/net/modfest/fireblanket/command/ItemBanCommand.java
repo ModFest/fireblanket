@@ -11,13 +11,14 @@ import net.minecraft.network.chat.Component;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.world.ItemBan;
 
+import static net.minecraft.commands.Commands.LEVEL_OWNERS;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
-public class ItemBanCommand {
+public final class ItemBanCommand {
 	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("itemban")
-			.requires(source -> source.hasPermission(4) || Roles.isOrganizer(source.getPlayer()))
+			.requires(source -> LEVEL_OWNERS.check(source.permissions()) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("list").executes(s -> execList(s.getSource())))
 			.then(literal("add")
 				.then(argument("value", StringArgumentType.greedyString())

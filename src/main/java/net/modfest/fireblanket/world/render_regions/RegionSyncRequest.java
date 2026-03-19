@@ -11,10 +11,11 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.modfest.fireblanket.Fireblanket;
+import net.modfest.fireblanket.FireblanketConstants;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.AddRegion;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.AttachBlock;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest.AttachEntity;
@@ -68,11 +69,11 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 		;
 		public static final ImmutableList<RequestType> VALUES = ImmutableList.copyOf(values());
 		public final Function<FriendlyByteBuf, ? extends RegionSyncRequest> reader;
-		public final ResourceLocation id;
+		public final Identifier id;
 
 		RequestType(Function<FriendlyByteBuf, ? extends RegionSyncRequest> reader, String name) {
 			this.reader = reader;
-			this.id = ResourceLocation.fromNamespaceAndPath("fireblanket", name);
+			this.id = FireblanketConstants.id(name);
 		}
 
 	}
@@ -93,7 +94,7 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 
 		String name();
 
-		ResourceLocation id();
+		Identifier id();
 
 		@Override
 		default boolean valid() {
@@ -135,11 +136,11 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 			mode);
 	}
 
-	private static <T> ResourceLocation readId(FriendlyByteBuf buf, Registry<T> registry) {
+	private static <T> Identifier readId(FriendlyByteBuf buf, Registry<T> registry) {
 		return registry.getKey(registry.byId(buf.readVarInt()));
 	}
 
-	private static <T> void writeId(FriendlyByteBuf buf, Registry<T> registry, ResourceLocation id) {
+	private static <T> void writeId(FriendlyByteBuf buf, Registry<T> registry, Identifier id) {
 		buf.writeVarInt(registry.getId(registry.getValue(id)));
 	}
 
@@ -512,7 +513,7 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 
 	}
 
-	record AttachEntityType(String name, ResourceLocation id) implements RegistryRegionSyncRequest<EntityType<?>> {
+	record AttachEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<EntityType<?>> {
 
 		@Override
 		public RequestType requestType() {
@@ -535,7 +536,7 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 
 	}
 
-	record DetachEntityType(String name, ResourceLocation id) implements RegistryRegionSyncRequest<EntityType<?>> {
+	record DetachEntityType(String name, Identifier id) implements RegistryRegionSyncRequest<EntityType<?>> {
 
 		@Override
 		public RequestType requestType() {
@@ -559,7 +560,7 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 	}
 
 	record AttachBlockEntityType(String name,
-								 ResourceLocation id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
+								 Identifier id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
 
 		@Override
 		public RequestType requestType() {
@@ -583,7 +584,7 @@ public sealed interface RegionSyncRequest extends CustomPacketPayload permits In
 	}
 
 	record DetachBlockEntityType(String name,
-								 ResourceLocation id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
+								 Identifier id) implements RegistryRegionSyncRequest<BlockEntityType<?>> {
 
 		@Override
 		public RequestType requestType() {

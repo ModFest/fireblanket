@@ -19,10 +19,10 @@ import net.modfest.fireblanket.client.ClientState;
 
 import java.util.stream.Collectors;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
-public class EntityMaskCommand {
+public final class EntityMaskCommand {
 	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandBuildContext access) {
 		base.then(literal("entity")
 			.then(literal("add")
@@ -40,7 +40,7 @@ public class EntityMaskCommand {
 						}
 
 						client.getSource()
-							.sendFeedback(Component.literal("Added " + type.key().location() + " to the mask."));
+							.sendFeedback(Component.literal("Added " + type.key().identifier() + " to the mask."));
 
 						Minecraft.getInstance().submit(() -> ClientState.MASKED_ENTITIES.add(type.value()));
 						return 0;
@@ -62,7 +62,7 @@ public class EntityMaskCommand {
 						}
 
 						client.getSource()
-							.sendFeedback(Component.literal("Removed " + type.key().location() + " to the mask."));
+							.sendFeedback(Component.literal("Removed " + type.key().identifier() + " to the mask."));
 
 						Minecraft.getInstance().submit(() -> ClientState.MASKED_ENTITIES.remove(type.value()));
 						return 0;
@@ -112,9 +112,9 @@ public class EntityMaskCommand {
 			return reference;
 		} else {
 			throw WRONG_TYPE_EXCEPTION.create(
-				registryKey.location(),
+				registryKey.identifier(),
 				registryKey.registry(),
-				registryRef.location()
+				registryRef.identifier()
 			);
 		}
 	}

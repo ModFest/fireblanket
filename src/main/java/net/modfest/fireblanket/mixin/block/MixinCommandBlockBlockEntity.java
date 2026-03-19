@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,24 +31,24 @@ public abstract class MixinCommandBlockBlockEntity extends BlockEntity implement
 	}
 
 	@Override
-	public void fireblanket$setOwner(UUID uuid) {
+	public void fireblanket$setOwner(@Nullable UUID uuid) {
 		((CommandBE) commandBlock).fireblanket$setOwner(uuid);
 		setChanged();
 	}
 
 	@Override
-	public void fireblanket$setLastUpdate(UUID uuid) {
+	public void fireblanket$setLastUpdate(@Nullable UUID uuid) {
 		((CommandBE) commandBlock).fireblanket$setLastUpdate(uuid);
 		setChanged();
 	}
 
 	@Override
-	public UUID fireblanket$getOwner() {
+	public @Nullable UUID fireblanket$getOwner() {
 		return ((CommandBE) commandBlock).fireblanket$getOwner();
 	}
 
 	@Override
-	public UUID fireblanket$getLastUpdate() {
+	public @Nullable UUID fireblanket$getLastUpdate() {
 		return ((CommandBE) commandBlock).fireblanket$getLastUpdate();
 	}
 

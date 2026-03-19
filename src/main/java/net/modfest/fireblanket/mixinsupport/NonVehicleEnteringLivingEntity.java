@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixinsupport;
 
 public interface NonVehicleEnteringLivingEntity {
-	boolean nonVehicleEntering();
+	boolean fireblanket$nonVehicleEntering();
 
-	void setNoVehicleEntering(boolean cantEnterVehicles);
+	void fireblanket$setNoVehicleEntering(boolean cantEnterVehicles);
 }

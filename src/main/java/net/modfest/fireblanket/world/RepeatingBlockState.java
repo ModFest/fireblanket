@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import net.modfest.fireblanket.FireblanketConstants;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,7 +33,7 @@ public class RepeatingBlockState extends SavedData {
 	}
 
 	public static SavedDataType<RepeatingBlockState> TYPE = new SavedDataType<>(
-		"fireblanket:repeating_command_block_placed", RepeatingBlockState::new, CODEC, null
+		FireblanketConstants.id("repeating_command_block_placed"), RepeatingBlockState::new, CODEC, null
 	);
 
 	public static SavedDataType<RepeatingBlockState> getType() {

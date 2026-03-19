@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
-public class CountParticleTypesCommand {
+public final class CountParticleTypesCommand {
 	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandBuildContext access) {
 		base.then(literal("countparticles")
 			.executes(cl -> {

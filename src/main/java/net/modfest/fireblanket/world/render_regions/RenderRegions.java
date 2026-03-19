@@ -27,7 +27,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -62,8 +62,8 @@ public class RenderRegions {
 
 	private final Long2ReferenceMultimap<ExplainedRenderRegion> blockRegions = new Long2ReferenceMultimap<>();
 	private final ListMultimap<UUID, ExplainedRenderRegion> entityRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
-	private final ListMultimap<ResourceLocation, ExplainedRenderRegion> exclusiveEntityTypeRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
-	private final ListMultimap<ResourceLocation, ExplainedRenderRegion> exclusiveBeTypeRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
+	private final ListMultimap<Identifier, ExplainedRenderRegion> exclusiveEntityTypeRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
+	private final ListMultimap<Identifier, ExplainedRenderRegion> exclusiveBeTypeRegions = Multimaps.newListMultimap(new Object2ReferenceOpenHashMap<>(), ReferenceArrayList::new);
 
 	// These are likely to be so rare to not be worthwhile to try to shove it into the regular exclusive map.
 	private final Set<ExplainedRenderRegion> unboundedInvertedExclusiveEntityTypeRegions = new ReferenceOpenHashSet<>();
@@ -217,7 +217,7 @@ public class RenderRegions {
 		attachEntityType(region, EntityType.getKey(type));
 	}
 
-	public void attachEntityType(RenderRegion region, ResourceLocation id) {
+	public void attachEntityType(RenderRegion region, Identifier id) {
 		if (region == null || id == null) return;
 		ExplainedRenderRegion ex = explaineds.get(region);
 		ex.entityTypeAttachments.add(id);
@@ -244,10 +244,10 @@ public class RenderRegions {
 	}
 
 	public void attachBlockEntityType(RenderRegion region, BlockEntityType<?> type) {
-		attachBlockEntityType(region, BlockEntityType.getKey(type));
+		attachBlockEntityType(region, BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type));
 	}
 
-	public void attachBlockEntityType(RenderRegion region, ResourceLocation id) {
+	public void attachBlockEntityType(RenderRegion region, Identifier id) {
 		if (region == null || id == null) return;
 		ExplainedRenderRegion ex = explaineds.get(region);
 		ex.beTypeAttachments.add(id);
@@ -277,7 +277,7 @@ public class RenderRegions {
 		detachEntityType(region, BuiltInRegistries.ENTITY_TYPE.getKey(type));
 	}
 
-	public void detachEntityType(RenderRegion region, ResourceLocation id) {
+	public void detachEntityType(RenderRegion region, Identifier id) {
 		if (region == null) return;
 		ExplainedRenderRegion ex = explaineds.get(region);
 		ex.entityTypeAttachments.remove(id);
@@ -305,7 +305,7 @@ public class RenderRegions {
 		detachBlockEntityType(region, BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type));
 	}
 
-	public void detachBlockEntityType(RenderRegion region, ResourceLocation id) {
+	public void detachBlockEntityType(RenderRegion region, Identifier id) {
 		if (region == null) return;
 		ExplainedRenderRegion ex = explaineds.get(region);
 		ex.beTypeAttachments.remove(id);
@@ -345,10 +345,10 @@ public class RenderRegions {
 		}
 		if (clear) ex.blockAttachments.clear();
 		if (ex.reg.mode() == Mode.EXCLUSIVE) {
-			for (ResourceLocation id : ex.beTypeAttachments) {
+			for (Identifier id : ex.beTypeAttachments) {
 				exclusiveBeTypeRegions.remove(id, ex);
 			}
-			for (ResourceLocation id : ex.entityTypeAttachments) {
+			for (Identifier id : ex.entityTypeAttachments) {
 				exclusiveEntityTypeRegions.remove(id, ex);
 			}
 		}
@@ -492,9 +492,9 @@ public class RenderRegions {
 		final boolean newBounded,
 		final boolean oldInverted,
 		final boolean newInverted,
-		final Set<ResourceLocation> ids,
+		final Set<Identifier> ids,
 		final Set<ExplainedRenderRegion> unboundedInversions,
-		final Multimap<ResourceLocation, ExplainedRenderRegion> exclusives
+		final Multimap<Identifier, ExplainedRenderRegion> exclusives
 	) {
 		// Non-exclusive regions don't need this.
 		if (ex.reg.mode() != Mode.EXCLUSIVE) {
@@ -532,8 +532,8 @@ public class RenderRegions {
 		final boolean oldBool,
 		final boolean newBool,
 		final Set<ExplainedRenderRegion> regions,
-		final Set<ResourceLocation> ids,
-		final Multimap<ResourceLocation, ExplainedRenderRegion> exclusives
+		final Set<Identifier> ids,
+		final Multimap<Identifier, ExplainedRenderRegion> exclusives
 	) {
 		if ((oldBool == newBool) || ex.reg.mode() != Mode.EXCLUSIVE) {
 			return;
@@ -556,8 +556,8 @@ public class RenderRegions {
 		final ExplainedRenderRegion ex,
 		final boolean oldBool,
 		final boolean newBool,
-		Set<ResourceLocation> ids,
-		final Multimap<ResourceLocation, ExplainedRenderRegion> exclusives
+		Set<Identifier> ids,
+		final Multimap<Identifier, ExplainedRenderRegion> exclusives
 	) {
 		if ((oldBool == newBool) || ex.reg.mode() != Mode.EXCLUSIVE) {
 			return;
@@ -596,13 +596,13 @@ public class RenderRegions {
 		return ex.entityAttachments;
 	}
 
-	public Set<ResourceLocation> getBlockEntityTypeAttachments(RenderRegion region) {
+	public Set<Identifier> getBlockEntityTypeAttachments(RenderRegion region) {
 		ExplainedRenderRegion ex = explaineds.get(region);
 		if (ex == null) return Collections.emptySet();
 		return ex.beTypeAttachments;
 	}
 
-	public Set<ResourceLocation> getEntityTypeAttachments(RenderRegion region) {
+	public Set<Identifier> getEntityTypeAttachments(RenderRegion region) {
 		ExplainedRenderRegion ex = explaineds.get(region);
 		if (ex == null) return Collections.emptySet();
 		return ex.entityTypeAttachments;
@@ -617,7 +617,7 @@ public class RenderRegions {
 		}
 		boolean res = shouldRender(
 			ExplainedRenderRegion::isBlockEntityTypeTargeted,
-			BlockEntityType.getKey(be.getType()),
+			BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()),
 			exclusiveBeTypeRegions,
 			unboundedInvertedExclusiveBeTypeRegions,
 			blockRegions.get(be.getBlockPos().asLong()),
@@ -654,8 +654,8 @@ public class RenderRegions {
 	}
 
 	private <T> boolean shouldRender(
-		BiPredicate<ExplainedRenderRegion, T> targets, ResourceLocation type,
-		ListMultimap<ResourceLocation, ExplainedRenderRegion> exclusiveTypeRegions,
+		BiPredicate<ExplainedRenderRegion, T> targets, Identifier type,
+		ListMultimap<Identifier, ExplainedRenderRegion> exclusiveTypeRegions,
 		Iterable<ExplainedRenderRegion> unboundedInvertedExclusives,
 		Iterable<ExplainedRenderRegion> assignedRegions, T target,
 		long targetChunkSect,
@@ -745,11 +745,11 @@ public class RenderRegions {
 				attachBlock(r, block);
 			}
 
-			for (ResourceLocation id : d.entityTypes) {
+			for (Identifier id : d.entityTypes) {
 				attachEntityType(r, id);
 			}
 
-			for (ResourceLocation id : d.blockTypes) {
+			for (Identifier id : d.blockTypes) {
 				attachBlockEntityType(r, id);
 			}
 
@@ -782,11 +782,11 @@ public class RenderRegions {
 		RenderRegion region,
 		Set<UUID> entities,
 		LongSet blocks,
-		Set<ResourceLocation> entityTypes,
-		Set<ResourceLocation> blockTypes,
+		Set<Identifier> entityTypes,
+		Set<Identifier> blockTypes,
 		BitSet meta
 	) {
-		private static final Codec<Set<ResourceLocation>> ID_SET_CODEC = ResourceLocation.CODEC
+		private static final Codec<Set<Identifier>> ID_SET_CODEC = Identifier.CODEC
 			.listOf()
 			.xmap(HashSet::new, List::copyOf);
 

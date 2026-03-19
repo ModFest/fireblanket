@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.util;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
@@ -11,17 +12,20 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.modfest.fireblanket.command.CommandUtils;
 import net.modfest.fireblanket.mixin.accessor.ServerCommandSourceAccessor;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -30,6 +34,7 @@ import java.util.UUID;
  * @author Ampflower
  */
 public final class TextUtil {
+	private static final Logger LOGGER = LogUtils.getLogger();
 	// These are not truly immutable (i.e. can be casted to MutableText); guard as such.
 
 	private static final Component warning = Component.literal("⚠").setStyle(
@@ -86,7 +91,7 @@ public final class TextUtil {
 
 	public static ClickEvent toClickToTeleport(final Level world, final Vec3i pos) {
 		return new ClickEvent.SuggestCommand(
-			"/execute in " + world.dimension().location() + " run tp @s " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
+			"/execute in " + world.dimension().identifier() + " run tp @s " + pos.getX() + " " + pos.getY() + " " + pos.getZ()
 		);
 	}
 
@@ -94,13 +99,25 @@ public final class TextUtil {
 		return text.withStyle(style -> style.withClickEvent(toClickToTeleport(world, pos)));
 	}
 
+	@Deprecated(forRemoval = true)
 	public static Component ofCommandBlock(final BaseCommandBlock executor) {
-		if (executor instanceof MinecartCommandBlock.MinecartCommandBase minecart) {
-			return ofEntityWithTeleport(minecart.getMinecart())
-				.withStyle(style -> style.withHoverEvent(executor.getName().getStyle().getHoverEvent()));
-		}
+		// FIXME: find a better way of handling this; ReflectionUtils is a bad hack but it's the only usable one.
+		try {
+			if (executor instanceof MinecartCommandBlock.MinecartCommandBase minecart) {
+				return ofEntityWithTeleport(ReflectionUtil.getHost(minecart, MinecartCommandBlock.class))
+					.withStyle(style -> style.withHoverEvent(executor.getName().getStyle().getHoverEvent()));
+			}
 
-		return ofTextWithTeleport(executor.getName().copy(), executor.getLevel(), BlockPos.containing(executor.getPosition()));
+			final CommandBlockEntity entity = ReflectionUtil.getHost(executor, CommandBlockEntity.class);
+			return ofTextWithTeleport(
+				executor.getName().copy(),
+				entity.getLevel(),
+				entity.getBlockPos()
+			);
+		} catch (IllegalAccessException e) {
+			LOGGER.warn("Cannot decompose {} for text purposes.", executor, e);
+			return Component.literal("Broken: " + executor.getName());
+		}
 	}
 
 	public static Component ofRunner(final CommandSourceStack source) {
@@ -211,33 +228,34 @@ public final class TextUtil {
 		);
 	}
 
-	public static HoverEvent toBlameHover(final BaseCommandBlock executor) {
-		final CommandBE cbe = (CommandBE) executor;
-
-		final Component name = getCommandBlockName(executor);
-
+	public static HoverEvent toBlameHover(
+		final CommandBE executor,
+		final ServerLevel level,
+		final BlockPos position,
+		final Component name
+	) {
 		final Component creator = Component.literal(TextUtil.getRawPlayerName(
-			executor.getLevel().getServer(),
-			cbe.fireblanket$getOwner(),
+			level.getServer(),
+			executor.fireblanket$getOwner(),
 			"Unknown"
 		)).withStyle(ChatFormatting.YELLOW);
 
-		final Component creatorUuid = Component.literal(TextUtil.ofUuidWithNoDashes(cbe.fireblanket$getOwner()))
+		final Component creatorUuid = Component.literal(TextUtil.ofUuidWithNoDashes(executor.fireblanket$getOwner()))
 			.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
 		final Component updater = Component.literal(TextUtil.getRawPlayerName(
-			executor.getLevel().getServer(),
-			cbe.fireblanket$getLastUpdate(),
+			level.getServer(),
+			executor.fireblanket$getLastUpdate(),
 			"Unknown"
 		)).withStyle(ChatFormatting.YELLOW);
 
-		final Component updaterUuid = Component.literal(TextUtil.ofUuidWithNoDashes(cbe.fireblanket$getLastUpdate()))
+		final Component updaterUuid = Component.literal(TextUtil.ofUuidWithNoDashes(executor.fireblanket$getLastUpdate()))
 			.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
-		final Component location = TextUtil.ofLocation(BlockPos.containing(executor.getPosition()))
+		final Component location = TextUtil.ofLocation(position)
 			.withStyle(ChatFormatting.YELLOW);
 
-		final Component world = Component.literal(executor.getLevel().dimension().location().toString())
+		final Component world = Component.literal(level.dimension().identifier().toString())
 			.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
 		final Component hover = Component.translatableWithFallback(
@@ -255,22 +273,8 @@ public final class TextUtil {
 		return new HoverEvent.ShowText(hover);
 	}
 
-	private static Component getCommandBlockName(final BaseCommandBlock executor) {
-		if (executor instanceof MinecartCommandBlock.MinecartCommandBase minecart) {
-			return minecart.getMinecart().getType().getDescription();
-		}
-
-		try {
-			final BlockEntity blockEntity = ReflectionUtil.getHost(executor, BlockEntity.class);
-
-			if (blockEntity != null) {
-				return blockEntity.getBlockState().getBlock().getName();
-			} else {
-				return Component.nullToEmpty(executor.getClass().getName());
-			}
-		} catch (IllegalAccessException e) {
-			return Component.nullToEmpty(e.getMessage());
-		}
+	public static Component getBlockEntityName(final BlockEntity entity) {
+		return entity.getBlockState().getBlock().getName();
 	}
 
 	private static Component getRunnerText(final CommandSourceStack source) {
@@ -284,14 +288,22 @@ public final class TextUtil {
 			return server;
 		}
 
-		if (output instanceof BaseCommandBlock executor) {
-			return ofCommandBlock(executor);
-		}
+		// FIXME: this really needs to be rethought: individual sources should be implementing this rather than this.
 
 		final ServerPlayer player = CommandUtils.getPlayerRunner(source);
 
 		if (player != null) {
 			return ofEntityWithTeleport(player);
+		}
+
+		try {
+			// FIXME: This is horrible and needs to be replaced ASAP
+			final Object host = ReflectionUtil.getHost(output);
+			if (host instanceof BaseCommandBlock exec) {
+				return ofCommandBlock(exec);
+			}
+		} catch (IllegalAccessException | IllegalArgumentException e) {
+			LOGGER.warn("Invalid: {}", output, e);
 		}
 
 		final Class<?> clazz = output.getClass();

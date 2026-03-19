@@ -7,10 +7,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.projectile.Fireball;
-import net.minecraft.world.entity.projectile.SmallFireball;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.entity.projectile.hurtingprojectile.Fireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -37,7 +37,7 @@ public abstract class MixinSmallFireballEntity extends Fireball {
 	)
 	private boolean fireblanket$madeAccurate(
 		final boolean original,
-		final @Local BlockPos blockPos
+		final @Local(name = "pos") BlockPos blockPos
 	) {
 		if (!original) {
 			return false;
@@ -48,7 +48,7 @@ public abstract class MixinSmallFireballEntity extends Fireball {
 		// Annoyingly, we can't just @Local it.
 		final Entity entity = this.getOwner();
 
-		if (entity == null && !world.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
+		if (entity == null && world.getGameRules().get(GameRules.FIRE_SPREAD_RADIUS_AROUND_PLAYER) == 0) {
 			return false;
 		}
 

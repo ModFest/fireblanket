@@ -20,6 +20,7 @@ import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
 import net.modfest.fireblanket.mixinsupport.NonVehicleEnteringLivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -28,9 +29,13 @@ import java.util.function.Consumer;
 
 @Mixin(DebugStickItem.class)
 public class MixinDebugStickItem extends Item {
+	@Unique
 	private static final String NOAI = "NoAI";
+	@Unique
 	private static final String NOGRAV = "NoGravity";
+	@Unique
 	private static final String NOMOV = "NoMovement";
+	@Unique
 	private static final String NOVEHICLE = "NoVehicleEntering";
 
 	public MixinDebugStickItem(Properties settings) {
@@ -49,21 +54,21 @@ public class MixinDebugStickItem extends Item {
 		CompoundTag nbt = stack.getComponents().getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
 		if (isCustomFireblanket(nbt)) {
 			// Only builder+ should be able to use debug hammers
-			if (!user.level().isClientSide && Roles.isBuilder(user)) {
+			if (!user.level().isClientSide() && Roles.isBuilder(user)) {
 				if (nbt.getBooleanOr(NOAI, false)) {
 					if (entity instanceof Mob mob) {
 						mob.setNoAi(true);
 					} else {
-						user.displayClientMessage(Component.literal("This entity isn't a mob, and can't have NoAI applied!"), true);
+						user.sendSystemMessage(Component.literal("This entity isn't a mob, and can't have NoAI applied!"));
 						return InteractionResult.PASS;
 					}
 				}
 
 				if (nbt.getBooleanOr(NOVEHICLE, false)) {
 					if (!(entity instanceof Player)) {
-						((NonVehicleEnteringLivingEntity)entity).setNoVehicleEntering(true);
+						((NonVehicleEnteringLivingEntity) entity).fireblanket$setNoVehicleEntering(true);
 					} else {
-						user.displayClientMessage(Component.literal("This entity is a player, and can't have NoVehicleEntering applied!"), true);
+						user.sendSystemMessage(Component.literal("This entity is a player, and can't have NoVehicleEntering applied!"));
 						return InteractionResult.PASS;
 					}
 				}
@@ -73,10 +78,10 @@ public class MixinDebugStickItem extends Item {
 				}
 
 				if (nbt.getBooleanOr(NOMOV, false)) {
-					((ImmmovableLivingEntity) entity).setNoMovement(true);
+					((ImmmovableLivingEntity) entity).fireblanket$setNoMovement(true);
 				}
 
-				user.displayClientMessage(Component.literal("Successfully applied."), true);
+				user.sendSystemMessage(Component.literal("Successfully applied."));
 			}
 		}
 
@@ -118,6 +123,7 @@ public class MixinDebugStickItem extends Item {
 		}
 	}
 
+	@Unique
 	private static boolean isCustomFireblanket(CompoundTag nbt) {
 		return nbt.getBooleanOr(NOAI, false) || nbt.getBooleanOr(NOGRAV, false) || nbt.getBooleanOr(NOMOV, false) || nbt.getBooleanOr(NOVEHICLE, false);
 	}

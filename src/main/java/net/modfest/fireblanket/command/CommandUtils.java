@@ -6,14 +6,15 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.modfest.fireblanket.compat.roles.Roles;
 import net.modfest.fireblanket.mixin.accessor.ServerCommandSourceAccessor;
+import net.modfest.fireblanket.mixinsupport.CommandBE;
 import net.modfest.fireblanket.util.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -34,8 +35,23 @@ public final class CommandUtils {
 	public static Entity getEntityRunner(final CommandSourceStack source) {
 		final CommandSource output = ((ServerCommandSourceAccessor) source).getSource();
 
-		if (output instanceof MinecartCommandBlock.MinecartCommandBase executor) {
-			return executor.getMinecart();
+		// FIXME: CommandSource should tag original entity
+		if (output instanceof Entity entity) {
+			return entity;
+		}
+
+		// FIXME: this is horrible and should not exist, please replace ASAP.
+		try {
+			final Object unknown = ReflectionUtil.getHost(output);
+			if (unknown instanceof Entity entity) {
+				return entity;
+			}
+
+			if (unknown instanceof CommandBE be && be.fireblanket$getEntity() != null) {
+				return be.fireblanket$getEntity();
+			}
+		} catch (IllegalAccessException | IllegalArgumentException e) {
+			logger.error("Someone made an error. Did someone miss me while porting? source: {}, output: {}", source, output, e);
 		}
 
 		// There's really not another branch here...
@@ -129,7 +145,7 @@ public final class CommandUtils {
 			return false;
 		}
 
-		if (player.getPermissionLevel() >= 4) {
+		if (Commands.LEVEL_OWNERS.check(player.permissions())) {
 			return true;
 		}
 

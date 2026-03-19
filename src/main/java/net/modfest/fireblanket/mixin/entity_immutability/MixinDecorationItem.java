@@ -19,7 +19,7 @@ public class MixinDecorationItem {
 		method = "useOn",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/decoration/HangingEntity;playPlacementSound()V"))
 	private void onInitSpawnedEntity(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir, @Local HangingEntity entity) {
-		if (context.getLevel() instanceof ServerLevel serverWorld && serverWorld.getGameRules().getBoolean(Fireblanket.NEW_ENTITIES_IMMUTABLE)) {
+		if (context.getLevel() instanceof ServerLevel serverWorld && serverWorld.getGameRules().get(Fireblanket.NEW_ENTITIES_IMMUTABLE)) {
 			ImmutableEntities.makeImmutable(entity);
 		}
 	}

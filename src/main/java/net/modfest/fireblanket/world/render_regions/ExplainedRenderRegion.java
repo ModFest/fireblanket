@@ -3,11 +3,11 @@ package net.modfest.fireblanket.world.render_regions;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.BitSet;
 import java.util.Set;
@@ -27,8 +27,8 @@ public class ExplainedRenderRegion {
 
 	public final Set<UUID> entityAttachments = new ObjectOpenHashSet<>();
 	public final LongSet blockAttachments = new LongOpenHashSet();
-	public final Set<ResourceLocation> entityTypeAttachments = new ObjectOpenHashSet<>();
-	public final Set<ResourceLocation> beTypeAttachments = new ObjectOpenHashSet<>();
+	public final Set<Identifier> entityTypeAttachments = new ObjectOpenHashSet<>();
+	public final Set<Identifier> beTypeAttachments = new ObjectOpenHashSet<>();
 
 	public ExplainedRenderRegion(String name, RenderRegion reg) {
 		this.name = name;
@@ -49,7 +49,7 @@ public class ExplainedRenderRegion {
 		return nw;
 	}
 
-	public boolean isEntityTypeTargeted(ResourceLocation id) {
+	public boolean isEntityTypeTargeted(Identifier id) {
 		return entityTypeAttachmentsInverted ^ entityTypeAttachments.contains(id);
 	}
 
@@ -58,12 +58,12 @@ public class ExplainedRenderRegion {
 			&& (!entityTypeBoxBounded || reg.contains(entity.position()));
 	}
 
-	public boolean isBlockEntityTypeTargeted(ResourceLocation id) {
+	public boolean isBlockEntityTypeTargeted(Identifier id) {
 		return beTypeAttachmentsInverted ^ beTypeAttachments.contains(id);
 	}
 
 	public boolean isBlockEntityTypeTargeted(BlockEntity blockEntity) {
-		return isBlockEntityTypeTargeted(BlockEntityType.getKey(blockEntity.getType()))
+		return isBlockEntityTypeTargeted(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()))
 			&& (!beTypeBoxBounded || reg.contains(blockEntity.getBlockPos()));
 	}
 

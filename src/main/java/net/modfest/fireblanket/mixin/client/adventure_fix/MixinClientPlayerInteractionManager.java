@@ -25,23 +25,15 @@ public class MixinClientPlayerInteractionManager {
 		method = "interact",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;ensureHasSentCarriedItem()V", shift = At.Shift.AFTER),
 		cancellable = true)
-	private void fireblanket$filterEntityInteractByTag(Player player, Entity entity, InteractionHand hand, CallbackInfoReturnable<InteractionResult> ci) {
+	private void fireblanket$filterEntityInteractByTag(
+		final Player player,
+		final Entity entity,
+		final EntityHitResult hitResult,
+		final InteractionHand hand,
+		final CallbackInfoReturnable<InteractionResult> ci
+	) {
 		if (!player.getAbilities().mayBuild && (
-				InteractionCheck.preventUseEntity(player, entity.getType()) ||
-					InteractionCheck.preventUseItem(player, player.getItemInHand(hand)))) {
-			ci.setReturnValue(InteractionResult.FAIL);
-			ci.cancel();
-		}
-	}
-
-	@Inject(
-		method = "interactAt",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;ensureHasSentCarriedItem()V", shift = At.Shift.AFTER),
-		cancellable = true
-	)
-	private void fireblanket$filterEntityInteractAtLocationByTag(Player player, Entity entity, EntityHitResult hitResult, InteractionHand hand, CallbackInfoReturnable<InteractionResult> ci) {
-		if (!player.getAbilities().mayBuild && (
-			InteractionCheck.preventUseEntity(player, entity.getType()) ||
+			InteractionCheck.preventUseEntity(player, entity) ||
 				InteractionCheck.preventUseItem(player, player.getItemInHand(hand)))) {
 			ci.setReturnValue(InteractionResult.FAIL);
 			ci.cancel();
@@ -81,7 +73,7 @@ public class MixinClientPlayerInteractionManager {
 		cancellable = true
 	)
 	private void fireblanket$filterAttackEntityByTag(Player player, Entity target, CallbackInfo ci) {
-		if (!player.getAbilities().mayBuild && InteractionCheck.preventAttackEntity(player, target.getType())) {
+		if (!player.getAbilities().mayBuild && InteractionCheck.preventAttackEntity(player, target)) {
 			ci.cancel();
 		}
 	}

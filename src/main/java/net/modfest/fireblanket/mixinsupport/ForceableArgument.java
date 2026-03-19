@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixinsupport;
 
 public interface ForceableArgument {
-	void setForced(boolean force);
+	void fireblanket$setForced(boolean force);
 
-	boolean isForced();
+	boolean fireblanket$isForced();
 }

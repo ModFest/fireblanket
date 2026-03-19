@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.modfest.fireblanket.FireblanketConstants;
+import net.modfest.fireblanket.mixinsupport.CommandBlockShim;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -29,7 +30,7 @@ import java.time.ZoneId;
  * @author Ampflower
  **/
 @Mixin(value = BaseCommandBlock.class, priority = 1100)
-public class MixinCommandBlockExecutor {
+public abstract class MixinCommandBlockExecutor implements CommandBlockShim {
 	@Unique
 	private String fireblanket$key$command;
 	@Unique
@@ -90,6 +91,7 @@ public class MixinCommandBlockExecutor {
 		return fireblanket$lazy$lastOutput(text);
 	}
 
+	@SuppressWarnings("MixinAnnotationTarget") // Unchanged, is complaining for no reason.
 	@ModifyExpressionValue(
 		method = "*",
 		at = @At(
@@ -160,23 +162,15 @@ public class MixinCommandBlockExecutor {
 		return results;
 	}
 
-	/**
-	 * @author Ampflower
-	 * @reason Optimize message tracking. DATE_FORMAT takes a lot of CPU time.
-	 */
-	@Overwrite
-	public void sendSystemMessage(final Component message) {
+	@Override
+	public boolean fireblanket$setLastOutput(final Component message) {
 		if (!this.trackOutput) {
-			return;
+			return false;
 		}
 
 		this.fireblanket$lastOutput$time = Instant.now();
 		this.lastOutput = message;
-		this.onUpdated();
-	}
 
-	@Shadow
-	public void onUpdated() {
-		throw new AssertionError();
+		return true;
 	}
 }

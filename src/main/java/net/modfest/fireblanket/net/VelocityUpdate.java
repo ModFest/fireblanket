@@ -3,7 +3,7 @@ package net.modfest.fireblanket.net;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
-import net.modfest.fireblanket.mixin.accessor.EntityVelocityUpdateS2CPacketAccessor;
+import net.minecraft.world.phys.Vec3;
 
 public record VelocityUpdate(int entity, boolean allZero, int velocityX, int velocityY,	int velocityZ) {
 	public static final StreamCodec<RegistryFriendlyByteBuf, VelocityUpdate> CODEC = new StreamCodec<>() {
@@ -43,11 +43,11 @@ public record VelocityUpdate(int entity, boolean allZero, int velocityX, int vel
 	};
 
 	public static VelocityUpdate of(ClientboundSetEntityMotionPacket packet) {
-		EntityVelocityUpdateS2CPacketAccessor acc = (EntityVelocityUpdateS2CPacketAccessor) packet;
-		int vx = acc.vx();
-		int vy = acc.vy();
-		int vz = acc.vz();
-		return new VelocityUpdate(packet.getId(), vx == 0 && vy == 0 && vz == 0, vx, vy, vz);
+		Vec3 acc = packet.movement();
+		int vx = (int) (acc.x * 8000.0);
+		int vy = (int) (acc.y * 8000.0);
+		int vz = (int) (acc.z * 8000.0);
+		return new VelocityUpdate(packet.id(), vx == 0 && vy == 0 && vz == 0, vx, vy, vz);
 	}
 
 	public double getVelocityX() {

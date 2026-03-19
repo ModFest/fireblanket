@@ -24,8 +24,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.pattern.BlockInWorld;
@@ -46,15 +46,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
+import static net.minecraft.commands.Commands.LEVEL_OWNERS;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
-public class RegionCommand {
-	private static final Predicate<CommandSourceStack> WORLDEDIT = ctx -> FabricLoader.getInstance().isModLoaded("worldedit");
+public final class RegionCommand {
+	private static final Predicate<CommandSourceStack> WORLDEDIT = _ -> false; // _ -> FabricLoader.getInstance().isModLoaded("worldedit");
 
 	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("region")
-			.requires(ctx -> ctx.hasPermission(4))
+			.requires(ctx -> LEVEL_OWNERS.check(ctx.permissions()))
 			.then(literal("add")
 				.then(argument("name", StringArgumentType.string())
 					.then(addBranch("deny", Mode.DENY))
@@ -236,14 +237,14 @@ public class RegionCommand {
 						var eta = regions.getEntityTypeAttachments(r);
 						if (!eta.isEmpty()) {
 							ctx.getSource().sendSystemMessage(Component.literal(eta.size() + " entity type attachment" + (eta.size() == 1 ? "" : "s") + ":"));
-							for (ResourceLocation id : eta) {
+							for (Identifier id : eta) {
 								ctx.getSource().sendSystemMessage(Component.literal("  - " + id));
 							}
 						}
 						var beta = regions.getBlockEntityTypeAttachments(r);
 						if (!beta.isEmpty()) {
 							ctx.getSource().sendSystemMessage(Component.literal(beta.size() + " block entity type attachment" + (beta.size() == 1 ? "" : "s") + ":"));
-							for (ResourceLocation id : beta) {
+							for (Identifier id : beta) {
 								ctx.getSource().sendSystemMessage(Component.literal("  - " + id));
 							}
 						}
@@ -470,7 +471,7 @@ public class RegionCommand {
 						.executes(ctx -> {
 							RenderRegion r = getRegion(ctx);
 							RenderRegions regions = getRegions(ctx);
-							ResourceLocation id = ctx.getArgument("type", ResourceKey.class).location();
+							Identifier id = ctx.getArgument("type", ResourceKey.class).identifier();
 							if (attach) {
 								regions.attachBlockEntityType(r, id);
 							} else {
@@ -486,7 +487,7 @@ public class RegionCommand {
 						.executes(ctx -> {
 							RenderRegion r = getRegion(ctx);
 							RenderRegions regions = getRegions(ctx);
-							ResourceLocation id = ctx.getArgument("type", ResourceKey.class).location();
+							Identifier id = ctx.getArgument("type", ResourceKey.class).identifier();
 							if (attach) {
 								regions.attachEntityType(r, id);
 							} else {

@@ -2,9 +2,10 @@ package net.modfest.fireblanket.mixin.block;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.level.Level;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -34,10 +35,10 @@ public class MixinAbstractMinecartEntity {
 	private static void fireblanket$onCreateMinecart(
 		final CallbackInfoReturnable<AbstractMinecart> ci,
 		final @Local(argsOnly = true) Level world,
-		final @Local(argsOnly = true) Player player,
+		final @Local(argsOnly = true) @Nullable Player player,
 		final @Local AbstractMinecart minecartEntity
 	) {
-		if (world.isClientSide) {
+		if (world.isClientSide()) {
 			return;
 		}
 

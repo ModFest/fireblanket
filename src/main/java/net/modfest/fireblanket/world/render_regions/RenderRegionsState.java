@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
+import net.modfest.fireblanket.FireblanketConstants;
 
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class RenderRegionsState extends SavedData {
 	public static RenderRegionsState get(ServerLevel world) {
 		return world.getDataStorage().computeIfAbsent(
 			new SavedDataType<>(
-				"fireblanket_render_regions",
+				FireblanketConstants.id("render_regions"),
 				() -> new RenderRegionsState(world),
 				RenderRegions.CODEC
 					.xmap(new RenderRegionsState(world)::loadData, state -> state.regions.toData()),

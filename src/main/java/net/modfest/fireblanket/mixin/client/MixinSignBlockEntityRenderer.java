@@ -1,15 +1,24 @@
 package net.modfest.fireblanket.mixin.client;
 
-import net.minecraft.client.renderer.blockentity.SignRenderer;
+import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.client.renderer.blockentity.AbstractSignRenderer;
+import net.minecraft.client.renderer.blockentity.state.SignRenderState;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 // priority to dodge PictureSign
-@Mixin(value = SignRenderer.class, priority = 5000)
+@Mixin(value = AbstractSignRenderer.class, priority = 5000)
 public class MixinSignBlockEntityRenderer {
-
-//	@Inject(at = @At("HEAD"), method = "render", cancellable = true)
-//	public void fireblanket$DontRenderHiddenSigns(SignBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, CallbackInfo ci) {
-//		if (light == 0) ci.cancel();
-//	}
-
+	@Inject(
+		at = @At("HEAD"),
+		method = {
+			"submit(Lnet/minecraft/client/renderer/blockentity/state/SignRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V"
+		}, cancellable = true)
+	public void fireblanket$DontRenderHiddenSigns(CallbackInfo ci, @Local(argsOnly = true) SignRenderState state) {
+		if (state.lightCoords == 0) {
+			ci.cancel();
+		}
+	}
 }

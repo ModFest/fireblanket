@@ -5,7 +5,7 @@ import net.modfest.fireblanket.mixin.accessor.ArmorStandEntityAccessor;
 import net.modfest.fireblanket.mixin.accessor.ItemFrameAccessor;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
 
-public class ImmutableEntities {
+public final class ImmutableEntities {
 	public static void makeImmutable(Entity entity) {
 		// Set invulnerability
 		entity.setInvulnerable(true);
@@ -15,7 +15,7 @@ public class ImmutableEntities {
 			ae.setDisabledSlots(4144959);
 			// Disable movement (prevents abuse of fishing rods)
 			if (entity instanceof ImmmovableLivingEntity im) {
-				im.setNoMovement(true);
+				im.fireblanket$setNoMovement(true);
 			}
 		}
 

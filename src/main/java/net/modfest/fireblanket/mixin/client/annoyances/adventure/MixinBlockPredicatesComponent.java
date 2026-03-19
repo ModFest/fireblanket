@@ -4,9 +4,8 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.critereon.BlockPredicate;
+import net.minecraft.advancements.criterion.BlockPredicate;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -75,7 +74,7 @@ public class MixinBlockPredicatesComponent {
 
 		// TODO: wire in control to the player to adjust the page time.
 		// Currently set to 2.5 seconds for not too unreasonable speed.
-		if (Screen.hasShiftDown()) {
+		if (client.hasShiftDown()) {
 			return fireblanket$page(original, 2500);
 		}
 

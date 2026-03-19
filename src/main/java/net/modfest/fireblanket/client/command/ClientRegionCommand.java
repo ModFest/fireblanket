@@ -7,9 +7,9 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.network.chat.Component;
 import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
-public class ClientRegionCommand {
+public final class ClientRegionCommand {
 	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandBuildContext access) {
 		base.then(literal("region")
 			.then(literal("visualize")

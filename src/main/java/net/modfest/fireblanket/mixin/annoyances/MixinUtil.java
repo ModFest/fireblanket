@@ -1,7 +1,7 @@
 package net.modfest.fireblanket.mixin.annoyances;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

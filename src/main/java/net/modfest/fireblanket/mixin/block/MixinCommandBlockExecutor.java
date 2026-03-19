@@ -10,8 +10,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import net.modfest.fireblanket.mixinsupport.CommandBE;
-import net.modfest.fireblanket.util.TextUtil;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,17 +24,17 @@ import java.util.UUID;
  * @author Ampflower
  **/
 @Mixin(BaseCommandBlock.class)
-public class MixinCommandBlockExecutor implements CommandBE {
+public abstract class MixinCommandBlockExecutor implements CommandBE {
 	@Unique
-	private UUID fireblanket$owner;
+	private @Nullable UUID fireblanket$owner;
 	@Unique
-	private UUID fireblanket$lastUpdated;
+	private @Nullable UUID fireblanket$lastUpdated;
 	@Unique
-	private HoverEvent fireblanket$blame;
+	private @Nullable HoverEvent fireblanket$blame;
 	@Unique
-	private Component fireblanket$lastName;
+	private @Nullable Component fireblanket$lastName;
 	@Unique
-	private Component fireblanket$name;
+	private @Nullable Component fireblanket$name;
 
 	/**
 	 * @return self as {@link BaseCommandBlock}
@@ -68,7 +68,7 @@ public class MixinCommandBlockExecutor implements CommandBE {
 			return name;
 		}
 
-		if (this.fireblanket$lastName != name) {
+		if (this.fireblanket$lastName != name || this.fireblanket$name == null) {
 			this.fireblanket$lastName = name;
 			this.fireblanket$name = name.copy().withStyle(style -> style.withHoverEvent(this.fireblanket$getBlame()));
 		}
@@ -77,24 +77,24 @@ public class MixinCommandBlockExecutor implements CommandBE {
 	}
 
 	@Override
-	public final void fireblanket$setOwner(final UUID uuid) {
+	public final void fireblanket$setOwner(final @Nullable UUID uuid) {
 		this.fireblanket$owner = uuid;
 		this.fireblanket$clearCache();
 	}
 
 	@Override
-	public final void fireblanket$setLastUpdate(final UUID uuid) {
+	public final void fireblanket$setLastUpdate(final @Nullable UUID uuid) {
 		this.fireblanket$lastUpdated = uuid;
 		this.fireblanket$clearCache();
 	}
 
 	@Override
-	public final UUID fireblanket$getOwner() {
+	public final @Nullable UUID fireblanket$getOwner() {
 		return this.fireblanket$owner;
 	}
 
 	@Override
-	public final UUID fireblanket$getLastUpdate() {
+	public final @Nullable UUID fireblanket$getLastUpdate() {
 		return this.fireblanket$lastUpdated;
 	}
 
@@ -112,6 +112,11 @@ public class MixinCommandBlockExecutor implements CommandBE {
 			return this.fireblanket$blame;
 		}
 
-		return this.fireblanket$blame = TextUtil.toBlameHover((BaseCommandBlock) (Object) this);
+		return this.fireblanket$blame = fireblanket$generateBlame();
+	}
+
+	@Unique
+	protected HoverEvent fireblanket$generateBlame() {
+		return new HoverEvent.ShowText(Component.nullToEmpty("[Fireblanket] This command block failed to extend generateBlame:\n" + this.getClass().getName()));
 	}
 }

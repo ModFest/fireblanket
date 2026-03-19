@@ -1,5 +1,7 @@
 package net.modfest.fireblanket.mixin.entity_ticking;
 
+import com.llamalad7.mixinextras.expression.Definition;
+import com.llamalad7.mixinextras.expression.Expression;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.CreativeModeTab;
@@ -14,10 +16,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CreativeModeTabs.class)
 public class MixinItemGroups {
-	@Inject(method = "method_51311(Lnet/minecraft/world/item/CreativeModeTab$ItemDisplayParameters;Lnet/minecraft/world/item/CreativeModeTab$Output;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/CreativeModeTab$Output;accept(Lnet/minecraft/world/level/ItemLike;)V", ordinal = 8))
+
+	@Definition(id = "accept", method = "Lnet/minecraft/world/item/CreativeModeTab$Output;accept(Lnet/minecraft/world/level/ItemLike;)V")
+	@Definition(id = "DEBUG_STICK", field = "Lnet/minecraft/world/item/Items;DEBUG_STICK:Lnet/minecraft/world/item/Item;")
+	@Expression("?.accept(DEBUG_STICK)")
+	@Inject(
+		method = "*(Lnet/minecraft/world/item/CreativeModeTab$ItemDisplayParameters;Lnet/minecraft/world/item/CreativeModeTab$Output;)V",
+		at = @At(
+			value = "MIXINEXTRAS:EXPRESSION",
+			shift = At.Shift.AFTER
+		)
+	)
 	private static void fireblanket$addHammers(CreativeModeTab.ItemDisplayParameters ctx, CreativeModeTab.Output entries, CallbackInfo ci) {
 		ItemStack noai = new ItemStack(Items.DEBUG_STICK);
-		noai.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+		noai.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, _ -> {
 			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoAI", true);
 			return CustomData.of(nbt);
@@ -25,7 +37,7 @@ public class MixinItemGroups {
 		entries.accept(noai);
 
 		ItemStack nograv = new ItemStack(Items.DEBUG_STICK);
-		nograv.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+		nograv.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, _ -> {
 			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoGravity", true);
 			return CustomData.of(nbt);
@@ -33,7 +45,7 @@ public class MixinItemGroups {
 		entries.accept(nograv);
 
 		ItemStack nomov = new ItemStack(Items.DEBUG_STICK);
-		nomov.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+		nomov.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, _ -> {
 			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoMovement", true);
 			return CustomData.of(nbt);
@@ -41,7 +53,7 @@ public class MixinItemGroups {
 		entries.accept(nomov);
 
 		ItemStack noVehicle = new ItemStack(Items.DEBUG_STICK);
-		noVehicle.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, n -> {
+		noVehicle.update(DataComponents.CUSTOM_DATA, CustomData.EMPTY, _ -> {
 			CompoundTag nbt = new CompoundTag();
 			nbt.putBoolean("NoVehicleEntering", true);
 			return CustomData.of(nbt);

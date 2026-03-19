@@ -7,13 +7,12 @@ import io.netty.channel.ChannelFutureListener;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback;
-import net.fabricmc.fabric.api.gamerule.v1.GameRuleFactory;
-import net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder;
+import net.fabricmc.fabric.api.networking.v1.FriendlyByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginNetworking;
@@ -26,14 +25,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.TicketStorage;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.level.gamerules.GameRuleCategory;
 import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.ItemBanCommand;
@@ -65,24 +65,29 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 public class Fireblanket implements ModInitializer {
-	public static final ResourceLocation BATCHED_BE_UPDATE = ResourceLocation.fromNamespaceAndPath("fireblanket", "batched_be_sync");
-	public static final ResourceLocation BATCHED_VELOCITY_SYNC = ResourceLocation.fromNamespaceAndPath("fireblanket", "batched_velocity_sync");
-	public static final ResourceLocation FULL_STREAM_COMPRESSION = ResourceLocation.fromNamespaceAndPath("fireblanket", "full_stream_compression");
-	public static final ResourceLocation REGIONS_UPDATE = ResourceLocation.fromNamespaceAndPath("fireblanket", "regions_update");
+	public static final Identifier BATCHED_BE_UPDATE = FireblanketConstants.id("batched_be_sync");
+	public static final Identifier BATCHED_VELOCITY_SYNC = FireblanketConstants.id("batched_velocity_sync");
+	public static final Identifier FULL_STREAM_COMPRESSION = FireblanketConstants.id("full_stream_compression");
+	public static final Identifier REGIONS_UPDATE = FireblanketConstants.id("regions_update");
 
 	/**
 	 * Whether new entities will be fixed.
 	 *
 	 * @see net.modfest.fireblanket.mixin.entity_immutability
 	 */
-	public static final GameRules.Key<GameRules.BooleanValue> NEW_ENTITIES_IMMUTABLE =
-		GameRuleRegistry.register("newEntitiesImmutable", GameRules.Category.MOBS, GameRuleFactory.createBooleanRule(true));
+	public static final GameRule<Boolean> NEW_ENTITIES_IMMUTABLE =
+		GameRuleBuilder.forBoolean(true)
+			.category(GameRuleCategory.MOBS)
+			.buildAndRegister(FireblanketConstants.id("new_entities_immutable"));
 
 	/**
 	 * How far lightning may be observed. Setting this to 0 disables lightning outright.
 	 */
-	public static final GameRules.Key<GameRules.IntegerValue> LIGHTNING_BROADCAST_RADIUS =
-		GameRuleRegistry.register("fireblanket:lightningBroadcastRadius", GameRules.Category.UPDATES, GameRuleFactory.createIntRule(-1, -1));
+	public static final GameRule<Integer> LIGHTNING_BROADCAST_RADIUS =
+		GameRuleBuilder.forInteger(-1)
+			.range(-1, Integer.MAX_VALUE)
+			.category(GameRuleCategory.UPDATES)
+			.buildAndRegister(FireblanketConstants.id("lightning_broadcast_radius"));
 
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 
@@ -97,7 +102,7 @@ public class Fireblanket implements ModInitializer {
 	public static boolean CAN_USE_ZSTD = false;
 	public static boolean IS_FIREBLANKET_SERVER = false;
 
-	public static final TicketType KEEP_LOADED = Registry.register(BuiltInRegistries.TICKET_TYPE, "fireblanket:keep_loaded", new TicketType(0L, true, TicketType.TicketUse.LOADING));
+	public static final TicketType KEEP_LOADED = Registry.register(BuiltInRegistries.TICKET_TYPE, "fireblanket:keep_loaded", new TicketType(0L, TicketType.FLAG_LOADING));
 
 	@Override
 	public void onInitialize() {
@@ -175,17 +180,17 @@ public class Fireblanket implements ModInitializer {
 		}
 
 		// Networking
-		PayloadTypeRegistry.playS2C().register(BatchedBEUpdatePayload.ID, BatchedBEUpdatePayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(BatchedEntityVelocityUpdatePacket.ID, BatchedEntityVelocityUpdatePacket.CODEC);
-		PayloadTypeRegistry.playS2C().register(CommandBlockPacket.ID, CommandBlockPacket.CODEC);
-		PayloadTypeRegistry.playS2C().register(RegionSyncRequest.ID, RegionSyncRequest.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(BatchedBEUpdatePayload.ID, BatchedBEUpdatePayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(BatchedEntityVelocityUpdatePacket.ID, BatchedEntityVelocityUpdatePacket.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(CommandBlockPacket.ID, CommandBlockPacket.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RegionSyncRequest.ID, RegionSyncRequest.CODEC);
 
 		if (CAN_USE_ZSTD) {
 			LOGGER.info("Enabling full-stream compression");
-			ServerLoginConnectionEvents.QUERY_START.addPhaseOrdering(ResourceLocation.parse("fireblanket:pre"), Event.DEFAULT_PHASE);
-			ServerLoginConnectionEvents.QUERY_START.register(ResourceLocation.parse("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
+			ServerLoginConnectionEvents.QUERY_START.addPhaseOrdering(Identifier.parse("fireblanket:pre"), Event.DEFAULT_PHASE);
+			ServerLoginConnectionEvents.QUERY_START.register(Identifier.parse("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
 				if (!server.isSingleplayer()) {
-					sender.sendPacket(FULL_STREAM_COMPRESSION, PacketByteBufs.empty());
+					sender.sendPacket(FULL_STREAM_COMPRESSION, FriendlyByteBufs.empty());
 				}
 			});
 		}
@@ -202,9 +207,9 @@ public class Fireblanket implements ModInitializer {
 
 		PlayerRolesCompat.init();
 
-		ServerWorldEvents.LOAD.register((server, world) -> {
+		ServerLevelEvents.LOAD.register((server, world) -> {
 			if (FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS) > 0) {
-				if (!world.dimension().location().toString().equals("minecraft:overworld")) return;
+				if (!world.dimension().identifier().toString().equals("minecraft:overworld")) return;
 				int radius = FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS);
 				int min = (int) Math.floor(-radius / 16);
 				int max = (int) Math.ceil(radius / 16);
@@ -236,7 +241,7 @@ public class Fireblanket implements ModInitializer {
 			fullRegionSync(handler.player.level(), sender::sendPacket);
 		});
 
-		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
+		ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
 			fullRegionSync(player.level(), player.connection::send);
 		});
 	}
@@ -249,7 +254,7 @@ public class Fireblanket implements ModInitializer {
 		} else {
 			req = regions.toPacket();
 		}
-		sender.accept(ServerPlayNetworking.createS2CPacket(req));
+		sender.accept(ServerPlayNetworking.createClientboundPacket(req));
 	}
 
 	public static LinkedBlocQueue<QueuedPacket> getNextQueue() {

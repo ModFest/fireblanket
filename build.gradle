@@ -26,38 +26,34 @@ configurations {
 
 dependencies {
 	minecraft libs.mc
-	mappings loom.officialMojangMappings()
-	modImplementation libs.fl
-	modImplementation libs.fapi
+	implementation libs.fl
+	implementation libs.fapi
 
 	//modImplementation libs.sodium
 	//modImplementation libs.flywheel
 	//modImplementation libs.vanillin
 
-	modImplementation libs.nettyIoUringClasses
-	modImplementation variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }
-	modImplementation libs.zstd
+	implementation libs.nettyIoUringClasses
+	implementation variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }
+	implementation libs.zstd
 
-	modImplementation(libs.worldeditCore) {
-		exclude group: "it.unimi.dsi"
-		exclude group: "com.google.code.gson"
-		exclude group: "com.google.guava"
-		exclude group: "org.apache.logging.log4j"
-	}
-	modImplementation(libs.worldeditFabric) {
+	// This will *not* boot and you know it
+	compileOnly(libs.bundles.worldedit) {
 		exclude group: "it.unimi.dsi"
 		exclude group: "com.google.code.gson"
 		exclude group: "com.google.guava"
 		exclude group: "org.apache.logging.log4j"
 	}
 
-	modImplementation "dev.gegy:player-roles-api:1.6.15"
+	// TODO: update this when it's actually released
+	//  The API is currently mimicked in the meantime.
+	// implementation "dev.gegy:player-roles-api:1.6.15"
 
 	shade(libs.nettyIoUringClasses) { transitive = false }
 	shade(variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }) { transitive = false }
 	shade(libs.zstd) { transitive = false }
 
-	include(implementation(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.3.2-beta.3")))
+	include(implementation(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.3.3")))
 }
 
 processResources {
@@ -84,7 +80,8 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
-	it.options.release = 21
+	it.options.release = 25
+	it.options.compilerArgs += "-Xlint:deprecation,unchecked,rawtypes"
 }
 
 loom {
@@ -102,13 +99,13 @@ sourceSets {
 
 java {
 	withSourcesJar()
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {
 	from("LICENSE") {
-		rename { "${it}_${archivesBaseName}" }
+		rename { "${it}_${base.archivesName}" }
 	}
 
 	configurations.shade.resolve().each {
@@ -116,6 +113,9 @@ jar {
 			exclude 'META-INF/MANIFEST.MF'
 			exclude 'META-INF/INDEX.LIST'
 			exclude 'META-INF/maven/**'
+			// Unnecessary module-info.class
+			exclude 'META-INF/versions/**'
+			exclude 'META-INF/io.netty.versions.properties'
 		}
 	}
 }

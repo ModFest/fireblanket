@@ -31,8 +31,8 @@ public abstract class MixinEntitySelectorOptions {
 		if (!OPTIONS.containsKey("force")) {
 			register("force", reader -> {
 				reader.setWorldLimited();
-				((ForceableArgument) reader).setForced(reader.getReader().readBoolean());
-			}, reader -> !((ForceableArgument) reader).isForced(), Component.translatable("argument.entity.options.force.description"));
+				((ForceableArgument) reader).fireblanket$setForced(reader.getReader().readBoolean());
+			}, reader -> !((ForceableArgument) reader).fireblanket$isForced(), Component.translatable("argument.entity.options.force.description"));
 		}
 	}
 }

@@ -11,8 +11,8 @@ import net.minecraft.util.StringRepresentable;
 import net.modfest.fireblanket.stacksmash.StackUtil;
 import net.modfest.fireblanket.stacksmash.TraceLevel;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 /**
  * @author Ampflower

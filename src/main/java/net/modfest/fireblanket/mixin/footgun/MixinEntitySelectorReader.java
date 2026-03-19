@@ -2,7 +2,7 @@ package net.modfest.fireblanket.mixin.footgun;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
-import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.commands.arguments.selector.EntitySelectorParser;
 import net.minecraft.network.chat.Component;
@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.mixinsupport.ForceableArgument;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -34,19 +35,21 @@ public class MixinEntitySelectorReader implements ForceableArgument {
 	private Double deltaY;
 	@Shadow
 	private Double deltaZ;
+	@Unique
 	private boolean forced = false;
 
+	@Unique
 	private static final DynamicCommandExceptionType LIMIT_UNFORCED = new DynamicCommandExceptionType(
 		count -> Component.translatableEscape("argument.entity.selector.limit.unforced", count)
 	);
 
 	@Override
-	public void setForced(boolean forced) {
+	public void fireblanket$setForced(boolean forced) {
 		this.forced = forced;
 	}
 
 	@Override
-	public boolean isForced() {
+	public boolean fireblanket$isForced() {
 		return forced;
 	}
 

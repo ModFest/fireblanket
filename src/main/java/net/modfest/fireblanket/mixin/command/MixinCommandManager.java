@@ -81,8 +81,8 @@ public class MixinCommandManager {
 		if (runner == source.getEntity()) {
 			return MessageFormat.format("[{0}] [\0{1}\0:{2}]: /{3}\n",
 				time,
-				sourceProfile.getName().replace('\0', '�'),
-				sourceProfile.getId(),
+				sourceProfile.name().replace('\0', '�'),
+				sourceProfile.id(),
 				command
 			);
 		}
@@ -92,8 +92,8 @@ public class MixinCommandManager {
 				time,
 				// FIXME:
 				source.getTextName().replace('\0', '�'),
-				sourceProfile.getName().replace('\0', '�'),
-				sourceProfile.getId(),
+				sourceProfile.name().replace('\0', '�'),
+				sourceProfile.id(),
 				command
 			);
 		}
@@ -103,10 +103,10 @@ public class MixinCommandManager {
 		return MessageFormat.format(
 			"[{0}] [\0{1}\0:{2} \uD83C\uDFAD \0{3}\0:{4}]: /{5}\n",
 			time,
-			runnerProfile.getName().replace('\0', '�'),
-			runnerProfile.getId(),
-			sourceProfile.getName().replace('\0', '�'),
-			sourceProfile.getId(),
+			runnerProfile.name().replace('\0', '�'),
+			runnerProfile.id(),
+			sourceProfile.name().replace('\0', '�'),
+			sourceProfile.id(),
 			command
 		);
 	}

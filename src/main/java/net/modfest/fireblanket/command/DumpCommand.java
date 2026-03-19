@@ -19,20 +19,21 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+import static net.minecraft.commands.Commands.LEVEL_OWNERS;
 import static net.minecraft.commands.Commands.literal;
 
-public class DumpCommand {
+public final class DumpCommand {
 	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("dump")
-			.requires(source -> source.hasPermission(4) || Roles.isOrganizer(source.getPlayer()))
+			.requires(source -> LEVEL_OWNERS.check(source.permissions()) || Roles.isOrganizer(source.getPlayer()))
 			.then(literal("command-blocks")
 				.executes(ctx -> {
 					final MinecraftServer server = ctx.getSource().getServer();
 
-					final CmdFindReplaceCommand.Counter counter = CmdFindReplaceCommand.iterate(server, (text, cbe) -> {
+					final CmdFindReplaceCommand.Counter counter = CmdFindReplaceCommand.iterate(server, (text, cbe, level) -> {
 						final BaseCommandBlock executor = cbe.fireblanket$getCommandExecutor();
 
-						final Optional<Component> result = CmdFindReplaceCommand.toText(server, text, cbe, executor.getCommand());
+						final Optional<Component> result = CmdFindReplaceCommand.toText(server, level, text, cbe, executor.getCommand());
 
 							if (result.isEmpty()) {
 								return 0;
@@ -60,7 +61,7 @@ public class DumpCommand {
 					MinecraftServer server = cmd.getSource().getServer();
 					server.submit(() -> {
 						for (ServerLevel world : server.getAllLevels()) {
-							cmd.getSource().sendSuccess(() -> Component.literal("----- Dumping types for dimension " + world.dimensionTypeRegistration().unwrapKey().get().location() + " --------"), false);
+							cmd.getSource().sendSuccess(() -> Component.literal("----- Dumping types for dimension " + world.dimensionTypeRegistration().unwrapKey().get().identifier() + " --------"), false);
 
 							Object2IntOpenHashMap<EntityType<?>> map = new Object2IntOpenHashMap<>();
 

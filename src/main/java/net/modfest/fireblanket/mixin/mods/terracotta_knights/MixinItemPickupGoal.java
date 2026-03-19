@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(targets = "io.github.Bubblie01.terracotta_knights.entities.ai.ItemPickupGoal")
 @Pseudo
 public abstract class MixinItemPickupGoal extends Goal {
-	@Redirect(method = "method_6264", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/ai/sensing/Sensing;hasLineOfSight(Lnet/minecraft/world/entity/Entity;)Z"))
+	@Redirect(method = "canUse", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/ai/sensing/Sensing;hasLineOfSight(Lnet/minecraft/world/entity/Entity;)Z"))
 	private boolean fireblanket$canAlwaysSee(Sensing inst, Entity e) {
 		return true;
 	}

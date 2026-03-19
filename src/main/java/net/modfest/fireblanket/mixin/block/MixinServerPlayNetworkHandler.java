@@ -32,7 +32,7 @@ public abstract class MixinServerPlayNetworkHandler extends ServerCommonPacketLi
 		super(server, connection, clientData);
 	}
 
-	@Inject(method = "handleSetCommandBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BaseCommandBlock;onUpdated()V"))
+	@Inject(method = "handleSetCommandBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BaseCommandBlock;onUpdated(Lnet/minecraft/server/level/ServerLevel;)V"))
 	private void fireblanket$markUpdate(
 		final ServerboundSetCommandBlockPacket packet,
 		final CallbackInfo ci,
@@ -58,7 +58,7 @@ public abstract class MixinServerPlayNetworkHandler extends ServerCommonPacketLi
 
 	@Inject(
 		method = "handleSetCommandMinecart",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BaseCommandBlock;onUpdated()V")
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/BaseCommandBlock;onUpdated(Lnet/minecraft/server/level/ServerLevel;)V")
 	)
 	private void fireblanket$markUpdate(
 		final ServerboundSetCommandMinecartPacket packet,

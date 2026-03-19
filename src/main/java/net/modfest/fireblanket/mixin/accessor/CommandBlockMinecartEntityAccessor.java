@@ -1,6 +1,6 @@
 package net.modfest.fireblanket.mixin.accessor;
 
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 

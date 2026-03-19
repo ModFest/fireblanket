@@ -1,8 +1,6 @@
 package net.modfest.fireblanket.mixin.mods.vivatech;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Pseudo;
 
 @Pseudo
@@ -13,8 +11,7 @@ public class MixinWireRenderer {
 	 *
 	 * @reason Won't disappear from world, keeps rendering
 	 */
-	@Overwrite(remap = false)
-	public void afterEntities(WorldRenderContext context) {
-
-	}
+//	@Overwrite(remap = false)
+//	public void afterEntities(WorldRenderContext context) {
+//	}
 }

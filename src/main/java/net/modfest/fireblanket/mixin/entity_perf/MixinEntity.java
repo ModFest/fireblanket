@@ -33,7 +33,7 @@ public abstract class MixinEntity {
 //		Box box = this.getBoundingBox();
 //		BlockPos blockPos = BlockPos.ofFloored(box.minX + 1.0E-7, box.minY + 1.0E-7, box.minZ + 1.0E-7);
 //		BlockPos blockPos2 = BlockPos.ofFloored(box.maxX - 1.0E-7, box.maxY - 1.0E-7, box.maxZ - 1.0E-7);
-//		if (this.getWorld().isRegionLoaded(blockPos, blockPos2)) {
+//		if (this.getLevel().isRegionLoaded(blockPos, blockPos2)) {
 //			BlockPos.Mutable mutable = new BlockPos.Mutable();
 //
 //			// YXZ
@@ -45,15 +45,15 @@ public abstract class MixinEntity {
 //						}
 //
 //						mutable.set(x, y, z);
-//						BlockState blockState = this.getWorld().getBlockState(mutable);
+//						BlockState blockState = this.getLevel().getBlockState(mutable);
 //
 //						try {
-//							blockState.onEntityCollision(this.getWorld(), mutable, (Entity) (Object) this);
+//							blockState.onEntityCollision(this.getLevel(), mutable, (Entity) (Object) this);
 //							this.onBlockCollision(blockState);
 //						} catch (Throwable var12) {
 //							CrashReport crashReport = CrashReport.create(var12, "Colliding entity with block");
 //							CrashReportSection crashReportSection = crashReport.addElement("Block being collided with");
-//							CrashReportSection.addBlockInfo(crashReportSection, this.getWorld(), mutable, blockState);
+//							CrashReportSection.addBlockInfo(crashReportSection, this.getLevel(), mutable, blockState);
 //							throw new CrashException(crashReport);
 //						}
 //					}

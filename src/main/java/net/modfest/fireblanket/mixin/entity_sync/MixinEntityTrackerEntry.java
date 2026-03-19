@@ -1,7 +1,5 @@
 package net.modfest.fireblanket.mixin.entity_sync;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerEntity;
@@ -22,7 +20,6 @@ import org.spongepowered.asm.mixin.injection.Slice;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 @Mixin(ServerEntity.class)
 public class MixinEntityTrackerEntry implements TrackerEntityHolder {
@@ -38,13 +35,18 @@ public class MixinEntityTrackerEntry implements TrackerEntityHolder {
 		figure out the new offsets.
 	 */
 
-	@WrapOperation(
+	@Redirect(
 		method = "sendChanges",
 		slice = @Slice( // comes after bundle
 			from = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/game/ClientboundBundlePacket;<init>(Ljava/lang/Iterable;)V")
 		),
-		at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 1)
-	) public void fireblanket$velocity1(Consumer instance, Object o, Operation<Void> original) {
+		at = @At(
+			value = "INVOKE",
+			target = "Lnet/minecraft/server/level/ServerEntity$Synchronizer;sendToTrackingPlayers(Lnet/minecraft/network/protocol/Packet;)V",
+			ordinal = 1
+		)
+	)
+	public void fireblanket$velocity1(ServerEntity.Synchronizer instance, Packet<?> o) {
 		if (o instanceof ClientboundSetEntityMotionPacket packet) {
 			if (heldListeners == null) {
 				throw new IllegalStateException();
@@ -55,8 +57,8 @@ public class MixinEntityTrackerEntry implements TrackerEntityHolder {
 		}
 	}
 
-	@Redirect(method = "sendChanges", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerEntity;broadcastAndSend(Lnet/minecraft/network/protocol/Packet;)V"))
-	public void fireblanket$velocity2(ServerEntity instance, Packet<?> o) {
+	@Redirect(method = "sendChanges", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerEntity$Synchronizer;sendToTrackingPlayersAndSelf(Lnet/minecraft/network/protocol/Packet;)V"))
+	public void fireblanket$velocity2(ServerEntity.Synchronizer instance, Packet<?> o) {
 		if (o instanceof ClientboundSetEntityMotionPacket packet) {
 			if (heldListeners == null) {
 				throw new IllegalStateException();
@@ -73,7 +75,7 @@ public class MixinEntityTrackerEntry implements TrackerEntityHolder {
 	}
 
 	@Override
-	public void setListeners(Set<ServerPlayerConnection> listeners) {
+	public void fireblanket$setListeners(Set<ServerPlayerConnection> listeners) {
 		this.heldListeners = listeners;
 	}
 }

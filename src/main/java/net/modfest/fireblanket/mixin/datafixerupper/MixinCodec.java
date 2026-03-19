@@ -24,7 +24,9 @@ public interface MixinCodec {
 	 * which is not feasible to use in production if it can be caught at all.
 	 * <p>
 	 * Should anyone ever have the misfortune of <em>needing</em> to diagnose a codec crash that only
-	 * says NullPointerException, hook an in-depth stack dumper or debugger at the following locations:
+	 * says NullPointerException,
+	 * hook an {@link net.modfest.fireblanket.diagnostics.ForbiddenStackWalker in-depth stack dumper}
+	 * or debugger at the following locations:
 	 * <ul>
 	 *     <li>Constructor of {@link DataResult.Success}</li>
 	 *     <li>{@link DataResult.Success#result()}</li>

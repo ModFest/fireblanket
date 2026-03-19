@@ -3,11 +3,11 @@ package net.modfest.fireblanket.mixin.opto;
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.Util;
-import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.phys.AABB;
@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -126,6 +127,7 @@ public abstract class MixinEntitySelector {
 		}
 	}
 
+	@Unique
 	private Predicate<Entity> getPositionOnlyPredicate(Vec3 pos) {
 		Predicate<Entity> predicate = e -> true;
 		if (this.aabb != null) {
@@ -140,6 +142,7 @@ public abstract class MixinEntitySelector {
 		return predicate;
 	}
 
+	@Unique
 	private Predicate<Entity> getPositionOnlyPredicate(Vec3 pos, @Nullable AABB box, @Nullable FeatureFlagSet enabledFeatures) {
 		boolean bl = enabledFeatures != null;
 		boolean bl2 = box != null;

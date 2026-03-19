@@ -33,7 +33,7 @@ public class MixinMatrixStack implements TracerProxy, GuardProxy {
 	private int lastIndex;
 
 	@Shadow
-	private void setIdentity() {
+	public void setIdentity() {
 		throw new AssertionError();
 	}
 

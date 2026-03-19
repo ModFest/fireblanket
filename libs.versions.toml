@@ -1,33 +1,36 @@
 [versions]
-loom = "1.14.+"
+loom = "1.15.+"
 
-mc = "1.21.8"
-fl = "0.16.14"
-fapi = "0.129.0+1.21.8"
+mc = "26.1-pre-3"
+fl = "0.18.4"
+fapi = "0.143.14+26.1"
 
-nettyIoUring = "0.0.15.Final"
+nettyIoUring = "4.2.7.Final"
 zstd = "1.5.5-5"
 
 sodium = "mc1.21-0.5.9"
 flywheel = "1.0.4-27"
 vanillin = "1.1.3-27"
-worldeditCore = "7.3.16"
-worldeditFabric = "7.3.16"
+worldeditCore = "7.4.0"
+worldeditFabric = "7.4.0"
 
 [plugins]
-loom = { id = "fabric-loom", version.ref = "loom" }
+loom = { id = "net.fabricmc.fabric-loom", version.ref = "loom" }
 
 [libraries]
 mc = { group = "mojang", name = "minecraft", version.ref = "mc" }
 fl = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fl" }
 fapi = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fapi" }
 
-nettyIoUringClasses = { group = "io.netty.incubator", name = "netty-incubator-transport-classes-io_uring", version.ref = "nettyIoUring" }
-nettyIoUringNative = { group = "io.netty.incubator", name = "netty-incubator-transport-native-io_uring", version.ref = "nettyIoUring" }
+nettyIoUringClasses = { group = "io.netty", name = "netty-transport-classes-io_uring", version.ref = "nettyIoUring" }
+nettyIoUringNative = { group = "io.netty", name = "netty-transport-native-io_uring", version.ref = "nettyIoUring" }
 zstd = { group = "com.github.luben", name = "zstd-jni", version.ref = "zstd" }
 
 sodium = { group = "maven.modrinth", name = "sodium", version.ref = "sodium" }
 flywheel = { group = "dev.engine-room.flywheel", name = "flywheel-fabric-1.21.1", version.ref = "flywheel" }
 vanillin = { group = "dev.engine-room.vanillin", name = "vanillin-fabric-1.21.1", version.ref = "vanillin" }
 worldeditCore = { group = "com.sk89q.worldedit", name = "worldedit-core", version.ref = "worldeditCore" }
-worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc1.21.7", version.ref = "worldeditFabric" }
+worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc1.21.11", version.ref = "worldeditFabric" }
+
+[bundles]
+worldedit = ['worldeditCore', 'worldeditFabric']

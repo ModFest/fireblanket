@@ -21,7 +21,7 @@ public class MixinEntityType {
 	)
 	private <T extends Entity> T afterCreate(ServerLevel world, @Nullable Consumer<T> afterConsumer, BlockPos pos, EntitySpawnReason reason, boolean alignPosition, boolean invertY, Operation<T> original) {
 		Consumer<T> processImmutable = entity -> {
-			if (entity.level() instanceof ServerLevel serverWorld && serverWorld.getGameRules().getBoolean(Fireblanket.NEW_ENTITIES_IMMUTABLE) && reason == EntitySpawnReason.SPAWN_ITEM_USE) {
+			if (entity.level() instanceof ServerLevel serverWorld && serverWorld.getGameRules().get(Fireblanket.NEW_ENTITIES_IMMUTABLE) && reason == EntitySpawnReason.SPAWN_ITEM_USE) {
 				ImmutableEntities.makeImmutable(entity);
 			}
 		};

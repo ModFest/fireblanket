@@ -3,8 +3,8 @@ package net.modfest.fireblanket;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -24,7 +24,7 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 
-public class FireblanketConstants {
+public final class FireblanketConstants {
 	public static final String MOD_ID = "fireblanket";
 
 	public static final TagKey<Block> BLOCK_INTERACTION_RESTRICTED = tag(Registries.BLOCK, "block_interaction_restricted");
@@ -67,8 +67,8 @@ public class FireblanketConstants {
 		.appendLiteral("] ")
 		.toFormatter();
 
-	public static ResourceLocation id(String id) {
-		return ResourceLocation.fromNamespaceAndPath(MOD_ID, id);
+	public static Identifier id(String id) {
+		return Identifier.fromNamespaceAndPath(MOD_ID, id);
 	}
 
 	private static <T> TagKey<T> tag(ResourceKey<? extends Registry<T>> reg, String id) {

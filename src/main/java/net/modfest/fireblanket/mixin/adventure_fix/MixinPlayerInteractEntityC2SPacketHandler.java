@@ -1,12 +1,15 @@
 package net.modfest.fireblanket.mixin.adventure_fix;
 
+import com.llamalad7.mixinextras.expression.Definition;
+import com.llamalad7.mixinextras.expression.Expression;
+import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.modfest.fireblanket.mixinsupport.InteractionCheck;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,44 +17,45 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Vanilla uses an anonymous class to process entity interaction serverside, so there's not
- * really a better place to do this. Entity#interactAt is only called here,
- * so we might as well filter both.
- *
- * While the client has an easy way to do the check in ClientPlayerInteractionManager,
- * the ServerPlayerInteractionManager does not. /shrug
+ * Entity#interactAt is only called here, so we might as well filter both.
  */
-@Mixin(targets = "net.minecraft.server.network.ServerGamePacketListenerImpl$1")
+@Mixin(ServerGamePacketListenerImpl.class)
 public class MixinPlayerInteractEntityC2SPacketHandler {
 	@Shadow
-	@Final
-	private ServerGamePacketListenerImpl field_28963; // outer this
-	@Shadow
-	@Final
-	private Entity val$target; // target entity captured variable
+	public ServerPlayer player;
 
+	@Definition(id = "getEntityOrPart", method = "Lnet/minecraft/server/level/ServerLevel;getEntityOrPart(I)Lnet/minecraft/world/entity/Entity;")
+	@Expression("? = ?.getEntityOrPart(?)")
 	@Inject(
-		method = "performInteraction(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/server/network/ServerGamePacketListenerImpl$EntityInteraction;)V",
-		at = @At("HEAD"),
+		method = "handleInteract",
+		at = @At(value = "MIXINEXTRAS:EXPRESSION", shift = At.Shift.AFTER),
 		cancellable = true
 	)
-	private void fireblanket$filterEntityInteractByTag(InteractionHand hand, ServerGamePacketListenerImpl.EntityInteraction action, CallbackInfo ci) {
-		Player player = field_28963.player;
-		ItemStack stack = player.getItemInHand(hand);
+	private void fireblanket$filterEntityInteractByTag(
+		final ServerboundInteractPacket packet,
+		final CallbackInfo ci,
+		final @Local Entity target
+	) {
+		ItemStack stack = player.getItemInHand(packet.hand());
 		if (!player.getAbilities().mayBuild &&
-			(InteractionCheck.preventUseItem(player, stack) || InteractionCheck.preventUseEntity(player, val$target.getType()))) {
+			(InteractionCheck.preventUseItem(player, stack) || InteractionCheck.preventUseEntity(player, target))) {
 			ci.cancel();
 		}
 	}
 
+	@Definition(id = "getEntityOrPart", method = "Lnet/minecraft/server/level/ServerLevel;getEntityOrPart(I)Lnet/minecraft/world/entity/Entity;")
+	@Expression("? = ?.getEntityOrPart(?)")
 	@Inject(
-		method = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl$1;attack()V",
-		at = @At("HEAD"),
+		method = "handleAttack",
+		at = @At(value = "MIXINEXTRAS:EXPRESSION", shift = At.Shift.AFTER),
 		cancellable = true
 	)
-	private void fireblanket$filterAttackEntityByTag(CallbackInfo ci) {
-		Player player = field_28963.player;
-		if (!player.getAbilities().mayBuild && InteractionCheck.preventAttackEntity(player, val$target.getType())) {
+	private void fireblanket$filterAttackEntityByTag(
+		final ServerboundAttackPacket packet,
+		final CallbackInfo ci,
+		final @Local Entity target
+	) {
+		if (!player.getAbilities().mayBuild && InteractionCheck.preventAttackEntity(player, target)) {
 			ci.cancel();
 		}
 	}

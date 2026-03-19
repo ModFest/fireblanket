@@ -121,8 +121,12 @@ public abstract class MixinClientConnection implements FSCConnection {
 			zos.setCloseFrameOnFlush(false);
 			ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
 			ZstdDecoder dec = new ZstdDecoder();
-			pipeline.remove("compress");
-			pipeline.remove("decompress");
+			if (pipeline.get("compress") != null) {
+				pipeline.remove("compress");
+			}
+			if (pipeline.get("decompress") != null) {
+				pipeline.remove("decompress");
+			}
 			pipeline.addBefore("prepender", "fireblanket:fsc_enc", enc);
 			pipeline.addBefore("splitter", "fireblanket:fsc_dec", dec);
 		} catch (IOException e) {

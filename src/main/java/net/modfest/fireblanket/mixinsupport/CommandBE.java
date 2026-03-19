@@ -1,20 +1,26 @@
 package net.modfest.fireblanket.mixinsupport;
 
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BaseCommandBlock;
+import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
 public interface CommandBE {
 	BaseCommandBlock fireblanket$getCommandExecutor();
 
-	void fireblanket$setOwner(UUID uuid);
+	default @Nullable Entity fireblanket$getEntity() {
+		return null;
+	}
 
-	void fireblanket$setLastUpdate(UUID uuid);
+	void fireblanket$setOwner(@Nullable UUID uuid);
 
-	UUID fireblanket$getOwner();
+	void fireblanket$setLastUpdate(@Nullable UUID uuid);
 
-	UUID fireblanket$getLastUpdate();
+	@Nullable UUID fireblanket$getOwner();
+
+	@Nullable UUID fireblanket$getLastUpdate();
 
 	HoverEvent fireblanket$getBlame();
 }

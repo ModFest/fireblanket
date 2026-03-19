@@ -1,10 +1,10 @@
-accessWidener v2 named
+accessWidener v2 official
 #
 accessible class net/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$RebuildTask
 accessible class net/minecraft/server/level/ServerChunkCache$MainThreadExecutor
 #
-accessible class net/minecraft/server/network/ServerGamePacketListenerImpl$EntityInteraction
-accessible method net/minecraft/server/level/ChunkMap getChunks ()Ljava/lang/Iterable;
+#accessible class net/minecraft/server/network/ServerGamePacketListenerImpl$EntityInteraction
+#accessible method net/minecraft/server/level/ChunkMap getChunks ()Ljava/lang/Iterable;
 #
 accessible method net/minecraft/world/level/chunk/storage/RegionFileVersion <init> (ILjava/lang/String;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper;)V
 accessible class net/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper
@@ -23,3 +23,7 @@ accessible method net/minecraft/network/protocol/game/ClientboundBlockEntityData
 accessible field net/minecraft/world/entity/InterpolationHandler interpolationSteps I
 
 accessible method net/minecraft/commands/CommandSourceStack broadcastToAdmins (Lnet/minecraft/network/chat/Component;)V
+
+# Thank you Mojang
+accessible class net/minecraft/world/entity/vehicle/minecart/MinecartCommandBlock$MinecartCommandBase
+accessible method net/minecraft/server/network/EventLoopGroupHolder <init> (Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Class;)V

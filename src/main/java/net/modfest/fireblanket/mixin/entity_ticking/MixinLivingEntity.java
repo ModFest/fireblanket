@@ -8,6 +8,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -15,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntity.class)
 public abstract class MixinLivingEntity extends Entity implements ImmmovableLivingEntity {
+	@Unique
 	private boolean fireblanket$movementless = false;
 
 	public MixinLivingEntity(EntityType<?> type, Level world) {
@@ -39,7 +41,7 @@ public abstract class MixinLivingEntity extends Entity implements ImmmovableLivi
 	}
 
 	@Override
-	public void setNoMovement(boolean noMovement) {
+	public void fireblanket$setNoMovement(boolean noMovement) {
 		this.fireblanket$movementless = noMovement;
 	}
 }

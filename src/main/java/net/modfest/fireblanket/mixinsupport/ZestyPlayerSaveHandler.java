@@ -5,20 +5,19 @@ import com.github.luben.zstd.ZstdOutputStream;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.io.FastBufferedInputStream;
-import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.util.Util;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.FileNameDateFormatter;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess;
 import net.minecraft.world.level.storage.PlayerDataStorage;
-import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.world.level.storage.ValueInput;
 import net.modfest.fireblanket.util.IOUnaryOperation;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -30,16 +29,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 
 public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	public static final boolean AVOID_ZTSD = Boolean.getBoolean("fireblanket.saveAsDat");
-
-	// I don't know why this isn't just a constant there.
-	private static final DateTimeFormatter FORMATTER = FileNameDateFormatter.create();
 
 	private final Path playerDataDir;
 
@@ -49,7 +44,7 @@ public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 	}
 
 	private void backupPlayerData(
-		final Player player,
+		final NameAndId player,
 		final Path failed,
 		final String extension
 	) {
@@ -57,27 +52,27 @@ public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 			return;
 		}
 
-		Path backup = this.playerDataDir.resolve(player.getStringUUID() + "_corrupted_" + LocalDateTime.now().format(
-			FORMATTER) + "." + extension);
+		Path backup = this.playerDataDir.resolve(player.id() + "_corrupted_" + LocalDateTime.now().format(
+			FileNameDateFormatter.FORMATTER) + "." + extension);
 
 		try {
 			Files.copy(failed, backup, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 		} catch (Exception e) {
-			LOGGER.warn("Failed to copy the player.dat file for {}", player.getName().getString(), e);
+			LOGGER.warn("Failed to copy the player.dat file for {}", player, e);
 		}
 	}
 
 	private @Nullable CompoundTag loadPlayerData(
-		final Player player,
+		final NameAndId player,
 		final String extension,
 		final IOUnaryOperation<InputStream> decoder
 	) {
-		Path path = this.playerDataDir.resolve(player.getStringUUID() + "." + extension);
+		Path path = this.playerDataDir.resolve(player.id() + "." + extension);
 		if (Files.isRegularFile(path)) {
 			try (InputStream in = new FastBufferedInputStream(decoder.apply(Files.newInputStream(path)))) {
 				return NbtIo.read(new DataInputStream(in));
 			} catch (Exception e) {
-				LOGGER.warn("Failed to load player data for {} at {}", player.getName().getString(), path, e);
+				LOGGER.warn("Failed to load player data for {} at {}", player, path, e);
 				backupPlayerData(player, path, extension);
 			}
 		}
@@ -85,7 +80,7 @@ public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 		return null;
 	}
 
-	private @Nullable CompoundTag tryLoadPlayerData(Player player) {
+	private @Nullable CompoundTag tryLoadPlayerData(NameAndId player) {
 		CompoundTag nbt = loadPlayerData(player, "zat", ZstdInputStream::new);
 		if (nbt != null) {
 			return nbt;
@@ -105,7 +100,7 @@ public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 	}
 
 	@Override
-	public Optional<ValueInput> load(Player player, ProblemReporter errorReporter) {
+	public Optional<CompoundTag> load(NameAndId player) {
 		CompoundTag nbt = tryLoadPlayerData(player);
 
 		if (nbt == null) {
@@ -115,11 +110,9 @@ public class ZestyPlayerSaveHandler extends PlayerDataStorage {
 		try {
 			int ver = NbtUtils.getDataVersion(nbt, -1);
 			nbt = DataFixTypes.PLAYER.updateToCurrentVersion(fixerUpper, nbt, ver);
-			ValueInput readView = TagValueInput.create(errorReporter, player.registryAccess(), nbt);
-			player.load(readView);
-			return Optional.of(readView);
+			return Optional.of(nbt);
 		} catch (Exception e) {
-			LOGGER.warn("Failed to load player data for {}", player.getName().getString());
+			LOGGER.warn("Failed to load player data for {}", player);
 			return Optional.empty();
 		}
 	}

@@ -12,6 +12,5 @@ public final class ClientState {
 	// entities that are set to render a mask around them for identification
 	public static final Set<EntityType<?>> MASKED_ENTITIES = new HashSet<>();
 
-	public static boolean wireframe = false;
 	public static boolean displayTickTimes = false;
 }
