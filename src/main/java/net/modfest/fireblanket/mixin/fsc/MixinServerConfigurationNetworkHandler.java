@@ -25,10 +25,9 @@ public abstract class MixinServerConfigurationNetworkHandler extends ServerCommo
 	 * Inject point for FullStreamCompression.
 	 *
 	 * @author Ampflower
-	 * @see FSCConnection#fireblanket$startFullStreamCompression()
 	 **/
 	@Inject(method = "handleConfigurationFinished", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;setupOutboundProtocol(Lnet/minecraft/network/ProtocolInfo;)V"))
 	private void fireblanket$startFSC(CallbackInfo ci) {
-		((FSCConnection) this.connection).fireblanket$startFullStreamCompression();
+		((FSCConnection) this.connection).fireblanket$startFullStreamCompression(40L);
 	}
 }

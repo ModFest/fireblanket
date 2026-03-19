@@ -34,7 +34,7 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
 		}, 5, 5, TimeUnit.MINUTES);
 	}
 
-	private final long flushFrequency, unclogFrequency;
+	private long flushFrequency, unclogFrequency;
 
 	private final ReassignableOutputStream out;
 	private final ZstdOutputStream stream;
@@ -46,8 +46,7 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
 	public ZstdEncoder(ReassignableOutputStream out, ZstdOutputStream stream, long flushFrequency) {
 		this.out = out;
 		this.stream = stream;
-		this.flushFrequency = flushFrequency;
-		this.unclogFrequency = (flushFrequency * 3) / 2;
+		this.setFlushFrequency(flushFrequency);
 	}
 
 	@Override
@@ -78,6 +77,12 @@ public class ZstdEncoder extends MessageToByteEncoder<ByteBuf> {
 	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
 		super.handlerRemoved(ctx);
 		stream.close();
+	}
+
+	public void setFlushFrequency(final long nanos) {
+		Fireblanket.LOGGER.debug("Zstd encoder: setting flush to {}ns", nanos);
+		this.flushFrequency = nanos;
+		this.unclogFrequency = (nanos * 3) / 2;
 	}
 
 }

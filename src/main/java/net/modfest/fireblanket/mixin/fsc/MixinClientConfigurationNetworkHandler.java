@@ -25,10 +25,9 @@ public abstract class MixinClientConfigurationNetworkHandler extends ClientCommo
 	 * Inject point for FullStreamCompression.
 	 *
 	 * @author Ampflower
-	 * @see FSCConnection#fireblanket$startFullStreamCompression()
 	 **/
 	@Inject(method = "handleConfigurationFinished", at = @At("RETURN"))
 	private void fireblanket$startFSC(CallbackInfo ci) {
-		((FSCConnection) this.connection).fireblanket$startFullStreamCompression();
+		((FSCConnection) this.connection).fireblanket$startFullStreamCompression(0L);
 	}
 }

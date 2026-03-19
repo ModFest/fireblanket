@@ -100,13 +100,18 @@ public abstract class MixinClientConnection implements FSCConnection {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void fireblanket$startFullStreamCompression() {
-		if (this.fireblanket$fsc && !this.fireblanket$fscStarted) {
-			this.fireblanket$enableFSCNow();
+	public void fireblanket$startFullStreamCompression(final long millis) {
+		if (!this.fireblanket$fsc) {
+			return;
+		}
+		if (!this.fireblanket$fscStarted) {
+			this.fireblanket$enableFSCNow(millis);
+		} else {
+			this.fireblanket$modifyFSC(millis);
 		}
 	}
 
-	private void fireblanket$enableFSCNow() {
+	private void fireblanket$enableFSCNow(final long millis) {
 //		Thread.dumpStack();
 
 		fireblanket$fscStarted = true;
@@ -119,7 +124,7 @@ public abstract class MixinClientConnection implements FSCConnection {
 			zos.setLevel(client ? 6 : 4);
 			zos.setLong(client ? 27 : 22);
 			zos.setCloseFrameOnFlush(false);
-			ZstdEncoder enc = new ZstdEncoder(ros, zos, TimeUnit.MILLISECONDS.toNanos(client ? 0 : 40));
+			ZstdEncoder enc = new ZstdEncoder(ros, zos, millis);
 			ZstdDecoder dec = new ZstdDecoder();
 			if (pipeline.get("compress") != null) {
 				pipeline.remove("compress");
@@ -132,6 +137,17 @@ public abstract class MixinClientConnection implements FSCConnection {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	// io_uring makes it very difficult
+	private void fireblanket$modifyFSC(final long millis) {
+		final ChannelPipeline pipeline = channel.pipeline();
+
+		if (!(pipeline.get("fireblanket:fsc_enc") instanceof ZstdEncoder encoder)) {
+			throw new IllegalStateException("fireblanket:fsc_enc is missing or replaced despite starting fsc?");
+		}
+
+		encoder.setFlushFrequency(TimeUnit.MILLISECONDS.toNanos(millis));
 	}
 
 	@Override
