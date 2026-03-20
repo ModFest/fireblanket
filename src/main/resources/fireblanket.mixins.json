@@ -49,6 +49,7 @@
 		"crash.MixinCraftingScreenHandler",
 		"criterion.MixinServerPlayerEntity",
 		"datafixerupper.MixinCodec",
+		"diagnostics.net.MixinConnection",
 		"entity_block.MixinEntityType",
 		"entity_immutability.MixinDecorationItem",
 		"entity_immutability.MixinEntityType",
