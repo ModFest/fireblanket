@@ -12,7 +12,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.modfest.fireblanket.FireblanketClient;
 import net.modfest.fireblanket.world.render_regions.RenderRegion;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -20,23 +19,15 @@ import java.util.Map;
 public final class RenderRegionRenderer implements DebugRenderer.SimpleDebugRenderer {
 	public static final RenderRegionRenderer instance = new RenderRegionRenderer();
 
-	public static boolean shouldRenderBox = false;
-	public static boolean useRegionRenderer = true;
-
 	@Override
 	public void emitGizmos(
 		final double cameraX,
 		final double cameraY,
 		final double cameraZ,
-		// These should be not null, but we don't use these.
-		final @Nullable DebugValueAccess valueAccess,
-		final @Nullable Frustum frustum,
+		final DebugValueAccess valueAccess,
+		final Frustum frustum,
 		final float partialTicks
 	) {
-		if (!shouldRenderBox) {
-			return;
-		}
-
 		for (Map.Entry<String, RenderRegion> e : FireblanketClient.renderRegions.getRegionsByName().entrySet()) {
 			RenderRegion rr = e.getValue();
 

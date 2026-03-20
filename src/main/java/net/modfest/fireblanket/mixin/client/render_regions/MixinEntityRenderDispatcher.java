@@ -5,7 +5,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.FireblanketClient;
-import net.modfest.fireblanket.client.render.RenderRegionRenderer;
+import net.modfest.fireblanket.client.ClientState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -14,6 +14,6 @@ public class MixinEntityRenderDispatcher {
 
 	@ModifyReturnValue(at = @At("RETURN"), method = "shouldRender")
 	private static boolean shouldRender(boolean original, Entity entity, Frustum frustum, double x, double y, double z) {
-		return original && (!RenderRegionRenderer.useRegionRenderer || FireblanketClient.shouldRender(entity));
+		return original && (!ClientState.useRegionRenderer || FireblanketClient.shouldRender(entity));
 	}
 }

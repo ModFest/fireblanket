@@ -12,5 +12,8 @@ public final class ClientState {
 	// entities that are set to render a mask around them for identification
 	public static final Set<EntityType<?>> MASKED_ENTITIES = new HashSet<>();
 
-	public static boolean displayTickTimes = false;
+	public static boolean displayingEntityTickTimes;
+	public static boolean displayingBlockTickTimes;
+
+	public static boolean useRegionRenderer = true;
 }

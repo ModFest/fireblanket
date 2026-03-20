@@ -8,6 +8,7 @@
 	},
 	"minVersion": "0.8.7",
 	"mixins": [
+		"accessor.AccessorLevel",
 		"accessor.ArmorStandEntityAccessor",
 		"accessor.BlockEntityTypeAccessor",
 		"accessor.ChunkMapAccessor",
@@ -114,6 +115,7 @@
 		"client.annoyances.adventure.MixinBlockPredicatesComponent",
 		"client.be_masking.MixinBlockEntityRenderDispatcher",
 		"client.hooks.MixinDebugRenderer",
+		"client.hooks.MixinKeyboardHandler",
 		"client.pose_stack.AccessorMatrixStackEntry",
 		"client.pose_stack.MixinMatrix4dStack",
 		"client.pose_stack.MixinMatrix4fStack",
@@ -121,7 +123,6 @@
 		"client.render_regions.MixinBlockEntityRenderDispatcher",
 		"client.render_regions.MixinEntityRenderDispatcher",
 		"client.render_regions.MixinRegionSubjects",
-		"client.timing.MixinBlockEntityRenderDispatcher",
 		"client.timing.MixinClientWorld",
 		"client.timing.MixinObservables",
 		"client.timing.MixinWorld",

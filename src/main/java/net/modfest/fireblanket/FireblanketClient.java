@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
+import net.modfest.fireblanket.client.FireblanketDebug;
 import net.modfest.fireblanket.client.command.BERMaskCommand;
 import net.modfest.fireblanket.client.command.ClientRegionCommand;
 import net.modfest.fireblanket.client.command.CountParticleTypesCommand;
@@ -106,6 +107,8 @@ public class FireblanketClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			client.schedule(renderRegions::clear);
 		});
+
+		FireblanketDebug.init();
 	}
 
 	public static boolean shouldRender(Entity entity) {

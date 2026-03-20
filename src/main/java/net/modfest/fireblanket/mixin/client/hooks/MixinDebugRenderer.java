@@ -1,14 +1,22 @@
 package net.modfest.fireblanket.mixin.client.hooks;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.debug.DebugRenderer;
+import net.modfest.fireblanket.client.FireblanketDebug;
+import net.modfest.fireblanket.client.render.BlockTimingRenderer;
+import net.modfest.fireblanket.client.render.EntityTimingRenderer;
 import net.modfest.fireblanket.client.render.RenderRegionRenderer;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.List;
 
 /**
  * @author Ampflower
@@ -16,10 +24,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DebugRenderer.class)
 @Environment(EnvType.CLIENT)
 public class MixinDebugRenderer {
-	// FIXME: just integrate this into the vanilla debug stack.
-	//  The renderer in question is already built for it.
-	@Inject(method = "emitGizmos", at = @At("RETURN"))
-	private void onRenderLate(final Frustum frustum, final double camX, final double camY, final double camZ, final float partialTicks, final CallbackInfo ci) {
-		RenderRegionRenderer.instance.emitGizmos(camX, camY, camZ, /* unused */ null, frustum, partialTicks);
+
+	@Shadow
+	@Final
+	private List<DebugRenderer.SimpleDebugRenderer> renderers;
+
+	@Inject(method = "refreshRendererList", at = @At("TAIL"))
+	private void injectFireblanketDebuggers(final CallbackInfo ci, final @Local Minecraft minecraft) {
+		if (minecraft.debugEntries.isCurrentlyEnabled(FireblanketDebug.RENDER_REGION_VISUALIZE)) {
+			this.renderers.add(RenderRegionRenderer.instance);
+		}
+
+		if (minecraft.debugEntries.isCurrentlyEnabled(FireblanketDebug.ENTITY_TICK_TIMES)) {
+			this.renderers.add(new EntityTimingRenderer(minecraft));
+		}
+
+		if (minecraft.debugEntries.isCurrentlyEnabled(FireblanketDebug.BLOCK_TICK_TIMES)) {
+			this.renderers.add(new BlockTimingRenderer(minecraft));
+		}
 	}
 }

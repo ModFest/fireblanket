@@ -19,5 +19,22 @@
 	"fireblanket.unknown": "Unknown",
 	"fireblanket.warning.tooltip": "Unknown command source found.\nAnyone blamed here may not have set up the command. Check the surrounding logs first.",
 	"fireblanket.advMode.powered": "Powered",
-	"fireblanket.item.canUse.count": "%s different blocks!"
+	"fireblanket.item.canUse.count": "%s different blocks!",
+	"fireblanket.debug.render_region.visualize.off": "Disabling render region visualization.",
+	"fireblanket.debug.render_region.visualize.on": "Enabling render region visualization.",
+	"fireblanket.debug.render_region.rendering.off": "Disabling render region rendering.",
+	"fireblanket.debug.render_region.rendering.on": "Enabling render region rendering.",
+	"fireblanket.debug.tick_times.advanced_warning": "WARNING: Tick times are influenced by a myriad of factors and require expert knowledge to analyze!",
+	"fireblanket.debug.tick_times.off": "No longer displaying tick times.",
+	"fireblanket.debug.tick_times.on": "Displaying tick times in world.",
+	"fireblanket.debug.block_tick_times.off": "No longer displaying block tick times.",
+	"fireblanket.debug.block_tick_times.on": "Displaying block tick times in world.",
+	"fireblanket.debug.entity_tick_times.off": "No longer displaying entity tick times.",
+	"fireblanket.debug.entity_tick_times.on": "Displaying entity tick times in world.",
+	"key.category.fireblanket.debug": "Fireblanket Debug",
+	"key.fireblanket.debug.render_region.visualize": "Visualize Render Regions",
+	"key.fireblanket.debug.render_region.rendering": "Render Region Rendering",
+	"key.fireblanket.debug.entity_tick_times": "Display Entity Tick Times",
+	"key.fireblanket.debug.block_tick_times": "Display Block Tick Times",
+	"key.fireblanket.debug.tick_times": "Display Tick Times"
 }

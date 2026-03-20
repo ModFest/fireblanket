@@ -4,8 +4,9 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandBuildContext;
-import net.minecraft.network.chat.Component;
-import net.modfest.fireblanket.client.render.RenderRegionRenderer;
+import net.modfest.fireblanket.client.ClientState;
+import net.modfest.fireblanket.client.DebugText;
+import net.modfest.fireblanket.client.FireblanketDebug;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
@@ -14,18 +15,24 @@ public final class ClientRegionCommand {
 		base.then(literal("region")
 			.then(literal("visualize")
 				.executes(cl -> {
-					Minecraft.getInstance().submit(() -> RenderRegionRenderer.shouldRenderBox = !RenderRegionRenderer.shouldRenderBox);
+					Minecraft.getInstance().submit(() -> {
+						if (Minecraft.getInstance().debugEntries.toggleStatus(FireblanketDebug.RENDER_REGION_VISUALIZE)) {
+							cl.getSource().sendFeedback(DebugText.renderRegionVisualizeOn);
+						} else {
+							cl.getSource().sendFeedback(DebugText.renderRegionVisualizeOff);
+						}
+					});
 					return 0;
 				})
 			)
 			.then(literal("toggle")
 				.executes(cl -> {
-					if (RenderRegionRenderer.useRegionRenderer) {
-						cl.getSource().sendFeedback(Component.literal("Disabling render region rendering."));
+					if (ClientState.useRegionRenderer) {
+						cl.getSource().sendFeedback(DebugText.renderRegionRenderingOff);
 					} else {
-						cl.getSource().sendFeedback(Component.literal("Enabling render region rendering."));
+						cl.getSource().sendFeedback(DebugText.renderRegionRenderingOn);
 					}
-					Minecraft.getInstance().submit(() -> RenderRegionRenderer.useRegionRenderer = !RenderRegionRenderer.useRegionRenderer);
+					Minecraft.getInstance().submit(() -> ClientState.useRegionRenderer = !ClientState.useRegionRenderer);
 					return 0;
 				})
 			)
