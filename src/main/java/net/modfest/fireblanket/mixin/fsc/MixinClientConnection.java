@@ -15,6 +15,7 @@ import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
 import net.modfest.fireblanket.Fireblanket;
 import net.modfest.fireblanket.Fireblanket.QueuedPacket;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
+import net.modfest.fireblanket.net.NetworkState;
 import net.modfest.fireblanket.net.ZstdDecoder;
 import net.modfest.fireblanket.net.ZstdEncoder;
 import net.modfest.fireblanket.util.LinkedBlocQueue;
@@ -22,6 +23,7 @@ import net.modfest.fireblanket.util.ReassignableOutputStream;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -48,8 +50,11 @@ public abstract class MixinClientConnection implements FSCConnection {
 	@Shadow
 	public abstract void flushChannel();
 
+	@Unique
 	private final LinkedBlocQueue<QueuedPacket> fireblanket$queue = Fireblanket.getNextQueue();
-	private boolean fireblanket$fsc = false;
+	@Unique
+	private NetworkState fireblanket$fsc = NetworkState.NONE;
+	@Unique
 	private boolean fireblanket$fscStarted = false;
 
 	/**
@@ -85,7 +90,7 @@ public abstract class MixinClientConnection implements FSCConnection {
 		// idk man
 		if (packet instanceof ClientboundDisconnectPacket || packet instanceof ClientboundLoginDisconnectPacket) {
 			fireblanket$fscStarted = false;
-			fireblanket$fsc = false;
+			fireblanket$fsc = NetworkState.NONE;
 		}
 	}
 
@@ -100,13 +105,15 @@ public abstract class MixinClientConnection implements FSCConnection {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void fireblanket$startFullStreamCompression(final long millis) {
-		if (!this.fireblanket$fsc) {
+	public void fireblanket$startFullStreamCompression(final NetworkState state, final long millis) {
+		if (state.ordinal() < this.fireblanket$fsc.ordinal()) {
 			return;
 		}
 		if (!this.fireblanket$fscStarted) {
+			Fireblanket.LOGGER.debug("Starting FSC now: {} @ {}ms", state, millis);
 			this.fireblanket$enableFSCNow(millis);
 		} else {
+			Fireblanket.LOGGER.debug("Modifying FSC flush time: {} @ {}ms", state, millis);
 			this.fireblanket$modifyFSC(millis);
 		}
 	}
@@ -151,7 +158,8 @@ public abstract class MixinClientConnection implements FSCConnection {
 	}
 
 	@Override
-	public void fireblanket$enableFullStreamCompression() {
-		fireblanket$fsc = true;
+	public void fireblanket$enableFullStreamCompression(final NetworkState state) {
+		Fireblanket.LOGGER.debug("Enabling FSC: {}", state);
+		this.fireblanket$fsc = state;
 	}
 }

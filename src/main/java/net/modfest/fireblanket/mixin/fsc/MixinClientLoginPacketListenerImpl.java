@@ -3,6 +3,7 @@ package net.modfest.fireblanket.mixin.fsc;
 import net.minecraft.client.multiplayer.ClientHandshakePacketListenerImpl;
 import net.minecraft.network.Connection;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
+import net.modfest.fireblanket.net.NetworkState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -33,6 +34,6 @@ public class MixinClientLoginPacketListenerImpl {
 		)
 	)
 	private void fireblanket$startFSC(CallbackInfo ci) {
-		((FSCConnection) this.connection).fireblanket$startFullStreamCompression(0L);
+		((FSCConnection) this.connection).fireblanket$startFullStreamCompression(NetworkState.CONFIGURATION, 0L);
 	}
 }

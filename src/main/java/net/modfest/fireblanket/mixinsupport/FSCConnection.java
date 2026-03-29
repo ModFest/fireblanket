@@ -8,6 +8,7 @@ import net.modfest.fireblanket.mixin.fsc.MixinClientConfigurationNetworkHandler;
 import net.modfest.fireblanket.mixin.fsc.MixinClientLoginPacketListenerImpl;
 import net.modfest.fireblanket.mixin.fsc.MixinServerConfigurationNetworkHandler;
 import net.modfest.fireblanket.mixin.fsc.MixinServerLoginPacketListenerImpl;
+import net.modfest.fireblanket.net.NetworkState;
 
 public interface FSCConnection {
 
@@ -31,8 +32,13 @@ public interface FSCConnection {
 	 * @see MixinClientLoginPacketListenerImpl
 	 * @see MixinServerLoginPacketListenerImpl
 	 */
-	void fireblanket$startFullStreamCompression(final long millis);
+	void fireblanket$startFullStreamCompression(final NetworkState state, final long millis);
 
-	void fireblanket$enableFullStreamCompression();
+	/**
+	 * Sets the starting point for full-stream compression.
+	 *
+	 * @implSpec The client and server <em>must</em> agree, else you will have decoding errors.
+	 */
+	void fireblanket$enableFullStreamCompression(final NetworkState state);
 
 }

@@ -6,6 +6,7 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.modfest.fireblanket.mixinsupport.FSCConnection;
+import net.modfest.fireblanket.net.NetworkState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,6 +29,6 @@ public abstract class MixinServerConfigurationNetworkHandler extends ServerCommo
 	 **/
 	@Inject(method = "handleConfigurationFinished", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;setupOutboundProtocol(Lnet/minecraft/network/ProtocolInfo;)V"))
 	private void fireblanket$startFSC(CallbackInfo ci) {
-		((FSCConnection) this.connection).fireblanket$startFullStreamCompression(40L);
+		((FSCConnection) this.connection).fireblanket$startFullStreamCompression(NetworkState.PLAY, 40L);
 	}
 }

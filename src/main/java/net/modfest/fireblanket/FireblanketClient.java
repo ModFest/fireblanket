@@ -29,10 +29,14 @@ import net.modfest.fireblanket.net.BEUpdate;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
 import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
+import net.modfest.fireblanket.net.NetworkState;
 import net.modfest.fireblanket.net.VelocityUpdate;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class FireblanketClient implements ClientModInitializer {
@@ -61,12 +65,48 @@ public class FireblanketClient implements ClientModInitializer {
 		});
 
 		ClientLoginNetworking.registerGlobalReceiver(Fireblanket.FULL_STREAM_COMPRESSION, (client, handler, buf, listenerAdder) -> {
-			if (Fireblanket.CAN_USE_ZSTD) {
-				((FSCConnection) ((ClientLoginNetworkHandlerAccessor) handler).fireblanket$getConnection()).fireblanket$enableFullStreamCompression();
-				return CompletableFuture.completedFuture(FriendlyByteBufs.empty());
-			} else {
+			if (!Fireblanket.CAN_USE_ZSTD) {
 				return CompletableFuture.completedFuture(null);
 			}
+			if (!(((ClientLoginNetworkHandlerAccessor) handler).fireblanket$getConnection() instanceof FSCConnection connection)) {
+				Fireblanket.LOGGER.error("FSC mixins are broken; ZSTD is allowed but FSCConnection is missing?");
+				return CompletableFuture.completedFuture(null);
+			}
+
+			if (!buf.isReadable()) {
+				// We're talking to an older Fireblanket server. Enable at play.
+				connection.fireblanket$enableFullStreamCompression(NetworkState.PLAY);
+				// This also means send an empty buffer back.
+				return CompletableFuture.completedFuture(FriendlyByteBufs.empty());
+			}
+
+			final Set<NetworkState> states = buf.readCollection(HashSet::new, NetworkState.CODEC);
+
+			// Retain all valid states.
+			states.retainAll(NetworkState.VALID);
+
+			if (states.isEmpty()) {
+				// Signal that we did not understand and proceed.
+				return CompletableFuture.completedFuture(null);
+			}
+
+			NetworkState state = NetworkState.UNKNOWN;
+			for (final NetworkState next : states) {
+				if (state.ordinal() > next.ordinal()) {
+					state = next;
+				}
+			}
+
+			connection.fireblanket$enableFullStreamCompression(state);
+
+			if (state == NetworkState.LOGIN) {
+				listenerAdder.accept(_ -> connection.fireblanket$startFullStreamCompression(NetworkState.LOGIN, 0));
+			}
+
+			final var ret = FriendlyByteBufs.create();
+			ret.writeByte(state.getNetworkName().length());
+			ret.writeCharSequence(state.getNetworkName(), StandardCharsets.UTF_8);
+			return CompletableFuture.completedFuture(ret);
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(BatchedBEUpdatePayload.ID, (payload, context) -> {

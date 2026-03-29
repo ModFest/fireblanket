@@ -24,6 +24,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -51,6 +52,7 @@ import net.modfest.fireblanket.mixinsupport.FSCConnection;
 import net.modfest.fireblanket.net.BatchedBEUpdatePayload;
 import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
+import net.modfest.fireblanket.net.NetworkState;
 import net.modfest.fireblanket.util.LinkedBlocQueue;
 import net.modfest.fireblanket.world.ItemBan;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
@@ -60,6 +62,7 @@ import net.modfest.fireblanket.world.render_regions.RenderRegionsState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -190,14 +193,49 @@ public class Fireblanket implements ModInitializer {
 			ServerLoginConnectionEvents.QUERY_START.addPhaseOrdering(Identifier.parse("fireblanket:pre"), Event.DEFAULT_PHASE);
 			ServerLoginConnectionEvents.QUERY_START.register(Identifier.parse("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
 				if (!server.isSingleplayer()) {
-					sender.sendPacket(FULL_STREAM_COMPRESSION, FriendlyByteBufs.empty());
+					final var buf = FriendlyByteBufs.create();
+					buf.writeCollection(NetworkState.VALID, NetworkState.CODEC);
+					sender.sendPacket(FULL_STREAM_COMPRESSION, buf);
 				}
 			});
 		}
 
 		ServerLoginNetworking.registerGlobalReceiver(FULL_STREAM_COMPRESSION, (server, handler, understood, buf, synchronizer, responseSender) -> {
-			if (understood) {
-				((FSCConnection) ((ServerLoginNetworkHandlerAccessor) handler).fireblanket$getConnection()).fireblanket$enableFullStreamCompression();
+			if (!understood) {
+				return;
+			}
+
+			if (!((((ServerLoginNetworkHandlerAccessor) handler).fireblanket$getConnection()) instanceof FSCConnection connection)) {
+				responseSender.disconnect(Component.translatableWithFallback("fireblanket.fsc.broken", "FSC Broken"));
+				return;
+			}
+
+			if (!buf.isReadable()) {
+				// Old Fireblanket logic; only relevant to backports,
+				// or cases of "why are you using ViaVersion with Fireblanket's networking?".
+				connection.fireblanket$enableFullStreamCompression(NetworkState.PLAY);
+				return;
+			}
+
+			final int len = buf.readByte() & 255;
+
+			if (len > 127 || !buf.isReadable(len)) {
+				responseSender.disconnect(Component.translatableWithFallback("fireblanket.fsc.invalid.size", "FSC Invalid: %s > %s || %1$s > 127", len, buf.readableBytes()));
+			}
+
+			final String rawState = buf.readString(len, StandardCharsets.UTF_8);
+			final NetworkState state = NetworkState.parse(rawState);
+
+			if (!NetworkState.VALID.contains(state)) {
+				// If the client picked a state that is not valid, we cannot continue as we'll crash the client.
+				responseSender.disconnect(Component.translatableWithFallback("fireblanket.fsc.invalid.name", "FSC Invalid: %s", state));
+				return;
+			}
+
+			connection.fireblanket$enableFullStreamCompression(state);
+
+			if (state == NetworkState.LOGIN) {
+				connection.fireblanket$startFullStreamCompression(NetworkState.LOGIN, 0);
 			}
 		});
 
