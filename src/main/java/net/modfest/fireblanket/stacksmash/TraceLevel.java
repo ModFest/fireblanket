@@ -114,20 +114,19 @@ public enum TraceLevel implements StringRepresentable {
 			if (classCheck != null) {
 				return classCheck;
 			}
-
+/*
 			final TraceElement traceElement = TraceCache.toElement(trace);
 			final TraceElement currentElement = TraceCache.toElement(current);
 			if (!traceElement.isSameFunction(currentElement)) {
 				return String.format("Method signature mismatch:\n\t%s\n\t%s", traceElement, currentElement);
 			}
-			/*
+ */
 			if (!trace.getMethodName().equals(current.getMethodName())) {
 				return mismatch(trace, current);
 			}
 			if (!trace.getDescriptor().equals(current.getDescriptor())) {
 				return mismatch(trace, current);
 			}
-			*/
 			return null;
 		}
 
