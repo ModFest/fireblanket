@@ -34,7 +34,7 @@ public final class StackTracer implements Guard, Stack, Tracer {
 			return;
 		}
 
-		final StackFrame current = StackUtil.getCaller(stackDepth);
+		final StackFrame current = StackUtil.getCallerAsProxy(stackDepth);
 		this.frames.push(current);
 	}
 
@@ -43,7 +43,7 @@ public final class StackTracer implements Guard, Stack, Tracer {
 	public boolean fireblanket$pop(int stackDepth) {
 		if (this.fireblanket$guardCheck()) {
 			final StackFrame peek = this.frames.peek();
-			throw new StackSmashException(peek, StackUtil.getCaller(stackDepth));
+			throw new StackSmashException(peek, StackUtil.getCallerAsProxy(stackDepth));
 			//logger.warn("Guard check: attempted to pop {}", peek, );
 			//return false;
 		}
@@ -51,7 +51,7 @@ public final class StackTracer implements Guard, Stack, Tracer {
 		final StackFrame trace = this.frames.pop();
 
 		if (this.level != TraceLevel.NONE) {
-			final StackFrame current = StackUtil.getCaller(stackDepth);
+			final StackFrame current = StackUtil.getCallerAsProxy(stackDepth);
 
 			this.level.logIfMismatched(trace, current);
 		}
@@ -63,7 +63,7 @@ public final class StackTracer implements Guard, Stack, Tracer {
 	public void fireblanket$startTrace(final @NotNull TraceLevel level, final int depth) {
 		if (this.frames.size() != 0) {
 			this.frames.poll();
-			this.frames.push(StackUtil.getCaller(3));
+			this.frames.push(StackUtil.getCallerAsProxy(3));
 		}
 		this.level = level;
 		this.startingTraceDepth = this.frames.size();
@@ -71,7 +71,7 @@ public final class StackTracer implements Guard, Stack, Tracer {
 
 	@Override
 	public void fireblanket$stopTrace(final int depth) {
-		final StackFrame frame = StackUtil.getCaller(3);
+		final StackFrame frame = StackUtil.getCallerAsProxy(3);
 		final StackFrame trace = this.frames.peek();
 
 		this.level.logIfMismatched(trace, frame);

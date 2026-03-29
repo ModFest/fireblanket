@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 
@@ -70,6 +71,8 @@ public final class StackUtil {
 		}
 	}
 
+	// TODO: admittedly, this isn't exactly intuitive, as I had to make a mini-diagnostic to
+	//  figure out the depth I actually needed.
 	/**
 	 * Fetches the stack frame of the caller, skipping over
 	 * {@link #knownSkippableClasses known skippable classes}.
@@ -82,14 +85,49 @@ public final class StackUtil {
 	 * 	due to an optimization to avoid an expensive {@link String#startsWith(String)} call.
 	 */
 	@CheckReturnValue
-	static StackWalker.StackFrame getCaller(final int depth) {
-		// walker + self + caller to be skipped
+	public static StackWalker.StackFrame getCallerAsProxy(final int depth) {
+		// self + caller as proxy + caller to be skipped
 		final int lambdaDepth = depth + 3;
 		return walker.walk(stream -> stream
 			.skip(lambdaDepth)
 			.dropWhile(frame -> isSkippableClass(frame.getDeclaringClass()))
 			.findFirst()
 		).orElseThrow();
+	}
+
+	/**
+	 * Mini-diagnostic for aiding in what depth should be added to {@link #getCallerAsProxy(int)}
+	 * to get the desired result.
+	 *
+	 * @param depth The amount that you think you need to skip.
+	 * @return The caller, either yours or your proxy's.
+	 * @implSpec This function shall operate the same as {@link #getCallerAsProxy(int)} to allow drop-in debugging,
+	 * 	with the sole exception of returning {@link TraceElement#nullFrame an empty frame} when it would otherwise fail.
+	 *
+	 */
+	public static StackWalker.StackFrame printCallStackAsProxy(final int depth) {
+		final int lambdaDepth = depth + 3;
+		return walker.walk(stream -> {
+			StackWalker.StackFrame returnedFrame = null;
+			int i = 0;
+			final Iterator<StackWalker.StackFrame> itr = stream.iterator();
+			while (itr.hasNext()) {
+				final StackWalker.StackFrame frame = itr.next();
+				final int relativeDepth = i - lambdaDepth;
+				final boolean skipped = isSkippableClass(frame.getDeclaringClass());
+
+				logger.info("{} => {} ({})", relativeDepth, frame, skipped ? "skippable" : "retained");
+
+				if (relativeDepth >= 0 && !skipped && returnedFrame == null) {
+					logger.info("^-^ returned");
+					returnedFrame = frame;
+				}
+
+				i++;
+			}
+
+			return Objects.requireNonNullElse(returnedFrame, TraceElement.nullFrame);
+		});
 	}
 
 	static boolean isSkippableClass(final Class<?> clazz) {
