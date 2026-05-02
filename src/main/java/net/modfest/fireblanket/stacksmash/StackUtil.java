@@ -1,6 +1,5 @@
 package net.modfest.fireblanket.stacksmash;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
@@ -39,14 +38,14 @@ public final class StackUtil {
 	 * Mod classes that are known to wrap push/pop.
 	 **/
 	private static final Set<String> knownSkippableClassNames = Set.of(
-		"com.unascribed.ears.common.render.AbstractEarsRenderDelegate"
+		"com.unascribed.ears.common.render.AbstractEarsRenderDelegate",
+		"com.mojang.blaze3d.vertex.PoseStack"
 	);
 
 	/**
 	 * Vanilla or Fireblanket classes that are known to wrap push/pop.
 	 */
 	private static final Set<Class<?>> knownSkippableClasses = Set.of(
-		PoseStack.class
 	);
 
 	/**
