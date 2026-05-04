@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.client.render;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -16,11 +17,19 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.modfest.fireblanket.mixin.accessor.AccessorLevel;
 import net.modfest.fireblanket.mixinsupport.ObservableTicks;
+import org.slf4j.Logger;
+
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * @author Ampflower
  **/
 public final class BlockTimingRenderer implements DebugRenderer.SimpleDebugRenderer {
+	private static final Logger logger = LogUtils.getLogger();
+
+	private static final Set<Object> witnesses = Collections.newSetFromMap(new WeakHashMap<>());
 
 	private final Minecraft minecraft;
 
@@ -45,6 +54,18 @@ public final class BlockTimingRenderer implements DebugRenderer.SimpleDebugRende
 
 		for (final TickingBlockEntity ticker : ((AccessorLevel) level).getBlockEntityTickers()) {
 			final BlockPos pos = ticker.getPos();
+
+			if (pos == null) {
+				// TODO: implement recursive object dumper in forbidden stack walker
+				//  This needs to be fixed properly but this is a debugger,
+				//  it can have a lil' bit of jank as a treat.
+				// Disable the snitch call because it's utterly useless with Lithium,
+				// as it wraps all objects, without providing a toString.
+//				if (witnesses.add(ticker)) {
+//					logger.warn("Ticker {} ({}) has a missing block position?!?!?!", ticker, ticker.getClass().getSimpleName());
+//				}
+				continue;
+			}
 
 			if (!frustum.isVisible(new AABB(pos))) {
 				continue;
