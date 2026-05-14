@@ -2,17 +2,36 @@ package net.modfest.fireblanket.compat;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.sk89q.worldedit.IncompleteRegionException;
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.coremc.CoreMcAdapter;
+import com.sk89q.worldedit.entity.Player;
+import com.sk89q.worldedit.fabric.FabricAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.regions.selector.CuboidRegionSelector;
+import com.sk89q.worldedit.regions.selector.limit.PermissiveSelectorLimits;
+import com.sk89q.worldedit.world.World;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.modfest.fireblanket.command.CommandUtils;
 
-public class WorldEditCompat {
+public final class WorldEditCompat {
+	private static final CoreMcAdapter adapter = FabricAdapter.get();
+
+	private static LocalSession getSessionOf(CommandSourceStack source) throws CommandSyntaxException {
+		Player player = adapter.fromNativePlayer(source.getPlayerOrException());
+		return WorldEdit.getInstance().getSessionManager().get(player);
+	}
 
 	public static BoundingBox getSelection(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-		/*
-		LocalSession localSession = FabricWorldEdit.inst.getSession(ctx.getSource().getPlayerOrException());
+		LocalSession localSession = getSessionOf(ctx.getSource());
 		Region region;
 		try {
-			region = localSession.getSelection(FabricWorldEdit.inst.getWorld(ctx.getSource().getLevel()));
+			region = localSession.getSelection(adapter.fromNativeWorld(ctx.getSource().getLevel()));
 		} catch (IncompleteRegionException ex) {
 			throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("Please make a region selection first."));
 		}
@@ -23,22 +42,16 @@ public class WorldEditCompat {
 		} else {
 			throw CommandUtils.GENERIC_EXCEPTION.create(Component.literal("Only cuboid regions are supported."));
 		}
-		*/
-		throw new AssertionError();
 	}
 
 	public static void setSelection(CommandContext<CommandSourceStack> ctx, BoundingBox box) throws CommandSyntaxException {
-		/*
-		LocalSession localSession = FabricWorldEdit.inst.getSession(ctx.getSource().getPlayerOrException());
-		World w = FabricWorldEdit.inst.getWorld(ctx.getSource().getLevel());
+		LocalSession localSession = getSessionOf(ctx.getSource());
+		World w = adapter.fromNativeWorld(ctx.getSource().getLevel());
 		CuboidRegionSelector crs = new CuboidRegionSelector(w);
 		crs.selectPrimary(BlockVector3.at(box.minX(), box.minY(), box.minZ()), PermissiveSelectorLimits.getInstance());
 		crs.selectSecondary(BlockVector3.at(box.maxX(), box.maxY(), box.maxZ()), PermissiveSelectorLimits.getInstance());
 		localSession.setRegionSelector(w, crs);
-		localSession.dispatchCUISelection(FabricAdapter.adaptCommandSource(ctx.getSource()));
-		*/
-		throw new AssertionError();
+		localSession.dispatchCUISelection(adapter.adaptCommandSource(ctx.getSource()));
 	}
-
 
 }

@@ -51,7 +51,8 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 public final class RegionCommand {
-	private static final Predicate<CommandSourceStack> WORLDEDIT = _ -> false; // _ -> FabricLoader.getInstance().isModLoaded("worldedit");
+	private static final Predicate<CommandSourceStack> WORLDEDIT = _ -> FabricLoader.getInstance()
+		.isModLoaded("worldedit");
 
 	public static void init(LiteralArgumentBuilder<CommandSourceStack> base, CommandBuildContext access) {
 		base.then(literal("region")

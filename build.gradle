@@ -37,8 +37,7 @@ dependencies {
 	implementation variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }
 	implementation libs.zstd
 
-	// This will *not* boot and you know it
-	compileOnly(libs.bundles.worldedit) {
+	implementation(libs.bundles.worldedit) {
 		exclude group: "it.unimi.dsi"
 		exclude group: "com.google.code.gson"
 		exclude group: "com.google.guava"
