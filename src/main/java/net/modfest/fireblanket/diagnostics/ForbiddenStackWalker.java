@@ -510,7 +510,7 @@ public final class ForbiddenStackWalker {
 				frame.getLineNumber(),
 				frame.getByteCodeIndex(),
 				builder,
-				crasher == null ? "null" : crasher.getClass().getName(),
+				getMaybeClassName(crasher),
 				System.identityHashCode(crasher),
 				e
 			);
@@ -666,7 +666,11 @@ public final class ForbiddenStackWalker {
 			if (!(object instanceof Path) && object instanceof final Iterable<?> iterable) {
 				printIterableIdentity(builder, object).append('\n');
 				if (depth > 32) {
-					logger.warn("Depth exceeded: {}@{}", object.getClass().getName(), Integer.toHexString(System.identityHashCode(object)));
+					logger.warn(
+						"Depth exceeded: {}@{}",
+						getMaybeClassName(object),
+						Integer.toHexString(System.identityHashCode(object))
+					);
 					return;
 				}
 				for (final var entry : iterable) {
