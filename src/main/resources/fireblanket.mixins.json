@@ -90,6 +90,7 @@
 		"opto.MixinCommandBlockExecutor",
 		"opto.MixinEntitySelector",
 		"opto.MixinMapState",
+		"opto.block.MixinSignBlock",
 		"packet_chunk_cache.MixinChunkDataS2CPacket",
 		"packet_chunk_cache.MixinWorldChunk",
 		"region_chunk_cache.MixinServerChunkManager",
