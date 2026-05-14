@@ -515,9 +515,27 @@ public final class ForbiddenStackWalker {
 				e
 			);
 			for (final var entry : witness) {
-				logger.error("Encountered {}@{}", entry.getClass().getName(), System.identityHashCode(entry));
+				logger.error("Encountered {}@{}", getMaybeClassName(entry), System.identityHashCode(entry));
 			}
 		}
+	}
+
+	/**
+	 * Safely fetches the class name of the entry, returning {@code "** NULL **"} when null.
+	 */
+	private static String getMaybeClassName(final Object entry) {
+		if (entry == null) {
+			return "** NULL **";
+		}
+		final Class<?> clazz = entry.getClass();
+		if (clazz == null) {
+			return "** Non-compliant JVM: Object#getClass() returned null **";
+		}
+		final String name = clazz.getName();
+		if (name == null) {
+			return "** Non-compliant JVM: Class#getName() returned null **";
+		}
+		return name;
 	}
 
 	/**
@@ -569,6 +587,9 @@ public final class ForbiddenStackWalker {
 	/**
 	 * Prints all encountered objects to the provided {@link StringBuilder}.
 	 *
+	 * If it encounters an exception while printing an object,
+	 * it'll print the error, with the stack truncated to the stackwalker.
+	 *
 	 * @param builder The target string builder.
 	 * @param depth   The tab depth. Used and incremented recursively to indent.
 	 * @param witness An IdentitySet. See {@link #newWitnessSet()}
@@ -583,8 +604,25 @@ public final class ForbiddenStackWalker {
 		final Set<Object> witness,
 		final Object... objects
 	) {
+		// Although the sinks are supposed to be non-null,
+		// we cannot guarantee that everything sent to here is.
+		if (objects == null) {
+			builder.repeat('\t', depth).append("** NULL **\n");
+			return;
+		}
+
 		for (final var object : objects) {
-			print(builder, depth, witness, object);
+			try {
+				print(builder, depth, witness, object);
+			} catch (Throwable throwable) {
+				final var tabCache = "\t".repeat(depth + 1);
+
+				builder.append('\n').append(tabCache).append("Terminated early: Object threw an error: ");
+
+				printIdentity(builder, object).append('\n');
+
+				printUntilFilter(builder.append(tabCache), tabCache, ForbiddenStackWalker.class, throwable);
+			}
 		}
 	}
 
