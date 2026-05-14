@@ -452,7 +452,7 @@ public final class ForbiddenStackWalker {
 				if (arr == null || arr.isEmpty()) {
 					break mixins;
 				}
-				builder.append("\tMixins:\n");
+				builder.append("\tMixins[").append(arr.size()).append("]:\n");
 				for (var a : arr) {
 					builder.append("\t\t- ").append(a).append('\n');
 				}
@@ -467,7 +467,7 @@ public final class ForbiddenStackWalker {
 				if (arr == null || arr.length == 0) {
 					break monitors;
 				}
-				print(builder.append("\tMonitors:\n"), 2, witness, arr);
+				print(builder.append("\tMonitors[").append(arr.length).append("]:\n"), 2, witness, arr);
 			}
 			locals:
 			if ($getLocals != null) {
@@ -476,7 +476,7 @@ public final class ForbiddenStackWalker {
 					break locals;
 				}
 				final var trimArr = trim(arr);
-				print(builder.append("\tLocals:\n"), 2, witness, trimArr);
+				print(builder.append("\tLocals[").append(arr.length).append("]:\n"), 2, witness, trimArr);
 				if (trimArr != arr) {
 					builder.append("\t\t... ").append(arr.length - trimArr.length).append(" more zeros\n");
 				}
@@ -487,7 +487,7 @@ public final class ForbiddenStackWalker {
 				if (arr == null || arr.length == 0) {
 					break stack;
 				}
-				print(builder.append("\tStack:\n"), 2, witness, arr);
+				print(builder.append("\tStack[").append(arr.length).append("]:\n"), 2, witness, arr);
 			}
 			logger.error(
 				"at {}\n{}.{}{} @ LI:{} => BCI:{}\n{}",
