@@ -10,6 +10,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -86,6 +87,7 @@ public final class ForbiddenStackWalker {
 	private static final long address;
 
 	private static final ThreadLocal<Object> crashTimeWitness = new ThreadLocal<>();
+	private static final ThreadLocal<WeakReference<?>> lock = new ThreadLocal<>();
 
 	// region Jail breaking & initialization
 	static {
@@ -346,7 +348,12 @@ public final class ForbiddenStackWalker {
 		final @Nullable Supplier<@Nullable T> throwable,
 		final @Nullable Object @Nullable ... context
 	) throws T {
-		dumpStack(context);
+		if (isAlreadyDumping()) {
+			logger.warn("Terminating recursive call.");
+			return;
+		}
+
+		dump(context);
 
 		// If we didn't get an exception provider for some reason,
 		// fall back to throwing an assertion error instead.
@@ -372,6 +379,16 @@ public final class ForbiddenStackWalker {
 	 */
 	@SuppressWarnings("unused") // API
 	public static void dumpStack(final @Nullable Object @Nullable ... context) {
+		if (isAlreadyDumping()) {
+			logger.warn("Terminating recursive call.");
+			return;
+		}
+
+		dump(context);
+	}
+
+	// Backing dump call
+	private static void dump(final @Nullable Object @Nullable [] context) {
 		logger.error("Dumping stack:");
 		if (context != null) {
 			print(context);
@@ -382,13 +399,32 @@ public final class ForbiddenStackWalker {
 			return;
 		}
 
-		forbidden.walk(stream -> {
-			final var builder = new StringBuilder(1024);
-			final var witness = newWitnessSet();
+		final Object object = new Object();
 
-			stream.forEach(frame -> consume(frame, builder, witness));
-			return null;
-		});
+		try {
+			lock.set(new WeakReference<>(object));
+
+			forbidden.walk(stream -> {
+				final var builder = new StringBuilder(1024);
+				final var witness = newWitnessSet();
+
+				stream.forEach(frame -> consume(frame, builder, witness));
+				return null;
+			});
+		} finally {
+			lock.remove();
+		}
+	}
+
+	/**
+	 * Tests whether the dumper is already active on the current thread.
+	 * <p>
+	 * Prevents recursion when the stackwalker encounters an iterable it's dumping.
+	 */
+	private static boolean isAlreadyDumping() {
+		final WeakReference<?> reference = lock.get();
+
+		return reference != null && reference.get() != null;
 	}
 
 	/**
