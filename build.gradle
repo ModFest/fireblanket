@@ -29,9 +29,12 @@ dependencies {
 	implementation libs.fl
 	implementation libs.fapi
 
-	//modImplementation libs.sodium
+	implementation libs.sodium
 	//modImplementation libs.flywheel
 	//modImplementation libs.vanillin
+
+	// Importing its bakery.
+	implementation libs.glowcase
 
 	implementation libs.nettyIoUringClasses
 	implementation variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }

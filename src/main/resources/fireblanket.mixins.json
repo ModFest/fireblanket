@@ -116,6 +116,8 @@
 		"client.MixinClientPlayNetworkHandler",
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
 		"client.annoyances.adventure.MixinBlockPredicatesComponent",
+		"client.bakery.shelf.MixinShelfBlockEntity",
+		"client.bakery.shelf.MixinShelfRenderer",
 		"client.be_masking.MixinBlockEntityRenderDispatcher",
 		"client.hooks.MixinDebugRenderer",
 		"client.hooks.MixinKeyboardHandler",

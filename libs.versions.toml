@@ -14,6 +14,8 @@ vanillin = "1.1.3-27"
 worldeditCore = "7.4.3"
 worldeditFabric = "7.4.3"
 
+glowcase = "2.5.0+26.1"
+
 [plugins]
 loom = { id = "net.fabricmc.fabric-loom", version.ref = "loom" }
 
@@ -31,6 +33,8 @@ flywheel = { group = "dev.engine-room.flywheel", name = "flywheel-fabric-1.21.1"
 vanillin = { group = "dev.engine-room.vanillin", name = "vanillin-fabric-1.21.1", version.ref = "vanillin" }
 worldeditCore = { group = "com.sk89q.worldedit", name = "worldedit-core", version.ref = "worldeditCore" }
 worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc26.1.2", version.ref = "worldeditFabric" }
+
+glowcase = { group = "maven.modrinth", name = "glowcase", version.ref = "glowcase" }
 
 [bundles]
 worldedit = ['worldeditCore', 'worldeditFabric']
