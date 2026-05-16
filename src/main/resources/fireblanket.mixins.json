@@ -112,6 +112,7 @@
 	"client": [
 		"accessor.ClientLoginNetworkHandlerAccessor",
 		"accessor.ParticleManagerAccessor",
+		"client.MixinByteBufferBuilder",
 		"client.MixinClientPlayNetworkHandler",
 		"client.MixinSignBlockEntityRenderer",
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
