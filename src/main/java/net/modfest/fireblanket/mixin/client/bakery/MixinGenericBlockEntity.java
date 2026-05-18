@@ -1,10 +1,11 @@
-package net.modfest.fireblanket.mixin.client.bakery.shelf;
+package net.modfest.fireblanket.mixin.client.bakery;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.ShelfBlockEntity;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -15,10 +16,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * @author Ampflower
  **/
-@Mixin(ShelfBlockEntity.class)
-public abstract class MixinShelfBlockEntity extends BlockEntity {
+@Mixin({ShelfBlockEntity.class, SignBlockEntity.class})
+public abstract class MixinGenericBlockEntity extends BlockEntity {
 
-	public MixinShelfBlockEntity(
+	public MixinGenericBlockEntity(
 		final BlockEntityType<?> type,
 		final BlockPos worldPosition,
 		final BlockState blockState
@@ -27,12 +28,12 @@ public abstract class MixinShelfBlockEntity extends BlockEntity {
 	}
 
 	@Inject(method = "loadAdditional", at = @At("RETURN"))
-	private void onLoadAdditional(CallbackInfo ci) {
+	protected void onLoadAdditional(CallbackInfo ci) {
 		this.rebake(false);
 	}
 
 	@Unique
-	private void rebake(boolean immediate) {
+	protected void rebake(boolean immediate) {
 		if (!this.hasLevel() || !this.getLevel().isClientSide()) {
 			return;
 		}
