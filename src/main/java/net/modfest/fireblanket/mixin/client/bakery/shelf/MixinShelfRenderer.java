@@ -1,7 +1,6 @@
 package net.modfest.fireblanket.mixin.client.bakery.shelf;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import dev.hephaestus.glowcase.client.render.block.entity.BakedBlockEntityRenderer;
 import it.unimi.dsi.fastutil.HashCommon;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.ShelfRenderer;
@@ -16,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.ShelfBlock;
 import net.minecraft.world.level.block.entity.ShelfBlockEntity;
 import net.minecraft.world.phys.Vec3;
+import net.modfest.fireblanket.mixinsupport.client.RetrofitBakery;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -28,15 +28,10 @@ import org.spongepowered.asm.mixin.Shadow;
  **/
 @NullMarked
 @Mixin(ShelfRenderer.class)
-public abstract class MixinShelfRenderer implements BakedBlockEntityRenderer<ShelfBlockEntity, ShelfRenderState, ShelfRenderState> {
+public abstract class MixinShelfRenderer implements RetrofitBakery<ShelfBlockEntity, ShelfRenderState> {
 	@Shadow
 	@Final
 	private ItemModelResolver itemModelResolver;
-
-	@Override
-	public ShelfRenderState createBakedRenderState() {
-		return new ShelfRenderState();
-	}
 
 	/**
 	 * @author Ampflower
@@ -62,7 +57,7 @@ public abstract class MixinShelfRenderer implements BakedBlockEntityRenderer<She
 		final ShelfRenderState state,
 		final int light
 	) {
-		BakedBlockEntityRenderer.super.extractBakingRenderState(blockEntity, state, light);
+		RetrofitBakery.super.extractBakingRenderState(blockEntity, state, light);
 		state.alignToBottom = blockEntity.getAlignItemsToBottom();
 		state.facing = blockEntity.getBlockState().getValue(ShelfBlock.FACING);
 		NonNullList<ItemStack> items = blockEntity.getItems();
@@ -87,7 +82,7 @@ public abstract class MixinShelfRenderer implements BakedBlockEntityRenderer<She
 
 	/**
 	 * @author Ampflower
-	 * @reason No-op/forward to submitForRendering
+	 * @reason No-op
 	 */
 	@Override
 	@Overwrite
@@ -97,17 +92,6 @@ public abstract class MixinShelfRenderer implements BakedBlockEntityRenderer<She
 		final SubmitNodeCollector submitNodeCollector,
 		final CameraRenderState camera
 	) {
-		submitForRendering(state, poseStack, submitNodeCollector, camera);
-	}
-
-	@Override
-	public void submitForRendering(
-		final ShelfRenderState state,
-		final PoseStack poseStack,
-		final SubmitNodeCollector submitNodeCollector,
-		final CameraRenderState cameraRenderState
-	) {
-		// intentional no-op
 	}
 
 	/**
@@ -151,10 +135,5 @@ public abstract class MixinShelfRenderer implements BakedBlockEntityRenderer<She
 		final float yRot
 	) {
 		throw new AssertionError();
-	}
-
-	@Override
-	public boolean glowcase$isBakingRenderer() {
-		return true;
 	}
 }
