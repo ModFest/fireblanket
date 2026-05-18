@@ -5,6 +5,7 @@ import com.bawnorton.mixinsquared.canceller.MixinCancellerRegistrar;
 import net.fabricmc.loader.api.FabricLoader;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
+import net.modfest.fireblanket.mixinsupport.modifiers.CompatibilityHandler;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -19,8 +20,12 @@ import java.util.Set;
 public class FireblanketMixin implements IMixinConfigPlugin {
 	public static final boolean DO_MASKING = Boolean.getBoolean("fireblanket.masking");
 
+	private String mixinPackage;
+
 	@Override
 	public void onLoad(String mixinPackage) {
+		this.mixinPackage = mixinPackage;
+
 		Path configs = FabricLoader.getInstance().getConfigDir().resolve("fireblanket");
 		if (!Files.exists(configs)) {
 			try {
@@ -82,8 +87,7 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			return !FireblanketConfig.get(ConfigSpecs.AVOID_ZSTD);
 		}
 
-		// Conflicts with Krypton, which also lifts the limit
-		return !mixinClassName.contains("SplitterHandler") || !FabricLoader.getInstance().isModLoaded("krypton");
+		return CompatibilityHandler.isMixinCompatible(this.mixinPackage, mixinClassName);
 	}
 
 	@Override
