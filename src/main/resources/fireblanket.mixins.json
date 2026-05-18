@@ -114,7 +114,6 @@
 		"accessor.ParticleManagerAccessor",
 		"client.MixinByteBufferBuilder",
 		"client.MixinClientPlayNetworkHandler",
-		"client.MixinSignBlockEntityRenderer",
 		"client.adventure_fix.MixinClientPlayerInteractionManager",
 		"client.annoyances.adventure.MixinBlockPredicatesComponent",
 		"client.be_masking.MixinBlockEntityRenderDispatcher",

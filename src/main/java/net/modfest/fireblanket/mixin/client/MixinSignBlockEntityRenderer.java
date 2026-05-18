@@ -8,7 +8,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Previously used to hide signs used for PictureSign.
+ * <p>
+ * Unless we ever bring it back, this can sit dormant.
+ */
 // priority to dodge PictureSign
+@Deprecated(forRemoval = true)
 @Mixin(value = AbstractSignRenderer.class, priority = 5000)
 public class MixinSignBlockEntityRenderer {
 	@Inject(
