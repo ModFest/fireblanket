@@ -27,7 +27,6 @@ public @interface Conflict {
 	/**
 	 * The version of the mod that breaks the mixin.
 	 */
-	@ApiStatus.Experimental
 	String version() default "*";
 
 	/**

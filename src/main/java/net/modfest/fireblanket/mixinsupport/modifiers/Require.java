@@ -27,7 +27,6 @@ public @interface Require {
 	/**
 	 * The version of the mod that's required.
 	 */
-	@ApiStatus.Experimental
 	String version() default "*";
 
 	/**

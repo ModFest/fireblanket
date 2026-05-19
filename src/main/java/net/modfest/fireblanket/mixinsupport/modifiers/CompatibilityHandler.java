@@ -1,6 +1,9 @@
 package net.modfest.fireblanket.mixinsupport.modifiers;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.VersionParsingException;
+import net.fabricmc.loader.api.metadata.version.VersionPredicate;
 import net.modfest.fireblanket.FireblanketMixin;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
@@ -18,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -144,21 +148,47 @@ public final class CompatibilityHandler {
 		final List<? extends Conflict> breaks,
 		final List<? extends Require> requires
 	) {
-		final FabricLoader loader = FabricLoader.getInstance();
-
 		for (final Conflict value : breaks) {
-			if (loader.isModLoaded(value.value())) {
+			if (isMatchingModPresent(value.value(), value.version(), true)) {
 				return false;
 			}
 		}
 
 		for (final Require value : requires) {
-			if (!loader.isModLoaded(value.value())) {
+			if (!isMatchingModPresent(value.value(), value.version(), false)) {
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	private static boolean isMatchingModPresent(
+		final String id,
+		final String version,
+		final boolean failureFallback
+	) {
+		final ModContainer mod;
+		{
+			final Optional<ModContainer> optional = FabricLoader.getInstance().getModContainer(id);
+			if (optional.isEmpty()) {
+				return false;
+			}
+			mod = optional.get();
+		}
+
+		// Short circuit
+		if ("*".equals(version)) {
+			return true;
+		}
+
+		try {
+			final VersionPredicate predicate = VersionPredicate.parse(version);
+
+			return predicate.test(mod.getMetadata().getVersion());
+		} catch (VersionParsingException e) {
+			return failureFallback;
+		}
 	}
 
 	private static List<? extends Conflict> breaks(final ClassNode clazz) throws Throwable {
