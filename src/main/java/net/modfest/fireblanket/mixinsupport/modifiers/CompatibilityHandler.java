@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -76,6 +77,27 @@ public final class CompatibilityHandler {
 		scrammed = Set.copyOf($scrammed);
 	}
 
+	/**
+	 * Tests whether the mixin being enabled is compatible with the current environment.
+	 * <p>
+	 * This includes:
+	 * <ul>
+	 *     <li>Whether all {@link Require required} mods are present and loaded.</li>
+	 *     <li>Whether none of the {@link Conflict conflicting} mods are present.</li>
+	 *     <li>That it was not a {@link ConfigSpecs#MIXIN_SCRAM scrammed mixin}.</li>
+	 * </ul>
+	 *
+	 * @param mixinPackage The root mixin package of the mod. If you're implementing this generically,
+	 *                     see {@link IMixinConfigPlugin#onLoad(String)} for obtaining.
+	 * @param mixin        The mixin being checked prior to being loaded.
+	 * @return whether the mixin: has not been scrammed, all of its required dependencies present,
+	 * 	and none of its conflicts present
+	 * @implNote All checks have a corresponding debug message. If you need,
+	 * 	use {@code -Dfireblanket.compatibilityHandler.debug=true} to diagnose any loading problems.
+	 * @see Require
+	 * @see Conflict
+	 * @see ConfigSpecs#MIXIN_SCRAM
+	 */
 	public static boolean isMixinCompatible(final String mixinPackage, final String mixin) {
 		try {
 			if (scrammed.contains(mixin.substring(mixinPackage.length() + 1))) {
