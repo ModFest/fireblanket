@@ -117,31 +117,37 @@ public final class CompatibilityHandler {
 		try {
 			if (scrammed.contains(mixin.substring(mixinPackage.length() + 1))) {
 				if (DEBUG) {
-					System.err.printf("%s disabled via SCRAM. Refusing to load.\n", mixin);
+					System.err.printf("[Fireblanket/Mixin Check] %s disabled via SCRAM. Refusing to load.\n", mixin);
 				}
 				return false;
 			}
 
 			if (!checkPackagesOf(mixinPackage, mixin)) {
 				if (DEBUG) {
-					System.err.printf("%s has failing failing package checks.\n", mixin);
+					System.err.printf("[Fireblanket/Mixin Check] %s has failing failing package checks.\n", mixin);
 				}
 				return false;
 			}
 
 			if (isMixinCompatible(mixin, false)) {
 				if (DEBUG) {
-					System.err.printf("%s is compatible with the runtime. Loading...\n", mixin);
+					System.err.printf(
+						"[Fireblanket/Mixin Check] %s is compatible with the runtime. Loading...\n",
+						mixin
+					);
 				}
 				return true;
 			}
 			if (DEBUG) {
-				System.err.printf("%s is NOT compatible with the runtime. Refusing to load.\n", mixin);
+				System.err.printf(
+					"[Fireblanket/Mixin Check] %s is NOT compatible with the runtime. Refusing to load.\n",
+					mixin
+				);
 			}
 			return false;
 		} catch (Throwable thrown) {
 			// Preboot restriction: cannot use a logger. Print and carry on.
-			System.err.println("Failed to figure out whether " + mixin + " is compatible:");
+			System.err.println("[Fireblanket/Mixin Check] Failed to figure out whether " + mixin + " is compatible:");
 			thrown.printStackTrace();
 			// Well if we can't even read it, *no*, I can't say it is.
 			return false;
@@ -215,14 +221,14 @@ public final class CompatibilityHandler {
 		final Boolean cache = packageCache.get(packageName);
 		if (cache != null) {
 			if (DEBUG) {
-				System.err.printf("Cache hit: %s -> %s\n", packageName, cache);
+				System.err.printf("[Fireblanket/Package Check] Cache hit: %s -> %s\n", packageName, cache);
 			}
 			return cache;
 		}
 
 		if (!isMixinCompatible(packageName + ".package-info", true)) {
 			if (DEBUG) {
-				System.err.printf("Package incompatible: %s\n", packageName);
+				System.err.printf("[Fireblanket/Package Check] Package incompatible: %s\n", packageName);
 			}
 			packageCache.put(packageName, false);
 			return false;
@@ -230,7 +236,7 @@ public final class CompatibilityHandler {
 
 		if (rootPackage.equals(packageName)) {
 			if (DEBUG) {
-				System.err.printf("Apex package considered compatible: %s\n", packageName);
+				System.err.printf("[Fireblanket/Package Check] Apex package considered compatible: %s\n", packageName);
 			}
 			packageCache.put(packageName, true);
 			return true;
@@ -238,7 +244,7 @@ public final class CompatibilityHandler {
 
 		if (externScrammed.contains(packageName)) {
 			if (DEBUG) {
-				System.err.printf("Package Extern SCRAM'd: %s\n", packageName);
+				System.err.printf("[Fireblanket/Package Check] Package Extern SCRAM'd: %s\n", packageName);
 			}
 			packageCache.put(packageName, false);
 			return false;
@@ -246,7 +252,7 @@ public final class CompatibilityHandler {
 
 		if (scrammed.contains(packageName.substring(rootPackage.length() + 1))) {
 			if (DEBUG) {
-				System.err.printf("Package SCRAM'd: %s\n", packageName);
+				System.err.printf("[Fireblanket/Package Check] Package SCRAM'd: %s\n", packageName);
 			}
 			packageCache.put(packageName, false);
 			return false;
@@ -254,7 +260,7 @@ public final class CompatibilityHandler {
 
 		final boolean bool = checkPackages(rootPackage, packageName.substring(0, packageName.lastIndexOf('.')));
 		if (DEBUG) {
-			System.err.printf("Propagating: %s -> %s\n", packageName, bool);
+			System.err.printf("[Fireblanket/Package Check] Propagating: %s -> %s\n", packageName, bool);
 		}
 		packageCache.put(packageName, bool);
 		return bool;
@@ -271,7 +277,7 @@ public final class CompatibilityHandler {
 
 		if (stream == null) {
 			if (DEBUG) {
-				System.err.printf("Not found: %s\n", mixin);
+				System.err.printf("[Fireblanket/Package Check] Not found: %s\n", mixin);
 			}
 			return isPackage;
 		}
