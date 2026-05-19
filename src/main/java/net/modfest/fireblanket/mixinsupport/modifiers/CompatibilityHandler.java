@@ -5,6 +5,7 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.version.VersionPredicate;
 import net.modfest.fireblanket.FireblanketMixin;
+import net.modfest.fireblanket.config.ConfigSpec;
 import net.modfest.fireblanket.config.ConfigSpecs;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -45,36 +45,51 @@ import java.util.regex.Pattern;
  */
 public final class CompatibilityHandler {
 	private static final boolean DEBUG = Boolean.getBoolean("fireblanket.compatibilityHandler.debug");
+	private static final boolean SCRAM_TLD = Boolean.getBoolean("fireblanket.compatibilityHandler.scramTld");
 
 	private static final int SKIP_ALL = ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
 
-	private static final Set<String> scrammed;
+	private static final Pattern RESERVED_SCRAM = Pattern.compile("^\\.|\\.$|[\\[\\]{}*:;?'\"\\s/|\\\\]");
+
+	// TODO: we could probably unify these two into a single set.
+	//  The only problem with that is that MIXIN_SCRAM is specific to Fireblanket's mixins.
+	//  Tho, given we don't expect anyone to really rip this impl out of Fireblanket, it's probably fine.
+	private static final Set<String> scrammed = loadScram(ConfigSpecs.MIXIN_SCRAM, false);
+	private static final Set<String> externScrammed = loadScram(ConfigSpecs.MOD_MIXIN_SCRAM, !SCRAM_TLD);
 	private static final Map<String, Boolean> packageCache = new WeakHashMap<>();
+	// TODO: this may be better as a SoftReference-backed map?
+	private static final Map<String, Boolean> externPackageCache = new WeakHashMap<>();
 
-	static {
-		final Pattern pattern = Pattern.compile("^\\.|\\.$|[\\[\\]{}*:;?'\"\\s/|\\\\]");
-		final Predicate<String> test = pattern.asPredicate();
-		final Set<String> $scrammed = new HashSet<>();
+	private static Set<String> loadScram(
+		final ConfigSpec<? extends Iterable<String>> spec,
+		final boolean tldDangerous
+	) {
+		final Set<String> scrammed = new HashSet<>();
 
-		for (final String str : FireblanketConfig.get(ConfigSpecs.MIXIN_SCRAM)) {
+		for (final String str : FireblanketConfig.get(spec)) {
 			if (str.isEmpty()) {
 				if (DEBUG) {
-					System.err.println("[Fireblanket] Ignoring empty entry in SCRAM config.");
+					System.err.println("[Fireblanket/" + spec.prettyName() + "] Ignoring empty entry in SCRAM config.");
 				}
 				continue;
 			}
 
-			if (test.test(str)) {
-				System.err.println("[Fireblanket] Reserved character found, ignoring: `" + str + "`");
+			if (RESERVED_SCRAM.matcher(str).find()) {
+				System.err.println("[Fireblanket/" + spec.prettyName() + "] Reserved character found, ignoring: `" + str + "`");
 				continue;
 			}
 
-			if (!$scrammed.add(str.intern())) {
-				System.err.println("[Fireblanket] Duplicate SCRAM: `" + str + "`");
+			if (tldDangerous && str.indexOf('.') >= 0) {
+				System.err.println("[Fireblanket/" + spec.prettyName() + "] Cowardly refusing to SCRAM `" + str + "`");
+				continue;
+			}
+
+			if (!scrammed.add(str.intern())) {
+				System.err.println("[Fireblanket/" + spec.prettyName() + "] Duplicate SCRAM: `" + str + "`");
 			}
 		}
 
-		scrammed = Set.copyOf($scrammed);
+		return Set.copyOf(scrammed);
 	}
 
 	/**
@@ -133,6 +148,55 @@ public final class CompatibilityHandler {
 		}
 	}
 
+	/**
+	 * Tests whether the mixin being enabled by a mod is SCRAM'd by Fireblanket.
+	 *
+	 * @param mixin The mixin to test if it was SCRAM'd.
+	 * @return whether the mixin has been scrammed, and thus should be cancelled.
+	 * @implNote All checks have a corresponding debug message. If you need,
+	 * 	use {@code -Dfireblanket.compatibilityHandler.debug=true} to diagnose any loading problems.
+	 * @see ConfigSpecs#MOD_MIXIN_SCRAM
+	 */
+	public static boolean isExternalMixinScrammed(final String mixin) {
+		if (mixin.isEmpty()) {
+			if (DEBUG) {
+				System.err.println("[Fireblanket/SCRAM] Cannot SCRAM an empty string. What are you doing?");
+			}
+			return false;
+		}
+
+		final Boolean cache = externPackageCache.get(mixin);
+		if (cache != null) {
+			if (DEBUG) {
+				System.err.printf("[Fireblanket/SCRAM] Cache hit: %s -> %s\n", mixin, cache);
+			}
+			return cache;
+		}
+
+		if (externScrammed.contains(mixin)) {
+			if (DEBUG) {
+				System.err.printf("[Fireblanket/SCRAM] Refusing to load package/mixin %s\n", mixin);
+			}
+			externPackageCache.put(mixin.intern(), true);
+			return true;
+		}
+
+		final int index = mixin.lastIndexOf('.');
+		if (index < 0) {
+			if (DEBUG) {
+				System.err.printf("[Fireblanket/SCRAM] TLD package considered compatible: %s\n", mixin);
+			}
+			return false;
+		}
+
+		final boolean bool = isExternalMixinScrammed(mixin.substring(0, index));
+		if (DEBUG) {
+			System.err.printf("[Fireblanket/SCRAM] Propagating: %s -> %s\n", mixin, bool);
+		}
+		externPackageCache.put(mixin.intern(), bool);
+		return bool;
+	}
+
 	private static boolean checkPackagesOf(
 		final String rootPackage,
 		final String mixin
@@ -170,6 +234,14 @@ public final class CompatibilityHandler {
 			}
 			packageCache.put(packageName, true);
 			return true;
+		}
+
+		if (externScrammed.contains(packageName)) {
+			if (DEBUG) {
+				System.err.printf("Package Extern SCRAM'd: %s\n", packageName);
+			}
+			packageCache.put(packageName, false);
+			return false;
 		}
 
 		if (scrammed.contains(packageName.substring(rootPackage.length() + 1))) {

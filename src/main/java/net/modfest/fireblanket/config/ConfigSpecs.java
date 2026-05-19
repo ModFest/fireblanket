@@ -32,6 +32,24 @@ public final class ConfigSpecs {
 			mixin-scram: ai.MixinTemptGoal,client.hooks;
 			""", "", ConfigParsers.STRING_LIST);
 
+	public static final ConfigSpec<List<String>> MOD_MIXIN_SCRAM = new ConfigSpec<>("mod-mixin-scram",
+		"External Mod Mixin SCRAM",
+		"""
+			Force disables mixins from other mods from being loaded. Treat with EXTREME CAUTION, as certain mixins are required for functionality.
+			The format is case-sensitive path prefixes, including the origin mixin package, so it is possible to disable an entire package.
+						
+			Warning: It is possible to disable mixins from multiple mods from a single entry.
+			There is no check in place to prevent this, outside of blocking TLDs. Avoid doing that if at all possible.
+						
+			The same notes as `mixin-scram` applies here, except: the full package name, including the mixin package prefix, is required.
+						
+			Example:
+			mod-mixin-scram: net.modfest.fireblanket.mixin.ai,io.wispforest.affinity.mixin.MapStateMixin
+			""",
+		"",
+		ConfigParsers.STRING_LIST
+	);
+
 	public static final ConfigSpec<Integer> FORCED_LOAD_RADIUS = new ConfigSpec<>("forced-load-radius", "Forced load radius",
 		"""
 			Chunk accesses and loading can become very expensive for a large fest. This option keeps a predefined region of chunks
@@ -135,6 +153,7 @@ public final class ConfigSpecs {
 	static {
 		ALL_SPECS.add(PRIVILEGED_USERS);
 		ALL_SPECS.add(MIXIN_SCRAM);
+		ALL_SPECS.add(MOD_MIXIN_SCRAM);
 		ALL_SPECS.add(FORCED_LOAD_RADIUS);
 		ALL_SPECS.add(FLATTEN_CHUNK_PALETTES);
 		ALL_SPECS.add(ALLOW_FOOTGUNS);

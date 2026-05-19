@@ -51,7 +51,10 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			if ("net.frozenblock.lib.spotting_icons.mixin.client.LevelRendererMixin".equals(mixinClassName)) {
 				return true;
 			}
-			return "io.wispforest.affinity.mixin.MapStateMixin".equals(mixinClassName);
+			if ("io.wispforest.affinity.mixin.MapStateMixin".equals(mixinClassName)) {
+				return true;
+			}
+			return CompatibilityHandler.isExternalMixinScrammed(mixinClassName);
 		}
 	}
 
