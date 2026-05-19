@@ -5,6 +5,8 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.version.VersionPredicate;
 import net.modfest.fireblanket.FireblanketMixin;
+import net.modfest.fireblanket.config.ConfigSpecs;
+import net.modfest.fireblanket.config.FireblanketConfig;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -19,11 +21,14 @@ import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 /**
  * The mixin compatibility tester, allowing simplification of {@link FireblanketMixin} by hiding it behind
@@ -42,10 +47,44 @@ public final class CompatibilityHandler {
 
 	private static final int SKIP_ALL = ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
 
+	private static final Set<String> scrammed;
 	private static final Map<String, Boolean> packageCache = new WeakHashMap<>();
+
+	static {
+		final Pattern pattern = Pattern.compile("^\\.|\\.$|[\\[\\]{}*:;?'\"\\s/|\\\\]");
+		final Predicate<String> test = pattern.asPredicate();
+		final Set<String> $scrammed = new HashSet<>();
+
+		for (final String str : FireblanketConfig.get(ConfigSpecs.MIXIN_SCRAM)) {
+			if (str.isEmpty()) {
+				if (DEBUG) {
+					System.err.println("[Fireblanket] Ignoring empty entry in SCRAM config.");
+				}
+				continue;
+			}
+
+			if (test.test(str)) {
+				System.err.println("[Fireblanket] Reserved character found, ignoring: `" + str + "`");
+				continue;
+			}
+
+			if (!$scrammed.add(str.intern())) {
+				System.err.println("[Fireblanket] Duplicate SCRAM: `" + str + "`");
+			}
+		}
+
+		scrammed = Set.copyOf($scrammed);
+	}
 
 	public static boolean isMixinCompatible(final String mixinPackage, final String mixin) {
 		try {
+			if (scrammed.contains(mixin.substring(mixinPackage.length() + 1))) {
+				if (DEBUG) {
+					System.err.printf("%s disabled via SCRAM. Refusing to load.\n", mixin);
+				}
+				return false;
+			}
+
 			if (!checkPackagesOf(mixinPackage, mixin)) {
 				return false;
 			}
@@ -106,6 +145,14 @@ public final class CompatibilityHandler {
 			}
 			packageCache.put(packageName, true);
 			return true;
+		}
+
+		if (scrammed.contains(packageName.substring(rootPackage.length() + 1))) {
+			if (DEBUG) {
+				System.err.printf("Package SCRAM'd: %s\n", packageName);
+			}
+			packageCache.put(packageName, false);
+			return false;
 		}
 
 		final boolean bool = checkPackages(rootPackage, packageName.substring(0, packageName.lastIndexOf('.')));

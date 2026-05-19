@@ -15,9 +15,21 @@ public final class ConfigSpecs {
 	public static final ConfigSpec<List<String>> MIXIN_SCRAM = new ConfigSpec<>("mixin-scram", "Mixin SCRAM",
 		"""
 			Force disables mixins from being loaded. Treat with EXTREME CAUTION, as certain mixins are required for functionality.
-			The format is a regex, so it is possible to disable an entire package.
+			The format is case-sensitive path prefixes, so it is possible to disable an entire package.
+						
+			Note: Partial matches are currently NOT possible. The full name of the package or class must be used.
+			This means that, if you had the packages `entity`, `entity_block` and `entity_perf`,
+			simply providing `entity` will ONLY disable the `entity` package, leaving `entity_block` and `entity_perf` enabled.
+						
+			Note: Being prefix-only, you cannot disable a class by name alone, you need to include its package.
+			Providing simply the class name, e.g. `MixinCommandBlockExecutor`, will simply only disable the root class of the same name.
+			`block.MixinCommandBlockExecutor` and `opto.MixinCommandBlockExecutor` will remain enabled.
+						
+			This only applies to Fireblanket's mixins, and omits the `net.modfest.fireblanket.mixin.` prefix.
+			Entries with reserved characters, prefixes or suffixes are ignored and logs a warning.
+						
 			Example:
-			mixin-scram: ai.MixinTemptGoal,client.hooks.*;
+			mixin-scram: ai.MixinTemptGoal,client.hooks;
 			""", "", ConfigParsers.STRING_LIST);
 
 	public static final ConfigSpec<Integer> FORCED_LOAD_RADIUS = new ConfigSpec<>("forced-load-radius", "Forced load radius",
