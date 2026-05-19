@@ -108,6 +108,9 @@ public final class CompatibilityHandler {
 			}
 
 			if (!checkPackagesOf(mixinPackage, mixin)) {
+				if (DEBUG) {
+					System.err.printf("%s has failing failing package checks.\n", mixin);
+				}
 				return false;
 			}
 
