@@ -1,6 +1,7 @@
 package net.modfest.fireblanket.diagnostics;
 
 import com.mojang.logging.LogUtils;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -1228,7 +1229,14 @@ public final class ForbiddenStackWalker {
 		}
 	}
 
-	private static @Nullable Class<?> classOrNull(final String name) {
+	/**
+	 * Gets the class by name if it exists, otherwise returns null.
+	 *
+	 * @param name The name of the class you're looking up.
+	 * @return The class if it exists, otherwise null.
+	 */
+	@ApiStatus.Internal // Punched open because why reinvent the wheel
+	public static @Nullable Class<?> classOrNull(final String name) {
 		return classOrNull(name, Object.class);
 	}
 

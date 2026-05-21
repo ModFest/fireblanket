@@ -82,6 +82,8 @@
 		"mods.create.AccessorSmartBlockEntity",
 		"mods.create.MixinMechanicalBearingBlockEntity",
 		"mods.create.MixinSuperGlueEntity",
+		"mods.hotdognalds.MixinCondimentDispenser",
+		"mods.hotdognalds.MixinFoodEntity",
 		"mods.mythicmetals.MixinCarmotShield",
 		"mods.patchouli.MixinLecternEventHandler",
 		"mods.pehkui.MixinScaleUtils",
