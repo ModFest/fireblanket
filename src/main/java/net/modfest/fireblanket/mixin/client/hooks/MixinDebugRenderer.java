@@ -5,8 +5,11 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.debug.DebugRenderer;
+import net.modfest.fireblanket.FireblanketMixin;
 import net.modfest.fireblanket.client.FireblanketDebug;
+import net.modfest.fireblanket.client.render.BlockEntityMaskRenderer;
 import net.modfest.fireblanket.client.render.BlockTimingRenderer;
+import net.modfest.fireblanket.client.render.EntityMaskRenderer;
 import net.modfest.fireblanket.client.render.EntityTimingRenderer;
 import net.modfest.fireblanket.client.render.RenderRegionRenderer;
 import org.spongepowered.asm.mixin.Final;
@@ -41,6 +44,11 @@ public class MixinDebugRenderer {
 
 		if (minecraft.debugEntries.isCurrentlyEnabled(FireblanketDebug.BLOCK_TICK_TIMES)) {
 			this.renderers.add(new BlockTimingRenderer(minecraft));
+		}
+
+		if (FireblanketMixin.DO_MASKING) {
+			this.renderers.add(new EntityMaskRenderer(minecraft));
+			this.renderers.add(new BlockEntityMaskRenderer(minecraft));
 		}
 	}
 }

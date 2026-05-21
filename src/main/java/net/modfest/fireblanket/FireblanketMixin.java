@@ -65,10 +65,6 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 
 	@Override
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-		if (mixinClassName.contains("be_masking") || mixinClassName.contains("entity_masking")) {
-			return DO_MASKING;
-		}
-
 		if (mixinClassName.contains("region_chunk_cache")) {
 			return false;
 //			return FireblanketConfig.get(ConfigSpecs.FORCED_LOAD_RADIUS) > 0;
