@@ -1,5 +1,7 @@
 package net.modfest.fireblanket.config;
 
+import net.fabricmc.loader.api.FabricLoader;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +80,18 @@ public final class ConfigSpecs {
 		"""
 			Allow altering features in a way that impacts gameplay. This disables some entity AI and how certain sounds are played.
 			""", "no", ConfigParsers.BOOLEAN);
+
+	public static final ConfigSpec<Boolean> STRICT_CHECKS = new ConfigSpec<>("strict-checks", "Strict Checks",
+		"""
+			Applies strict checks to parts of the code that's likely cause crashes at runtime.
+						
+			Note: This should only be enabled during test phase or local testing,
+			as this may cause surprise, unwanted crashes unacceptable during build or production.
+			""",
+		// Default value? We have default values at home:
+		FabricLoader.getInstance().isDevelopmentEnvironment() ? "yes" : "no",
+		ConfigParsers.BOOLEAN
+	);
 
 	public static final ConfigSpec<Integer> ASYNC_PACKET_THREADS = new ConfigSpec<>("async-packet-threads", "Async Packet Threads",
 		"""
@@ -159,6 +173,7 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(ALLOW_FOOTGUNS);
 		ALL_SPECS.add(AVOID_ZSTD);
 		ALL_SPECS.add(GAMEPLAY_CHANGES);
+		ALL_SPECS.add(STRICT_CHECKS);
 		ALL_SPECS.add(ASYNC_PACKET_THREADS);
 		ALL_SPECS.add(BANNED_ITEMS);
 		ALL_SPECS.add(LOG_COMMAND_ERRORS);

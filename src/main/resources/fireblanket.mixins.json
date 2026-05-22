@@ -51,6 +51,7 @@
 		"datafixerupper.MixinCodec",
 		"diagnostics.commands.MixinCommands",
 		"diagnostics.net.MixinConnection",
+		"diagnostics.world.MixinPalette",
 		"entity_block.MixinEntityType",
 		"entity_immutability.MixinDecorationItem",
 		"entity_immutability.MixinEntity",
