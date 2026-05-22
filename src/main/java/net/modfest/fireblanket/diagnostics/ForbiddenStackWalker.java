@@ -2,6 +2,7 @@ package net.modfest.fireblanket.diagnostics;
 
 import com.mojang.logging.LogUtils;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -345,16 +346,16 @@ public final class ForbiddenStackWalker {
 	 * @see #dumpStack(Object...)
 	 */
 	@SuppressWarnings("unused") // API
+	@Contract("_, _ -> fail")
 	public static <T extends Throwable> void dumpStackAndThrow(
 		final @Nullable Supplier<@Nullable T> throwable,
 		final @Nullable Object @Nullable ... context
 	) throws T {
 		if (isAlreadyDumping()) {
 			logger.warn("Terminating recursive call.");
-			return;
+		} else {
+			dump(context);
 		}
-
-		dump(context);
 
 		// If we didn't get an exception provider for some reason,
 		// fall back to throwing an assertion error instead.
