@@ -53,6 +53,7 @@
 		"diagnostics.net.MixinConnection",
 		"entity_block.MixinEntityType",
 		"entity_immutability.MixinDecorationItem",
+		"entity_immutability.MixinEntity",
 		"entity_immutability.MixinEntityType",
 		"entity_perf.MixinDisplayEntity",
 		"entity_perf.MixinEntity",
