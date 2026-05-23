@@ -8,8 +8,9 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.modfest.fireblanket.compat.roles.Roles;
-import net.modfest.fireblanket.world.ItemBan;
+import net.modfest.fireblanket.config.EffectiveConfig;
 
 import static net.minecraft.commands.Commands.LEVEL_OWNERS;
 import static net.minecraft.commands.Commands.argument;
@@ -28,7 +29,12 @@ public final class ItemBanCommand {
 			.then(literal("remove")
 				.then(
 					argument("value", StringArgumentType.greedyString())
-						.suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ItemBan.BANNED_IDS, builder))
+						.suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+							EffectiveConfig.BANNED_ITEMS_RAW,
+							builder,
+							Identifier::toString,
+							id -> Component.literal(id.toString())
+						))
 						.executes(s -> execRemove(s.getSource(), StringArgumentType.getString(s, "value")))
 				)
 			)
@@ -36,12 +42,12 @@ public final class ItemBanCommand {
 	}
 
 	private static int execList(CommandSourceStack src) {
-		src.sendSuccess(() -> Component.literal("Currently banned items: " + ItemBan.BANNED_IDS), false);
+		src.sendSuccess(() -> Component.literal("Currently banned items: " + EffectiveConfig.BANNED_ITEMS), false);
 		return 0;
 	}
 
 	private static int execAdd(CommandSourceStack src, String value) {
-		if (ItemBan.BANNED_IDS.add(value)) {
+		if (EffectiveConfig.addItemBan(src.registryAccess(), value)) {
 			src.sendSuccess(() -> Component.literal("Successfully added " + value + "."), false);
 		} else {
 			src.sendFailure(Component.literal("Didn't add as it is already banned"));
@@ -50,7 +56,7 @@ public final class ItemBanCommand {
 	}
 
 	private static int execRemove(CommandSourceStack src, String value) {
-		if (ItemBan.BANNED_IDS.remove(value)) {
+		if (EffectiveConfig.removeItemBan(src.registryAccess(), value)) {
 			src.sendSuccess(() -> Component.literal("Successfully removed " + value + "."), false);
 		} else {
 			src.sendFailure(Component.literal("Didn't remove as it wasn't banned"));

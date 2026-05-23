@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.registry.RegistryEntryAddedCallback;
 import net.fabricmc.fabric.api.gamerule.v1.GameRuleBuilder;
 import net.fabricmc.fabric.api.networking.v1.FriendlyByteBufs;
@@ -43,6 +44,7 @@ import net.modfest.fireblanket.command.StareCommand;
 import net.modfest.fireblanket.compat.PolyMcCompat;
 import net.modfest.fireblanket.compat.roles.PlayerRolesCompat;
 import net.modfest.fireblanket.config.ConfigSpecs;
+import net.modfest.fireblanket.config.EffectiveConfig;
 import net.modfest.fireblanket.config.EntityFilters;
 import net.modfest.fireblanket.config.FireblanketConfig;
 import net.modfest.fireblanket.mixin.accessor.ClientConnectionAccessor;
@@ -54,7 +56,6 @@ import net.modfest.fireblanket.net.BatchedEntityVelocityUpdatePacket;
 import net.modfest.fireblanket.net.CommandBlockPacket;
 import net.modfest.fireblanket.net.NetworkState;
 import net.modfest.fireblanket.util.LinkedBlocQueue;
-import net.modfest.fireblanket.world.ItemBan;
 import net.modfest.fireblanket.world.blocks.UpdateSignBlockEntityTypes;
 import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
@@ -131,7 +132,12 @@ public class Fireblanket implements ModInitializer {
 		});
 
 		EntityFilters.init();
-		ItemBan.apply();
+
+		EffectiveConfig.init();
+
+		ServerLifecycleEvents.SERVER_STARTED.register(server -> EffectiveConfig.apply(server.registryAccess()));
+		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> EffectiveConfig.apply(
+			server.registryAccess()));
 
 		IS_FIREBLANKET_SERVER = FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
 
