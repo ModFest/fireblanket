@@ -6,7 +6,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.GameType;
 import net.modfest.fireblanket.Fireblanket;
+import net.modfest.fireblanket.config.EffectiveConfig;
 import net.modfest.fireblanket.mixin.accessor.ArmorStandEntityAccessor;
 import net.modfest.fireblanket.mixin.accessor.ItemFrameAccessor;
 import net.modfest.fireblanket.mixinsupport.EntityWithReason;
@@ -67,6 +69,8 @@ public interface ImmutableEntities {
 
 		// Sorry adventurers, you can't make immutable entities.
 		if (!player.isCreative()) {
+			// But, can you make immovable entities?
+			makeImmmovable(player, entity, reason);
 			return;
 		}
 
@@ -115,6 +119,30 @@ public interface ImmutableEntities {
 
 		if (entity instanceof ImmutableEntities candidate) {
 			candidate.fireblanket$setImmutable(true);
+		}
+	}
+
+	private static void makeImmmovable(
+		final ServerPlayer context,
+		final Entity entity,
+		final EntitySpawnReason reason
+	) {
+		if (reason != EntitySpawnReason.SPAWN_ITEM_USE) {
+			return;
+		}
+
+		if (context.gameMode() != GameType.ADVENTURE) {
+			return;
+		}
+
+		if (EffectiveConfig.isAdventureFixedEntity(entity)) {
+			makeImmmovable(entity);
+		}
+	}
+
+	private static void makeImmmovable(final Entity entity) {
+		if (entity instanceof ImmmovableLivingEntity immmovable) {
+			immmovable.fireblanket$setNoMovement(true);
 		}
 	}
 }

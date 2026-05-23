@@ -153,6 +153,28 @@ public final class ConfigSpecs {
 			""", "none", ConfigParsers.STRING
 	);
 
+	public static final ConfigSpec<List<String>> ADVENTURE_FIXED_ENTITIES = new ConfigSpec<>(
+		"adventure-fixed-entities",
+		"Adventure-placeable Fixed Entities",
+		"""
+			Entries of entities that are spawnable by players, but aren't able to otherwise be moved.
+						
+			This may include decorative stuff like item frames, armour stands and paintings.
+						
+			This is intended to remove movement-related lag with adventure-placeable entities by disabling the
+			movement code for the entities, either by enforcing immmovable entities, or using entity-specific code.
+						
+			Note: entities that players can place that are subject to pistons or other movement should NOT be included here.
+						
+			Note: This only applies to entities that can be reliably detected as coming from a player,
+			and sinks to the ImmutableEntities support class.
+						
+			Can be adjusted in-game with `/fireblanket adventure-fixed-entities`
+			""",
+		"",
+		ConfigParsers.STRING_LIST
+	);
+
 
 	public static final List<ConfigSpec<?>> ALL_SPECS = new ArrayList<>();
 
@@ -182,6 +204,7 @@ public final class ConfigSpecs {
 		ALL_SPECS.add(TATTLETALE_COMMANDS);
 		ALL_SPECS.add(LOCKED_GAMERULES);
 		ALL_SPECS.add(TRACE_LEVEL);
+		ALL_SPECS.add(ADVENTURE_FIXED_ENTITIES);
 
 		// We have registries at home:
 		buildMap();

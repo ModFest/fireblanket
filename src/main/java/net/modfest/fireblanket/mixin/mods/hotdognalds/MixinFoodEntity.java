@@ -7,6 +7,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.modfest.fireblanket.diagnostics.ForbiddenStackWalker;
+import net.modfest.fireblanket.mixinsupport.ImmmovableLivingEntity;
 import net.modfest.fireblanket.stacksmash.StackUtil;
 import net.modfest.fireblanket.util.ImmutableEntities;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Pseudo
 @Mixin(targets = "dev.chililisoup.hotdognalds.entity.FoodEntity")
-public abstract class MixinFoodEntity extends Entity implements ImmutableEntities {
+public abstract class MixinFoodEntity extends Entity implements ImmutableEntities, ImmmovableLivingEntity {
 	@Unique
 	private static final Class<?> spawnItem = ForbiddenStackWalker.classOrNull(
 		"dev.chililisoup.hotdognalds.item.SpawnItem");
@@ -61,6 +62,11 @@ public abstract class MixinFoodEntity extends Entity implements ImmutableEntitie
 		this.setNoGravity(immutable);
 		// ItemFrame special
 		this.setFixed(immutable);
+	}
+
+	@Override
+	public void fireblanket$setNoMovement(final boolean noMovement) {
+		this.setNoGravity(noMovement);
 	}
 
 	@Shadow

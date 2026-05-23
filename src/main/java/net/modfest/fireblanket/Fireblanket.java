@@ -36,6 +36,7 @@ import net.minecraft.world.level.TicketStorage;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.gamerules.GameRuleCategory;
+import net.modfest.fireblanket.command.AdventureFixedEntitiesCommand;
 import net.modfest.fireblanket.command.CmdFindReplaceCommand;
 import net.modfest.fireblanket.command.DumpCommand;
 import net.modfest.fireblanket.command.ItemBanCommand;
@@ -118,6 +119,7 @@ public class Fireblanket implements ModInitializer {
 			CmdFindReplaceCommand.init(base, access);
 			StareCommand.init(base, access);
 			ItemBanCommand.init(base, access);
+			AdventureFixedEntitiesCommand.init(base, access);
 
 			dispatcher.register(Commands.literal("fb")
 				.redirect(dispatcher.register(base)));

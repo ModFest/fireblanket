@@ -6,6 +6,8 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -32,13 +34,18 @@ public final class EffectiveConfig {
 	public static final Set<Item> BANNED_ITEMS = Collections.newSetFromMap(new IdentityHashMap<>());
 	public static final Set<Identifier> BANNED_ITEMS_RAW = new HashSet<>();
 
+	public static final Set<EntityType<?>> ADVENTURE_FIXED_ENTITIES = Collections.newSetFromMap(new IdentityHashMap<>());
+	public static final Set<Identifier> ADVENTURE_FIXED_ENTITIES_RAW = new HashSet<>();
+
 	/**
 	 * One-time init of the configuration, caching a set of entries.
 	 */
 	public static void init() {
 		BANNED_ITEMS_RAW.clear();
+		ADVENTURE_FIXED_ENTITIES_RAW.clear();
 
 		iterateIds(ConfigSpecs.BANNED_ITEMS, BANNED_ITEMS_RAW::add);
+		iterateIds(ConfigSpecs.ADVENTURE_FIXED_ENTITIES, ADVENTURE_FIXED_ENTITIES_RAW::add);
 	}
 
 	/**
@@ -46,8 +53,10 @@ public final class EffectiveConfig {
 	 */
 	public static void apply(RegistryAccess access) {
 		BANNED_ITEMS.clear();
+		ADVENTURE_FIXED_ENTITIES.clear();
 
 		iterateIds(access, Registries.ITEM, BANNED_ITEMS_RAW, BANNED_ITEMS::add);
+		iterateIds(access, Registries.ENTITY_TYPE, ADVENTURE_FIXED_ENTITIES_RAW, ADVENTURE_FIXED_ENTITIES::add);
 	}
 
 	// region Item Ban
@@ -66,6 +75,38 @@ public final class EffectiveConfig {
 
 	public static boolean removeItemBan(final RegistryAccess access, final String raw) {
 		return remove(access, Registries.ITEM, ConfigSpecs.BANNED_ITEMS, BANNED_ITEMS_RAW, BANNED_ITEMS, raw);
+	}
+	// endregion
+
+	// region Adventure Fixed Entities
+	public static boolean isAdventureFixedEntity(final Entity container) {
+		return isAdventureFixedEntity(container.registryAccess(), container.getType());
+	}
+
+	public static boolean isAdventureFixedEntity(final RegistryAccess access, final EntityType<?> value) {
+		return ADVENTURE_FIXED_ENTITIES.contains(value);
+	}
+
+	public static boolean addAdventureFixedEntity(final RegistryAccess access, final String raw) {
+		return add(
+			access,
+			Registries.ENTITY_TYPE,
+			ConfigSpecs.ADVENTURE_FIXED_ENTITIES,
+			ADVENTURE_FIXED_ENTITIES_RAW,
+			ADVENTURE_FIXED_ENTITIES,
+			raw
+		);
+	}
+
+	public static boolean removeAdventureFixedEntity(final RegistryAccess access, final String raw) {
+		return remove(
+			access,
+			Registries.ENTITY_TYPE,
+			ConfigSpecs.ADVENTURE_FIXED_ENTITIES,
+			ADVENTURE_FIXED_ENTITIES_RAW,
+			ADVENTURE_FIXED_ENTITIES,
+			raw
+		);
 	}
 	// endregion
 
