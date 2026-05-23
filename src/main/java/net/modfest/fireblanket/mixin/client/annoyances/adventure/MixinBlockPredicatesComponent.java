@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -102,7 +103,9 @@ public class MixinBlockPredicatesComponent {
 	private void fireblanket$injectCount(final Consumer<Component> adder, final CallbackInfo ci) {
 		if (this.count == -1) {
 			this.count = this.predicates.stream()
-				.flatMap(predicate -> predicate.blocks().orElseThrow().stream())
+				.map(BlockPredicate::blocks)
+				.filter(Optional::isPresent)
+				.flatMap(value -> value.get().stream())
 				.map(Holder::value)
 				.distinct()
 				.count();
