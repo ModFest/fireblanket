@@ -3,9 +3,13 @@ package net.modfest.fireblanket.util;
 import com.mojang.logging.LogUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -16,8 +20,13 @@ import java.util.IdentityHashMap;
  * @apiNote Consumers using this to fetch anything must take care that the ABI is not broken between versions.
  * 	This does not include any tooling to deal with mappings for you.
  */
+@NullMarked
 public final class ReflectionUtil {
 	private static final Logger logger = LogUtils.getLogger();
+
+	private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+	private static final MethodHandle nil = MethodHandles.empty(MethodType.genericMethodType(1));
 
 	/**
 	 * Mask to find the nest host field, requiring a non-static & synthetic field.
@@ -27,22 +36,24 @@ public final class ReflectionUtil {
 	 */
 	private static final int RELEVANT_NEST_MASK = Opcodes.ACC_SYNTHETIC | Opcodes.ACC_STATIC;
 
-	private static final IdentityHashMap<Class<?>, Field> hostFields = new IdentityHashMap<>();
+	private static final IdentityHashMap<Class<?>, MethodHandle> hostFields = new IdentityHashMap<>();
 
 	/**
 	 * Expensive field search, you should only run this once per class
 	 */
-	private static Field search(Class<?> clazz) {
+	private static MethodHandle search(Class<?> clazz) {
 		// We can't unnest a static class.
 		if (Modifier.isStatic(clazz.getModifiers())) {
-			return null;
+			return nil;
 		}
 
 		final Class<?> host = clazz.getNestHost();
 
 		// Either we have self, or the JVM is broken.
-		if (host == clazz || host == null) {
-			return null;
+		// Or, we have an interface, which apparently doesn't implicitly mark its nested classes
+		// as static anymore. When did that change? Or was I just oblivious to it?
+		if (host == clazz || host == null || Modifier.isInterface(host.getModifiers())) {
+			return nil;
 		}
 
 		for (final Field field : clazz.getDeclaredFields()) {
@@ -55,12 +66,34 @@ public final class ReflectionUtil {
 			if (!field.trySetAccessible()) {
 				continue;
 			}
-			return field;
+			try {
+				return lookup.unreflectGetter(field);
+			} catch (IllegalAccessException e) {
+				return rethrowHandle(e, field.getType(), field.getDeclaringClass());
+			}
 		}
 
 		logger.warn("I couldn't find anything in {}, can you? {}", clazz, Arrays.toString(clazz.getDeclaredFields()));
 
-		return null;
+		return nil;
+	}
+
+	/**
+	 * Produces a handle that always rethrows the provided exception.
+	 */
+	public static MethodHandle rethrowHandle(
+		final Throwable exception,
+		final Class<?> facade,
+		final Class<?>... drop
+	) {
+		// Ensure the stack trace is initialized before forwarding it.
+		exception.fillInStackTrace();
+
+		return MethodHandles.dropArguments(
+			MethodHandles.throwException(facade, exception.getClass()).bindTo(exception),
+			0,
+			drop
+		);
 	}
 
 	/**
@@ -78,12 +111,13 @@ public final class ReflectionUtil {
 			return null;
 		}
 
-		final Field field = hostFields.computeIfAbsent(object.getClass(), ReflectionUtil::search);
-
-		if (field != null) {
-			return field.get(object);
+		try {
+			return hostFields.computeIfAbsent(object.getClass(), ReflectionUtil::search).invoke(object);
+		} catch (IllegalAccessException e) {
+			throw e;
+		} catch (Throwable e) {
+			throw new AssertionError(e);
 		}
-		return null;
 	}
 
 	/**
