@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.modfest.fireblanket.util.RegistryUtil;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -128,7 +129,7 @@ public final class EffectiveConfig {
 			return false;
 		}
 
-		final @Nullable T value = access(access, registry, id);
+		final @Nullable T value = RegistryUtil.access(access, registry, id);
 		if (value != null) {
 			values.add(value);
 		}
@@ -153,7 +154,7 @@ public final class EffectiveConfig {
 			return false;
 		}
 
-		final @Nullable T value = access(access, registry, id);
+		final @Nullable T value = RegistryUtil.access(access, registry, id);
 		if (value != null) {
 			values.remove(value);
 		}
@@ -161,14 +162,6 @@ public final class EffectiveConfig {
 		return true;
 	}
 	// endregion
-
-	private static <T> @Nullable T access(
-		final RegistryAccess access,
-		final ResourceKey<Registry<T>> registry,
-		final Identifier id
-	) {
-		return access.get(ResourceKey.create(registry, id)).map(Holder::value).orElse(null);
-	}
 
 	private static <T> void iterate(
 		final RegistryAccess access,

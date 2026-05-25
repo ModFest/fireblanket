@@ -1,21 +1,22 @@
 package net.modfest.fireblanket.client.command;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.Dynamic3CommandExceptionType;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandBuildContext;
-import net.minecraft.commands.arguments.ResourceOrIdArgument;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.ResourceOrTagArgument;
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.modfest.fireblanket.client.ClientState;
+import net.modfest.fireblanket.util.RegistryUtil;
 
 import java.util.stream.Collectors;
 
@@ -26,36 +27,70 @@ public final class BERMaskCommand {
 	public static void init(LiteralArgumentBuilder<FabricClientCommandSource> base, CommandBuildContext access) {
 		base.then(literal("be")
 			.then(literal("add")
-				.then(argument("type", new BlockEntityTypeArgumentType(access))
+				.then(argument("type", StringArgumentType.greedyString())
+					.suggests(ResourceOrTagArgument.resourceOrTag(
+						access,
+						Registries.BLOCK_ENTITY_TYPE
+					)::listSuggestions)
 					.executes(client -> {
-						Holder.Reference<BlockEntityType<?>> type = getRegistryEntry(client, "type", Registries.BLOCK_ENTITY_TYPE);
-
-						if (type.unwrapKey().isEmpty()) {
-							client.getSource().sendFeedback(Component.literal("This BE seems to not be registered??"));
-							return 1;
+						int count = 0;
+						for (final Holder<BlockEntityType<?>> holder : getEntries(client, "type")) {
+							if (ClientState.MASKED_BERS.add(holder.value())) {
+								client.getSource().sendFeedback(
+									Component.literal("Added ")
+										.append(holder.unwrapKey()
+											.map(ResourceKey::identifier)
+											.map(Identifier::toString)
+											.orElse("-- unknown --"))
+										.append(" to the mask.")
+								);
+								count++;
+							}
 						}
 
-						client.getSource().sendFeedback(Component.literal("Added " + type.key().identifier() + " to the mask."));
+						if (count == 0) {
+							client.getSource().sendFeedback(Component.literal("Seems there was nothing to add."));
+						}
 
-						Minecraft.getInstance().submit(() -> ClientState.MASKED_BERS.add(type.value()));
-						return 0;
+						return count;
 					})
 				)
 			)
 			.then(literal("remove")
-				.then(argument("type", new BlockEntityTypeArgumentType(access))
+				.then(argument("type", StringArgumentType.greedyString())
+					.suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+						ClientState.MASKED_BERS,
+						builder,
+						value -> String.valueOf(ctx.getSource()
+							.registryAccess()
+							.lookupOrThrow(Registries.BLOCK_ENTITY_TYPE)
+							.getKey(value)),
+						value -> Component.literal(String.valueOf(ctx.getSource()
+							.registryAccess()
+							.lookupOrThrow(Registries.BLOCK_ENTITY_TYPE)
+							.getKey(value)))
+					))
 					.executes(client -> {
-						Holder.Reference<BlockEntityType<?>> type = getRegistryEntry(client, "type", Registries.BLOCK_ENTITY_TYPE);
-
-						if (type.unwrapKey().isEmpty()) {
-							client.getSource().sendFeedback(Component.literal("This BE seems to not be registered??"));
-							return 1;
+						int count = 0;
+						for (final Holder<BlockEntityType<?>> holder : getEntries(client, "type")) {
+							if (ClientState.MASKED_BERS.remove(holder.value())) {
+								client.getSource().sendFeedback(
+									Component.literal("Removed ")
+										.append(holder.unwrapKey()
+											.map(ResourceKey::identifier)
+											.map(Identifier::toString)
+											.orElse("-- unknown --"))
+										.append(" from the mask.")
+								);
+								count++;
+							}
 						}
 
-						client.getSource().sendFeedback(Component.literal("Removed " + type.key().identifier() + " to the mask."));
+						if (count == 0) {
+							client.getSource().sendFeedback(Component.literal("Seems there was nothing to remove."));
+						}
 
-						Minecraft.getInstance().submit(() -> ClientState.MASKED_BERS.remove(type.value()));
-						return 0;
+						return count;
 					})
 				)
 			)
@@ -82,23 +117,14 @@ public final class BERMaskCommand {
 		);
 	}
 
-	private static final Dynamic3CommandExceptionType WRONG_TYPE_EXCEPTION = new Dynamic3CommandExceptionType(
-		(tag, type, expectedType) -> Component.translatable("argument.resource_tag.invalid_type", tag, type, expectedType)
-	);
-
-	public static <T> Holder.Reference<T> getRegistryEntry(CommandContext<FabricClientCommandSource> context, String name, ResourceKey<Registry<T>> registryRef) throws CommandSyntaxException {
-		Holder.Reference<T> reference = context.getArgument(name, Holder.Reference.class);
-		ResourceKey<?> registryKey = reference.key();
-		if (registryKey.isFor(registryRef)) {
-			return reference;
-		} else {
-			throw WRONG_TYPE_EXCEPTION.create(registryKey.identifier(), registryKey.registry(), registryRef.identifier());
-		}
-	}
-
-	public static class BlockEntityTypeArgumentType extends ResourceOrIdArgument<BlockEntityType<?>> {
-		protected BlockEntityTypeArgumentType(CommandBuildContext registryAccess) {
-			super(registryAccess, Registries.BLOCK_ENTITY_TYPE, BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec());
-		}
+	private static Iterable<? extends Holder<BlockEntityType<?>>> getEntries(
+		CommandContext<FabricClientCommandSource> context,
+		String name
+	) {
+		return RegistryUtil.getResources(
+			context.getSource().registryAccess(),
+			Registries.BLOCK_ENTITY_TYPE,
+			StringArgumentType.getString(context, name)
+		);
 	}
 }
