@@ -94,6 +94,11 @@ public class Fireblanket implements ModInitializer {
 			.category(GameRuleCategory.UPDATES)
 			.buildAndRegister(FireblanketConstants.id("lightning_broadcast_radius"));
 
+	public static final GameRule<Boolean> ADVENTURE_WIND_CHARGE_INTERACTION =
+		GameRuleBuilder.forBoolean(false)
+			.category(GameRuleCategory.PLAYER)
+			.buildAndRegister(FireblanketConstants.id("adventure_wind_charge_interaction"));
+
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 
 	public record QueuedPacket(Connection conn, Packet<?> packet, ChannelFutureListener listener) {
