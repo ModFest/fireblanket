@@ -96,6 +96,7 @@
 		"mods.terracotta_knights.MixinItemPickupGoal",
 		"opto.MixinClosableCommandBlockSource",
 		"opto.MixinCommandBlockExecutor",
+		"opto.MixinDirection",
 		"opto.MixinEntitySelector",
 		"opto.MixinMapState",
 		"opto.block.MixinSignBlock",
