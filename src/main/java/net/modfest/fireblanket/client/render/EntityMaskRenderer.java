@@ -9,10 +9,10 @@ import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.gizmos.GizmoProperties;
 import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
-import net.minecraft.util.ARGB;
 import net.minecraft.util.debug.DebugValueAccess;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import net.modfest.fireblanket.FireblanketClient;
 import net.modfest.fireblanket.FireblanketMixin;
 import net.modfest.fireblanket.client.ClientState;
 
@@ -22,6 +22,9 @@ import net.modfest.fireblanket.client.ClientState;
 public final class EntityMaskRenderer implements DebugRenderer.SimpleDebugRenderer {
 
 	private static final boolean alwaysVisible = FireblanketMixin.DO_MASKING | SharedConstants.DEBUG_ENABLED;
+
+	private static final GizmoStyle STYLE_VISIBLE = GizmoStyle.stroke(0xc04EDB27);
+	private static final GizmoStyle STYLE_HIDDEN = GizmoStyle.stroke(0xC0F8AC28);
 
 	private final Minecraft minecraft;
 
@@ -68,7 +71,7 @@ public final class EntityMaskRenderer implements DebugRenderer.SimpleDebugRender
 
 			final GizmoProperties gizmo = Gizmos.cuboid(
 				entity.getBoundingBox().move(delta),
-				GizmoStyle.stroke(ARGB.color(192, 200, 220, 40))
+				FireblanketClient.shouldRender(entity) ? STYLE_VISIBLE : STYLE_HIDDEN
 			);
 
 			if (alwaysVisible) {

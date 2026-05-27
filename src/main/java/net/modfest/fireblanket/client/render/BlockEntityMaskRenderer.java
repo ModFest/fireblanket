@@ -11,12 +11,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gizmos.GizmoProperties;
 import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
-import net.minecraft.util.ARGB;
 import net.minecraft.util.debug.DebugValueAccess;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
+import net.modfest.fireblanket.FireblanketClient;
 import net.modfest.fireblanket.FireblanketMixin;
 import net.modfest.fireblanket.client.ClientState;
 import net.modfest.fireblanket.mixin.client.accessor.AccessorClientChunkCache;
@@ -32,6 +32,9 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public final class BlockEntityMaskRenderer implements DebugRenderer.SimpleDebugRenderer {
 
 	private static final boolean alwaysVisible = FireblanketMixin.DO_MASKING | SharedConstants.DEBUG_ENABLED;
+
+	private static final GizmoStyle STYLE_VISIBLE = GizmoStyle.stroke(0xC000F6AC);
+	private static final GizmoStyle STYLE_HIDDEN = GizmoStyle.stroke(0xC0DB3927);
 
 	private final Minecraft minecraft;
 
@@ -123,7 +126,7 @@ public final class BlockEntityMaskRenderer implements DebugRenderer.SimpleDebugR
 
 			final GizmoProperties gizmo = Gizmos.cuboid(
 				box,
-				GizmoStyle.stroke(ARGB.color(192, 200, 220, 40))
+				FireblanketClient.shouldRender(entity) ? STYLE_VISIBLE : STYLE_HIDDEN
 			);
 
 			if (alwaysVisible) {
