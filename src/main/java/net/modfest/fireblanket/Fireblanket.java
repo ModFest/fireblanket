@@ -99,6 +99,11 @@ public class Fireblanket implements ModInitializer {
 			.category(GameRuleCategory.PLAYER)
 			.buildAndRegister(FireblanketConstants.id("adventure_wind_charge_interaction"));
 
+	public static final GameRule<Boolean> ALLOW_TRIGGER_EXPLOSIONS =
+		GameRuleBuilder.forBoolean(false)
+			.category(GameRuleCategory.MISC)
+			.buildAndRegister(FireblanketConstants.id("allow_trigger_explosions"));
+
 	public static final Logger LOGGER = LoggerFactory.getLogger("Fireblanket");
 
 	public record QueuedPacket(Connection conn, Packet<?> packet, ChannelFutureListener listener) {

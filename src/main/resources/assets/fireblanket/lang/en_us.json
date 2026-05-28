@@ -7,6 +7,8 @@
 	"gamerule.fireblanket.lightning_broadcast_radius.description": "How far in blocks players will receive lightning strikes from in-game. Set to 0 to effectively disable broadcasting.",
 	"gamerule.fireblanket.adventure_wind_charge_interaction": "Wind charges interaction in Adventure",
 	"gamerule.fireblanket.adventure_wind_charge_interaction.description": "Whether wind charges interact with blocks in adventure.",
+	"gamerule.fireblanket.allow_trigger_explosions": "Allow trigger explosions",
+	"gamerule.fireblanket.allow_trigger_explosions.description": "Whether trigger explosions (such as those from wind charges) can happen",
 	"commands.gamerule.locked": "You do not have permission to modify this gamerule",
 	"commandsBlock.commandSetByPlayer": "%s set the command at (%s) to: %s",
 	"fireblanket.fsc.broken": "[Fireblanket] Despite relevant mixins being disabled or broken, we're still requesting FSC?",
