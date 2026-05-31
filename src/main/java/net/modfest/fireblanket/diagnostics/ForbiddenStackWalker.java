@@ -345,10 +345,10 @@ public final class ForbiddenStackWalker {
 	 * @throws T The throwable the user wanted to throw for the reason provided.
 	 * @see #dumpStack(Object...)
 	 */
-	@SuppressWarnings("unused") // API
+	@SuppressWarnings({"unused", "unchecked"}) // API, sneaky throws
 	@Contract("_, _ -> fail")
-	public static <T extends Throwable> void dumpStackAndThrow(
-		final @Nullable Supplier<@Nullable T> throwable,
+	public static <T extends Throwable> T dumpStackAndThrow(
+		final @Nullable Supplier<@Nullable Throwable> throwable,
 		final @Nullable Object @Nullable ... context
 	) throws T {
 		if (isAlreadyDumping()) {
@@ -366,7 +366,7 @@ public final class ForbiddenStackWalker {
 		if (toThrow == null) {
 			throw new AssertionError();
 		}
-		throw toThrow;
+		throw (T) toThrow;
 	}
 
 	/**
