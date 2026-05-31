@@ -29,6 +29,8 @@ dependencies {
 	implementation libs.fl
 	implementation libs.fapi
 
+	compileOnly(libs.bundles.emergency)
+
 	implementation libs.sodium
 	//modImplementation libs.flywheel
 	//modImplementation libs.vanillin

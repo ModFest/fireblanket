@@ -36,5 +36,9 @@ worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc26
 
 glowcase = { group = "maven.modrinth", name = "glowcase", version.ref = "glowcase" }
 
+# Emergency Bugfix Alpha
+surveyor = { module = "maven.modrinth:surveyor", version = "1.2.4+26.1" }
+
 [bundles]
 worldedit = ['worldeditCore', 'worldeditFabric']
+emergency = ['surveyor']
