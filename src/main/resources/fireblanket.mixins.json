@@ -55,6 +55,8 @@
 		"datafixerupper.MixinRecordCodecBuilder$Instance",
 		"diagnostics.commands.MixinCommands",
 		"diagnostics.net.MixinConnection",
+		"diagnostics.streams.MixinStreamCodec",
+		"diagnostics.streams.MixinStreamCodec$Anonymous",
 		"diagnostics.world.MixinPalette",
 		"entity_block.MixinEntityType",
 		"entity_immutability.MixinDecorationItem",
