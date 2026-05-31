@@ -1119,7 +1119,7 @@ public final class ForbiddenStackWalker {
 	 * @param tab       Cached tab. Recursion of suppressed throwables appends a tab.
 	 * @param throwable The throwable to print to the builder.
 	 */
-	private static void print(
+	public static void print(
 		final StringBuilder builder,
 		final String tab,
 		final Throwable throwable
