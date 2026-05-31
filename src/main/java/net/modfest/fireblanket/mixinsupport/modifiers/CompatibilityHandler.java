@@ -79,7 +79,7 @@ public final class CompatibilityHandler {
 				continue;
 			}
 
-			if (tldDangerous && str.indexOf('.') >= 0) {
+			if (tldDangerous && str.indexOf('.') < 0) {
 				System.err.println("[Fireblanket/" + spec.prettyName() + "] Cowardly refusing to SCRAM `" + str + "`");
 				continue;
 			}
