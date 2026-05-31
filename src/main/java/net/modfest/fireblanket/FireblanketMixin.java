@@ -54,7 +54,14 @@ public class FireblanketMixin implements IMixinConfigPlugin {
 			if ("io.wispforest.affinity.mixin.MapStateMixin".equals(mixinClassName)) {
 				return true;
 			}
-			return CompatibilityHandler.isExternalMixinScrammed(mixinClassName);
+			if (CompatibilityHandler.isExternalMixinScrammed(mixinClassName)) {
+				System.err.printf("""
+					[Fireblanket/SCRAM] Explicitly refusing to load `%s`.
+					If this wasn't expected, check the mod-mixin-scram config.
+					""", mixinClassName);
+				return true;
+			}
+			return false;
 		}
 	}
 
