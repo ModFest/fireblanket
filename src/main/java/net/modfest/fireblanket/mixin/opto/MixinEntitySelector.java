@@ -146,7 +146,7 @@ public abstract class MixinEntitySelector {
 	private Predicate<Entity> getPositionOnlyPredicate(Vec3 pos, @Nullable AABB box, @Nullable FeatureFlagSet enabledFeatures) {
 		boolean bl = enabledFeatures != null;
 		boolean bl2 = box != null;
-		boolean bl3 = !this.range.isAny();
+		boolean bl3 = this.range != null && !this.range.isAny();
 		int i = (bl ? 1 : 0) + (bl2 ? 1 : 0) + (bl3 ? 1 : 0);
 		List<Predicate<Entity>> list;
 		if (i == 0) {
