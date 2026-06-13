@@ -285,7 +285,7 @@ public final class ForbiddenStackWalker {
 				}
 			}
 		} catch (Exception e) {
-			logger.error("Cannot load ");
+			logger.error("Cannot load PrimitiveSlot", e);
 		}
 
 		$PrimitiveSlot = primitiveSlot;
