@@ -1,9 +1,7 @@
 package net.modfest.fireblanket.mixin.entity_sync;
 
-import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.network.ServerPlayerConnection;
-import net.minecraft.world.entity.Entity;
 import net.modfest.fireblanket.mixinsupport.TrackerEntityHolder;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,7 +23,7 @@ public abstract class MixinEntityTracker {
 	private Set<ServerPlayerConnection> seenBy;
 
 	@Inject(method = "<init>", at = @At("TAIL"))
-	public void fireblanket$setTrackerRef(ChunkMap serverChunkLoadingManager, Entity entity, int maxDistance, int tickInterval, boolean alwaysUpdateVelocity, CallbackInfo ci) {
+	public void fireblanket$setTrackerRef(final CallbackInfo ci) {
 		((TrackerEntityHolder) this.serverEntity).fireblanket$setListeners(this.seenBy);
 	}
 }

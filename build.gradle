@@ -31,25 +31,25 @@ dependencies {
 
 	compileOnly(libs.bundles.emergency)
 
-	implementation libs.sodium
+	compileOnly libs.sodium
 	//modImplementation libs.flywheel
 	//modImplementation libs.vanillin
 
 	// Importing its bakery.
-	implementation libs.glowcase
+	compileOnly libs.glowcase
 
 	implementation libs.nettyIoUringClasses
 	implementation variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }
 	implementation libs.zstd
 
-	implementation(libs.bundles.worldedit) {
+	compileOnly(libs.bundles.worldedit) {
 		exclude group: "it.unimi.dsi"
 		exclude group: "com.google.code.gson"
 		exclude group: "com.google.guava"
 		exclude group: "org.apache.logging.log4j"
 	}
 
-	implementation "dev.gegy:player-roles-api:1.9.0-pre.1"
+	compileOnly "dev.gegy:player-roles-api:1.9.0-pre.1"
 
 	shade(libs.nettyIoUringClasses) { transitive = false }
 	shade(variantOf(libs.nettyIoUringNative) { classifier "linux-x86_64" }) { transitive = false }

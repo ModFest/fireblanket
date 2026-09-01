@@ -4,7 +4,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.criterion.BlockPredicate;
+import net.minecraft.advancements.predicates.BlockPredicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -69,7 +69,7 @@ public class MixinBlockPredicatesComponent {
 		final Minecraft client = Minecraft.getInstance();
 
 		// Avoid modifying vanilla output while not in a screen, or on the server.
-		if (!client.isSameThread() || client.screen == null) {
+		if (!client.isSameThread() || client.gui.screen() == null) {
 			return original;
 		}
 

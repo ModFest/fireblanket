@@ -35,7 +35,6 @@ import net.modfest.fireblanket.world.render_regions.RegionSyncRequest;
 import net.modfest.fireblanket.world.render_regions.RenderRegions;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -80,7 +79,7 @@ public class FireblanketClient implements ClientModInitializer {
 				return CompletableFuture.completedFuture(FriendlyByteBufs.empty());
 			}
 
-			final Set<NetworkState> states = buf.readCollection(HashSet::new, NetworkState.CODEC);
+			final Set<NetworkState> states = NetworkState.SET_CODEC.decode(buf);
 
 			// Retain all valid states.
 			states.retainAll(NetworkState.VALID);
@@ -141,7 +140,7 @@ public class FireblanketClient implements ClientModInitializer {
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(CommandBlockPacket.ID, (payload, ctx) -> {
-			ctx.client().execute(() -> Minecraft.getInstance().setScreen(new PlaceCommandBlockScreen()));
+			ctx.client().execute(() -> Minecraft.getInstance().gui.setScreen(new PlaceCommandBlockScreen()));
 		});
 
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -163,7 +162,7 @@ public class FireblanketClient implements ClientModInitializer {
 
 	private static Vec3 getCameraPos() {
 		Minecraft mc = Minecraft.getInstance();
-		return mc.gameRenderer.getMainCamera().position();
+		return mc.gameRenderer.mainCamera().position();
 	}
 
 }

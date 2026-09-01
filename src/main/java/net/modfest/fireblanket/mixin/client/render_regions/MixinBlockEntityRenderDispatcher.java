@@ -15,7 +15,7 @@ public class MixinBlockEntityRenderDispatcher {
 	@Inject(at = @At("HEAD"), method = "tryExtractRenderState", cancellable = true)
 	private static void render(final CallbackInfoReturnable<?> ci, @Local(argsOnly = true) BlockEntity be) {
 		if (ClientState.useRegionRenderer && !FireblanketClient.shouldRender(be)) {
-			ci.cancel();
+			ci.setReturnValue(null);
 		}
 	}
 

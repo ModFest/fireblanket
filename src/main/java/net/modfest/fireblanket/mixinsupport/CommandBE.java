@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.mixinsupport;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BaseCommandBlock;
@@ -21,6 +22,8 @@ public interface CommandBE {
 	@Nullable UUID fireblanket$getOwner();
 
 	@Nullable UUID fireblanket$getLastUpdate();
+
+	Component fireblanket$getNameWithBlame();
 
 	HoverEvent fireblanket$getBlame();
 }

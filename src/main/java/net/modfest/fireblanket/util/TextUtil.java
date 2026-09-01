@@ -15,7 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.minecraft.world.level.Level;
@@ -121,10 +121,16 @@ public final class TextUtil {
 	}
 
 	public static Component ofRunner(final CommandSourceStack source) {
-		final Component rawDisplayName = Objects.requireNonNullElse(
-			((ServerCommandSourceAccessor) source).fireblanket$getRawDisplayName(),
-			unknown
-		);
+		final Component rawDisplayName;
+
+		if (source.getEntity() instanceof CommandBE be) {
+			rawDisplayName = be.fireblanket$getNameWithBlame();
+		} else {
+			rawDisplayName = Objects.requireNonNullElse(
+				((ServerCommandSourceAccessor) source).getNamesProvider().displayName(source.getEntity()),
+				unknown
+			);
+		}
 
 		final Component runner = getRunnerText(source);
 
@@ -182,7 +188,11 @@ public final class TextUtil {
 			name = result;
 		}
 
-		final HoverEvent.EntityTooltipInfo content = new HoverEvent.EntityTooltipInfo(EntityType.PLAYER, uuid, Component.nullToEmpty(name));
+		final HoverEvent.EntityTooltipInfo content = new HoverEvent.EntityTooltipInfo(
+			EntityTypes.PLAYER,
+			uuid,
+			Component.nullToEmpty(name)
+		);
 		final HoverEvent event = new HoverEvent.ShowEntity(content);
 
 		return Component.literal(name).setStyle(Style.EMPTY.withHoverEvent(event));

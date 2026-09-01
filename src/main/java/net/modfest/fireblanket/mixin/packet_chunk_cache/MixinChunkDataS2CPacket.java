@@ -31,7 +31,7 @@ public class MixinChunkDataS2CPacket {
 
 	@Redirect(at = @At(value = "NEW", target = "net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData"),
 		method = "<init>(Lnet/minecraft/world/level/chunk/LevelChunk;Lnet/minecraft/world/level/lighting/LevelLightEngine;Ljava/util/BitSet;Ljava/util/BitSet;)V")
-	public ClientboundLevelChunkPacketData fireblanket$useCachedChunkData(LevelChunk chunk) {
+	private static ClientboundLevelChunkPacketData fireblanket$useCachedChunkData(LevelChunk chunk) {
 		if (!PolyMcAccess.isActive() && chunk instanceof CacheableChunk cc) {
 			CachedChunkPacketData data = cc.fireblanket$getCachedPacket();
 			if (data != null) {
@@ -43,7 +43,13 @@ public class MixinChunkDataS2CPacket {
 
 	@Redirect(at = @At(value = "NEW", target = "net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData"),
 		method = "<init>(Lnet/minecraft/world/level/chunk/LevelChunk;Lnet/minecraft/world/level/lighting/LevelLightEngine;Ljava/util/BitSet;Ljava/util/BitSet;)V")
-	public ClientboundLightUpdatePacketData fireblanket$useCachedLightData(ChunkPos pos, LevelLightEngine lightProvider, BitSet skyBits, BitSet blockBits, LevelChunk chunk) {
+	private static ClientboundLightUpdatePacketData fireblanket$useCachedLightData(
+		ChunkPos pos,
+		LevelLightEngine lightProvider,
+		BitSet skyBits,
+		BitSet blockBits,
+		LevelChunk chunk
+	) {
 		if (!PolyMcAccess.isActive() && chunk instanceof CacheableChunk cc) {
 			CachedChunkPacketData data = cc.fireblanket$getCachedPacket();
 			if (data != null) {

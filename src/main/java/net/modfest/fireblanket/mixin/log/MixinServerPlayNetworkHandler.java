@@ -9,7 +9,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ServerGamePacketListenerImpl.class)
 public class MixinServerPlayNetworkHandler {
-	@Redirect(method = "handleMovePlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;teleport(DDDFF)V", ordinal = 1))
+	@Redirect(
+		method = "handlePlayerPositionChange",
+		at = @At(
+			value = "INVOKE",
+			target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;teleport(DDDFF)V",
+			ordinal = 1
+		)
+	)
 	private void fireblanket$move1(ServerGamePacketListenerImpl instance, double x, double y, double z, float yaw, float pitch) {
 
 	}
@@ -19,7 +26,15 @@ public class MixinServerPlayNetworkHandler {
 
 	}
 
-	@Redirect(method = "handleMovePlayer", at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;warn(Ljava/lang/String;[Ljava/lang/Object;)V", ordinal = 0, remap = false))
+	@Redirect(
+		method = "handlePlayerPositionChange",
+		at = @At(
+			value = "INVOKE",
+			target = "Lorg/slf4j/Logger;warn(Ljava/lang/String;[Ljava/lang/Object;)V",
+			ordinal = 0,
+			remap = false
+		)
+	)
 	private void fireblanket$log1(Logger logger, String format, Object... arguments) {
 
 	}

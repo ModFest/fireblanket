@@ -15,7 +15,7 @@ public class PlaceCommandBlockScreen extends Screen {
 	protected void init() {
 		super.init();
 		this.addRenderableWidget(
-			new Button.Builder(Component.literal("Continue..."), (bw) -> minecraft.setScreen(null))
+			new Button.Builder(Component.literal("Continue..."), (bw) -> minecraft.gui.setScreen(null))
 				.bounds((this.width / 2) + 50, (this.height / 2) + 58, 100, 20)
 				.build()
 		);

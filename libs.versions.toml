@@ -1,9 +1,9 @@
 [versions]
 loom = "1.15.+"
 
-mc = "26.1.2"
-fl = "0.18.4"
-fapi = "0.148.2+26.1.2"
+mc = "26.3-snapshot-10"
+fl = "0.19.3"
+fapi = "0.158.3+26.3"
 
 nettyIoUring = "4.2.7.Final"
 zstd = "1.5.7-7"

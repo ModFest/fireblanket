@@ -1,6 +1,6 @@
 package net.modfest.fireblanket.mixin.client.vbo_opto;
 
-import com.mojang.blaze3d.opengl.GlProgram;
+import com.mojang.renderpearl.backend.opengl.GlProgram;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(GlProgram.class)

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -38,6 +39,11 @@ public enum NetworkState {
 
 	public static final StreamCodec<ByteBuf, NetworkState> CODEC = ByteBufCodecs.STRING_UTF8
 		.map(NetworkState::parse, NetworkState::getNetworkName);
+
+	public static final StreamCodec<ByteBuf, Set<NetworkState>> SET_CODEC = ByteBufCodecs.collection(
+		HashSet::new,
+		CODEC
+	);
 
 	// TODO: configuration-based negotiation
 	public static final Set<NetworkState> VALID = Set.of(LOGIN, CONFIGURATION, PLAY);

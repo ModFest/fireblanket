@@ -13,8 +13,6 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
  * @author Ampflower
@@ -29,14 +27,10 @@ public class MixinCommandBlockMinecartExecutor extends MixinCommandBlockExecutor
 	@Unique
 	private @Nullable Component fireblanket$name;
 
-	@ModifyArg(
-		method = "createCommandSourceStack",
-		at = @At(
-			value = "INVOKE",
-			target = "Lnet/minecraft/commands/CommandSourceStack;<init>(Lnet/minecraft/commands/CommandSource;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec2;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/server/permissions/PermissionSet;Ljava/lang/String;Lnet/minecraft/network/chat/Component;Lnet/minecraft/server/MinecraftServer;Lnet/minecraft/world/entity/Entity;)V"
-		)
-	)
-	private Component fireblanket$augmentSourceName(final Component name) {
+	@Override
+	public Component fireblanket$getNameWithBlame() {
+		final Component name = this.this$0.getDisplayName();
+
 		if (!FireblanketConfig.get(ConfigSpecs.TATTLETALE_COMMANDS)) {
 			return name;
 		}

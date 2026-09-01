@@ -1,5 +1,6 @@
 package net.modfest.fireblanket.mixin.block;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import net.minecraft.world.level.BaseCommandBlock;
@@ -43,6 +44,11 @@ public class MixinCommandBlockMinecartEntity implements CommandBE {
 	@Override
 	public @Nullable UUID fireblanket$getLastUpdate() {
 		return ((CommandBE) commandBlock).fireblanket$getLastUpdate();
+	}
+
+	@Override
+	public Component fireblanket$getNameWithBlame() {
+		return ((CommandBE) commandBlock).fireblanket$getNameWithBlame();
 	}
 
 	@Override

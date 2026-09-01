@@ -1,26 +1,11 @@
 accessWidener v2 official
 #
-accessible class net/minecraft/client/renderer/chunk/SectionRenderDispatcher$RenderSection$RebuildTask
 accessible class net/minecraft/server/level/ServerChunkCache$MainThreadExecutor
-#
-#accessible class net/minecraft/server/network/ServerGamePacketListenerImpl$EntityInteraction
-#accessible method net/minecraft/server/level/ChunkMap getChunks ()Ljava/lang/Iterable;
-#
+
 accessible method net/minecraft/world/level/chunk/storage/RegionFileVersion <init> (ILjava/lang/String;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper;Lnet/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper;)V
 accessible class net/minecraft/world/level/chunk/storage/RegionFileVersion$StreamWrapper
-# FIXME: These have been left as yarn as there are no Mojang equivalent for some of these fields.
-#accessible method net/minecraft/entity/Entity setRotation (FF)V
-#accessible field net/minecraft/entity/LivingEntity serverX D
-#accessible field net/minecraft/entity/LivingEntity serverY D
-#accessible field net/minecraft/entity/LivingEntity serverZ D
-#accessible field net/minecraft/entity/LivingEntity bodyTrackingIncrements I
-#accessible field net/minecraft/entity/LivingEntity headTrackingIncrements I
-#accessible field net/minecraft/entity/LivingEntity serverYaw D
-#accessible field net/minecraft/entity/LivingEntity serverHeadYaw D
-#accessible field net/minecraft/entity/LivingEntity serverPitch D
-#
+
 accessible method net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket <init> (Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/BlockEntityType;Lnet/minecraft/nbt/CompoundTag;)V
-accessible field net/minecraft/world/entity/InterpolationHandler interpolationSteps I
 
 accessible method net/minecraft/commands/CommandSourceStack broadcastToAdmins (Lnet/minecraft/network/chat/Component;)V
 

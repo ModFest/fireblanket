@@ -101,7 +101,7 @@ public interface ImmutableEntities {
 	@Deprecated // The deprecation here isn't actually for removal. There's just no better annotation that nags.
 	static void makeImmutable(Entity entity) {
 		// Set invulnerability
-		entity.setInvulnerable(true);
+		entity.setPermanentlyInvulnerable(true);
 
 		if (entity instanceof ArmorStandEntityAccessor ae) {
 			// Disable all slots

@@ -118,7 +118,7 @@ public final class FireblanketDebug {
 	}
 
 	private static void send(final Minecraft minecraft, final Component component) {
-		minecraft.getChatListener().handleSystemMessage(component, false);
+		minecraft.gui.chatListener().handleSystemMessage(component, false);
 	}
 
 	private static void sendWarning(final Minecraft minecraft, final Component component) {

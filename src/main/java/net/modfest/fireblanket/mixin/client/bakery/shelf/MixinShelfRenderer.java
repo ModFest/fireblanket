@@ -111,7 +111,7 @@ public abstract class MixinShelfRenderer implements RetrofitBakery<ShelfBlockEnt
 			if (itemState == null) {
 				continue;
 			}
-			this.submitItem(state, itemState, poseStack, submitNodeCollector, slot, yRot);
+			submitItem(state, itemState, poseStack, submitNodeCollector, slot, yRot);
 		}
 	}
 
@@ -126,7 +126,7 @@ public abstract class MixinShelfRenderer implements RetrofitBakery<ShelfBlockEnt
 	}
 
 	@Shadow
-	private void submitItem(
+	private static void submitItem(
 		final ShelfRenderState state,
 		final ItemStackRenderState itemStackRenderState,
 		final PoseStack poseStack,

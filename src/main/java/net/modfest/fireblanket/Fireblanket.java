@@ -212,7 +212,7 @@ public class Fireblanket implements ModInitializer {
 			ServerLoginConnectionEvents.QUERY_START.register(Identifier.parse("fireblanket:pre"), (handler, server, sender, synchronizer) -> {
 				if (!server.isSingleplayer()) {
 					final var buf = FriendlyByteBufs.create();
-					buf.writeCollection(NetworkState.VALID, NetworkState.CODEC);
+					NetworkState.SET_CODEC.encode(buf, NetworkState.VALID);
 					sender.sendPacket(FULL_STREAM_COMPRESSION, buf);
 				}
 			});

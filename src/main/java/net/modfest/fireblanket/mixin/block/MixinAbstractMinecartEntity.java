@@ -24,12 +24,12 @@ public class MixinAbstractMinecartEntity {
 		method = "createMinecart",
 		at = @At(
 			value = "INVOKE",
-			target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V",
+			target = "Lnet/minecraft/world/entity/PostSpawnProcessor;apply(Lnet/minecraft/world/entity/Entity;)V",
 			shift = At.Shift.AFTER
 		),
 		slice = @Slice(from = @At(
 			value = "INVOKE",
-			target = "Lnet/minecraft/world/entity/EntityType;createDefaultStackConfig(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/LivingEntity;)Ljava/util/function/Consumer;"
+			target = "Lnet/minecraft/world/entity/EntityType;createDefaultStackConfig(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/LivingEntity;)Lnet/minecraft/world/entity/PostSpawnProcessor;"
 		))
 	)
 	private static void fireblanket$onCreateMinecart(
