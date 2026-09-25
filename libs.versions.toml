@@ -1,18 +1,18 @@
 [versions]
 loom = "1.15.+"
 
-mc = "26.3-snapshot-10"
+mc = "26.3"
 fl = "0.19.3"
-fapi = "0.158.3+26.3"
+fapi = "0.161.0+26.3"
 
 nettyIoUring = "4.2.7.Final"
 zstd = "1.5.7-7"
 
-sodium = "mc26.1.2-0.8.11-fabric"
+sodium = "mc26.3-0.9.3-alpha.1-fabric"
 flywheel = "1.0.4-27"
 vanillin = "1.1.3-27"
-worldeditCore = "7.4.3"
-worldeditFabric = "7.4.3"
+worldeditCore = "7.4.6-SNAPSHOT"
+worldeditFabric = "7.4.6-SNAPSHOT"
 
 glowcase = "2.5.0+26.1"
 
@@ -32,13 +32,26 @@ sodium = { group = "maven.modrinth", name = "sodium", version.ref = "sodium" }
 flywheel = { group = "dev.engine-room.flywheel", name = "flywheel-fabric-1.21.1", version.ref = "flywheel" }
 vanillin = { group = "dev.engine-room.vanillin", name = "vanillin-fabric-1.21.1", version.ref = "vanillin" }
 worldeditCore = { group = "com.sk89q.worldedit", name = "worldedit-core", version.ref = "worldeditCore" }
-worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc26.1.2", version.ref = "worldeditFabric" }
+worldeditFabric = { group = "com.sk89q.worldedit", name = "worldedit-fabric-mc26.3", version.ref = "worldeditFabric" }
 
+# We want its bakery. It's useful. :3
 glowcase = { group = "maven.modrinth", name = "glowcase", version.ref = "glowcase" }
 
 # Emergency Bugfix Alpha
 surveyor = { module = "maven.modrinth:surveyor", version = "1.2.4+26.1" }
 
 [bundles]
+# Meant to be a temporary hotfix and should be cleared the next up-port.
+# If the fix stays and a hard dependency is there, move the dependency to emergency-stale.
+emergency-active = []
+emergency-stale = ['surveyor']
+emergency-incompatible = []
+
+# Active permanent dependencies.
+# Dependencies that haven't updated, but has moved past intermediary should be moved to stale.
+regular-active = ['sodium']
+regular-stale = ['glowcase']
+regular-incompatible = ['flywheel', 'vanillin']
+
+# WorldEdit.
 worldedit = ['worldeditCore', 'worldeditFabric']
-emergency = ['surveyor']
