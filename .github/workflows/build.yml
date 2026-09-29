@@ -33,7 +33,10 @@ jobs:
       - name: Attest build artifacts
         uses: actions/attest@v4
         with:
-          subject-path: 'build/libs/*.jar;!build/libs/*-sources.jar;!build/libs/*-dev.jar'
+          subject-path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-dev.jar
 
       - name: Upload build artifacts
         if: ${{ always() }}
