@@ -31,6 +31,9 @@ jobs:
         run: ./gradlew build
 
       - name: Attest build artifacts
+        # Disable attestation normally.
+        # We shall leave it here in case someone in the future needs to debug the release script.
+        if: ${{ false }}
         uses: actions/attest@v4
         with:
           subject-path: |
@@ -46,4 +49,3 @@ jobs:
           path: |
             build/libs
             build/reports
-            created_attestation_paths.txt
