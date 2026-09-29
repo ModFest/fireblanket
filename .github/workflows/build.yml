@@ -30,6 +30,11 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Attest build artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: 'build/libs/*.jar;!build/libs/*-sources.jar;!build/libs/*-dev.jar'
+
       - name: Upload build artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
