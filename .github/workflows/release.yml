@@ -5,29 +5,39 @@ on:
     types:
       - published
 
+permissions:
+  id-token: write
+  attestations: write
+  contents: write
+
 jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup jdk
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: 25
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v6
         with:
           validate-wrappers: true
 
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Attest build artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: 'build/libs/*.jar;!build/libs/*-sources.jar;!build/libs/*-dev.jar'
+
       - name: Upload GitHub release
-        uses: AButler/upload-release-assets@v2.0
+        uses: AButler/upload-release-assets@v4.0
         with:
           files: 'build/libs/*.jar;!build/libs/*-sources.jar;!build/libs/*-dev.jar'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
