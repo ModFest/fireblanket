@@ -21,6 +21,7 @@
 		"accessor.ServerCommandSourceAccessor",
 		"accessor.ServerLoginNetworkHandlerAccessor",
 		"accessor.ServerPlayerAccessor",
+		"adventure_fix.MixinAnvilMenu",
 		"adventure_fix.MixinBedBlock",
 		"adventure_fix.MixinFarmlandBlock",
 		"adventure_fix.MixinItemStack",
