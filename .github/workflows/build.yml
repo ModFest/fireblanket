@@ -24,6 +24,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           validate-wrappers: true
+          # Opt-out of proprietary cache mechanism.
+          cache-provider: basic
 
       - name: Build with Gradle
         run: ./gradlew build
